@@ -1,0 +1,62 @@
+---
+description: DeepResearch Agentic RL 项目常驻工程约束。所有任务默认遵循。
+globs:
+alwaysApply: true
+---
+
+# DeepResearch Agentic RL Project Guardrails
+
+You are working on a DeepResearch / Search-R1 style agentic RL post-training project.
+
+## Hard Constraints
+
+1. **No large training without smoke first**
+   - Run unit tests or tiny smoke (≤8 samples) before any GPU job.
+   - Full training requires explicit user approval.
+
+2. **Inspect before editing**
+   - Read repo structure and existing modules first.
+   - Extend existing code; do not create parallel architectures or duplicate entrypoints.
+
+3. **Every runnable script must expose**
+   - `--config`, `--seed`, `--output-dir`, `--max-samples`, `--debug`
+   - Structured metric logging (JSON/CSV, not only stdout).
+
+4. **Never delete** raw data, checkpoints, logs, or prior experiment outputs unless explicitly asked.
+
+5. **End every task with**
+   - files changed
+   - commands run
+   - results observed
+   - next recommended step
+
+## Workspace Hygiene (Critical)
+
+Keep the repo clean. Common failure mode: agent runs many experiments and scatters artifacts.
+
+**Allowed top-level dirs only:**
+```
+configs/  data/  src/  scripts/  docs/  results/  papers/  external/  outputs/
+```
+Code lives under `src/{tools,env,agents,rewards,eval,train}/`.
+Data lives under `data/{raw,processed,sft,eval}/`.
+`external/` holds read-only third-party reference repos (Search-R1, FlashRAG); never edit its contents.
+
+**Rules:**
+- All experiment artifacts go under `results/{run_name}/` — never repo root, never random subdirs.
+- Run name format: `{stage}_{date}_{tag}` e.g. `smoke_parser_20260716_v1`.
+- Smoke/debug runs use prefix `smoke_` or `debug_`.
+- Do not commit generated files: checkpoints, logs, parquet/jsonl dumps, wandb, __pycache__.
+- One README per module max; do not create `README_v2.md`, `notes.md`, `temp_*.py`.
+- Max 1 new file per task unless user asks for more; prefer editing existing files.
+- After smoke test, delete only `results/smoke_*` temp files if user approves cleanup — never delete `data/raw/`.
+- `outputs/` is legacy from the old layout; pending removal — do not write new artifacts there.
+
+**Forbidden patterns:**
+- Creating `test/`, `tmp/`, `backup/`, `old/`, `copy_of_*` directories
+- Writing eval results to multiple locations
+- Generating large markdown reports mid-task (use `docs/` only when asked)
+
+## Interview-Ready Standard
+
+Optimize for: clear pipeline, reproducible scripts, small convincing experiments, ablation table, readable README.

@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Third-party reference repos (read-only, cloned separately, do NOT push)
+external/
+
+# Data & artifacts (keep raw/ structure, ignore generated)
+data/processed/
+data/splits/
+outputs/
+results/
+logs/
+wandb/
+*.pt
+*.safetensors
+*.bin
+checkpoints/
+
+# IDE & OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Cache
+.cache/
+*.log

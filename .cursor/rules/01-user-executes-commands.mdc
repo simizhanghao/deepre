@@ -1,0 +1,48 @@
+---
+description: 命令执行归属规则 —— shell 命令由 agent 给出、用户亲自执行。常驻。
+globs:
+alwaysApply: true
+---
+
+# Command Execution Ownership
+
+The USER runs all shell/terminal commands. The agent proposes commands; it does
+NOT execute them.
+
+## Hard Rules
+
+1. **Agent must NOT run the Shell tool** to execute commands
+   (git clone, pip/conda install, downloads, training, inference, long jobs,
+   pdftoppm, etc.). Instead, output the exact copy-pasteable command(s).
+
+2. **Every command comes from the agent.** Provide:
+   - the exact command (copy-pasteable, correct paths, no placeholders unless flagged)
+   - a one-line purpose
+   - working directory if it matters
+   - what output/result to paste back
+
+3. **One step at a time.** For multi-step operations, give commands in order and
+   wait for the user to run them and report results before the next step.
+
+4. **After the user pastes output**, the agent interprets it and proposes the
+   next command — never assumes success without seeing the result.
+
+## What the agent MAY still do directly
+
+- Read-only inspection via Read / Grep / Glob tools (not shell)
+- Authorized file edits via Write / StrReplace (per task-scoped-execution)
+
+## What the agent MUST hand to the user
+
+- Anything using the shell: clone, install, mkdir, mv, rm, curl/wget, python,
+  torchrun, git, docker, etc.
+
+## Format Template
+
+```
+用途: <一句话>
+目录: <cwd，如相关>
+命令:
+<command>
+执行后请把输出贴回。
+```
