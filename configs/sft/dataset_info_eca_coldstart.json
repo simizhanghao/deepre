@@ -1,0 +1,26 @@
+{
+  "eca_coldstart_v0_train": {
+    "file_name": "eca_coldstart_v0_train.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "system": "system"
+    }
+  },
+  "eca_coldstart_v0_dev": {
+    "file_name": "eca_coldstart_v0_dev.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "system": "system"
+    }
+  },
+  "eca_coldstart_v0_smoke": {
+    "file_name": "eca_coldstart_v0_smoke.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "system": "system"
+    }
+  }
+}

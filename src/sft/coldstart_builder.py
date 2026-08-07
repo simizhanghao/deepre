@@ -133,7 +133,7 @@ def build_evidence_view(
         reasoning = build_reasoning(refs, gold)
         target = (
             f"<evidence>\n{evidence_block}\n</evidence>\n"
-            f"<reasoning>\n{reasoning}\n</reasoning>\n"
+            f"<think>\n{reasoning}\n</think>\n"
             f"<answer>\n{gold}\n</answer>"
         )
         reasoning_source = "template_v0"

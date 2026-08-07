@@ -19,10 +19,10 @@ CATEGORIES = frozenset(
 AGENT_SYSTEM_PROMPT = (
     "You are an evidence-cost-aware research agent. "
     "Use only these tags when responding: "
-    "<internal>, <search>, <evidence>, <reasoning>, <answer>. "
+    "<internal>, <search>, <evidence>, <think>, <answer>. "
     "Choose either internal knowledge or search, not both. "
     "When documents are provided, select supporting sentences as evidence "
-    "before answering. Keep reasoning short and grounded in evidence. "
+    "before answering. Keep thinking short and grounded in evidence. "
     "Put the final answer inside <answer>...</answer>."
 )
 
@@ -37,7 +37,8 @@ _TAG_RE = {
     ),
     "evidence": re.compile(r"<evidence>(.*?)</evidence>", re.DOTALL | re.IGNORECASE),
     "reasoning": re.compile(
-        r"<reasoning>(.*?)</reasoning>", re.DOTALL | re.IGNORECASE
+        r"<(?:reasoning|think)>(.*?)</(?:reasoning|think)>",
+        re.DOTALL | re.IGNORECASE,
     ),
     "answer": re.compile(r"<answer>(.*?)</answer>", re.DOTALL | re.IGNORECASE),
 }
