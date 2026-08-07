@@ -1,0 +1,106 @@
+{
+  "total_samples": 3000,
+  "source_split": "train",
+  "overlap_with_frozen_validation_200": 0,
+  "overlap_examples": [],
+  "non_train_sample_ids": 0,
+  "deterministic_validation_pass_rate": 1.0,
+  "n_validation_pass": 3000,
+  "evidence_refs_nonempty_rate": 1.0,
+  "gold_answer_present_rate": 1.0,
+  "by_category": {
+    "internal": 450,
+    "evidence": 600,
+    "evidence_reasoning": 1500,
+    "search_format": 450
+  },
+  "category_rates": {
+    "internal": 0.15,
+    "evidence": 0.2,
+    "evidence_reasoning": 0.5,
+    "search_format": 0.15
+  },
+  "exact_duplicate_targets": 128,
+  "unique_sft_ids": 3000,
+  "unique_sample_ids": 3000,
+  "template_v0_reasoning_marked": 1500,
+  "template_v0_reasoning_rate": 1.0,
+  "n_rejected_at_build": 0,
+  "build_stats": {
+    "targets": {
+      "evidence_reasoning": 1500,
+      "evidence": 600,
+      "internal": 450,
+      "search_format": 450
+    },
+    "built": {
+      "internal": 450,
+      "evidence": 600,
+      "evidence_reasoning": 1500,
+      "search_format": 450
+    },
+    "shortfall": {
+      "evidence_reasoning": 0,
+      "evidence": 0,
+      "internal": 0,
+      "search_format": 0
+    },
+    "n_direct_correct_available": 747,
+    "n_search_eligible": 5847,
+    "n_unique_sample_ids": 3000,
+    "n_accepted": 3000,
+    "n_rejected": 0,
+    "context_views": {
+      "n/a": 900,
+      "noisy": 1082,
+      "clean": 1018
+    },
+    "builder": "phase2c_coldstart_builder_v0"
+  },
+  "token_stats": {
+    "tokenizer_path": "/data1/hcc/.hf_home/Qwen2.5-3B-Instruct",
+    "n": 3000,
+    "prompt_tokens": {
+      "p50": 429.0,
+      "p95": 1173.0,
+      "max": 2395.0,
+      "mean": 531.0
+    },
+    "target_tokens": {
+      "p50": 307.0,
+      "p95": 1194.0,
+      "max": 2224.0,
+      "mean": 396.3
+    },
+    "total_tokens": {
+      "p50": 970.5,
+      "p95": 1580.0,
+      "max": 2877.0,
+      "mean": 927.3
+    }
+  },
+  "gates": {
+    "train_only": true,
+    "zero_val200_overlap": true,
+    "validation_near_100": true,
+    "approx_3k": true,
+    "search_format_le_20pct": true,
+    "internal_in_10_20": true
+  },
+  "inputs": {
+    "train_file": "data/sft/source/hotpotqa_distractor_train_pool_n8000.jsonl",
+    "direct_labels": "results/phase2c_direct_label_n4000_20260807_162044_phase2c_direct/labels.jsonl",
+    "retrieval_cache": "results/retrieval_candidate_bm25_n8000_20260807_162150/retrieval_results.jsonl",
+    "frozen_val_ids": "data/eval/hotpotqa_200_ids.txt",
+    "seed": 42,
+    "targets": {
+      "evidence_reasoning": 1500,
+      "evidence": 600,
+      "internal": 450,
+      "search_format": 450
+    },
+    "noisy_fraction": 0.5,
+    "max_distractors": 3
+  },
+  "note": "Copied from results/phase2c_coldstart_v0/audit.json for git (results/ is gitignored)."
+}

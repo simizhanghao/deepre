@@ -12,6 +12,8 @@ external/
 # Data & artifacts (keep raw/ structure, ignore generated)
 data/processed/
 data/splits/
+# Regenerable HotpotQA train pool (large); keep manifest/ids + coldstart_v0
+data/sft/source/hotpotqa_distractor_train_pool_n*.jsonl
 outputs/
 results/
 logs/

@@ -1,0 +1,16 @@
+{
+  "dataset": "hotpotqa/hotpot_qa",
+  "config": "distractor",
+  "split": "train",
+  "seed": 42,
+  "n_raw_total": 90447,
+  "n_pool": 8000,
+  "n_skipped_invalid": 2,
+  "frozen_val_ids_file": "/data1/hcc/deepresearch/data/eval/hotpotqa_200_ids.txt",
+  "n_frozen_val_ids": 200,
+  "overlap_sample_id": 0,
+  "overlap_raw_id": 0,
+  "output_jsonl": "/data1/hcc/deepresearch/data/sft/source/hotpotqa_distractor_train_pool_n8000.jsonl",
+  "phase": "2C",
+  "note": "Train pool only; never merge Phase-1 validation-200 into SFT."
+}
