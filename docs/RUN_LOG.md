@@ -16,4 +16,6 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-07 | phase2e1-base-oracle | `run_baseline.py` oracle on train shards | `results/phase2e1_base_oracle_n8000_20260807_205154/merged/` | pass | EM 0.6812 (5445/7993); search-req pool ~4151
 2026-08-07 | phase2e1-sftv0-oracle | `run_baseline.py` oracle w/ coldstart_v0_merged | `results/phase2e1_sftv0_oracle_n8000_20260807_211627/merged/` | pass | EM 0.7375 (+5.6pp vs Base); hard pool 2098
 2026-08-07 | phase2e1-docs | freeze `docs/PHASE2E1_LABELING.md` | — | pass | 2E1 GPU labeling closed; next 2E2 coldstart_v1 builder
+2026-08-07 | phase2e2-scaffold | add teacher + coldstart_v1 builder scripts | `src/sft/teacher_reasoning.py`, `coldstart_v1_builder.py`, `scripts/generate_teacher_reasoning.py`, `build_sft_coldstart_v1.py` | pass | Kimi endpoint for think-only P2
+2026-08-07 | phase2e2-teacher-smoke20 | `generate_teacher_reasoning.py --max-samples 20` | `results/teacher_reasoning_n20_20260807_213753_smoke20/` | fail | 0/20; Kimi `10.16.137.2:8000` timeout/500 then connection refused — retry when service up
 

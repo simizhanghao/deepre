@@ -476,12 +476,22 @@ def validate_sft_row(row: Dict[str, Any]) -> List[str]:
             reasoning_n = normalize_answer(reasoning)
             if gold_n and gold_n not in reasoning_n:
                 errors.append(f"{sid}: reasoning not answer-consistent")
-            for ref in row.get("evidence_refs") or []:
-                frag = whitespace_norm(ref.get("text") or "")
-                if frag and frag not in whitespace_norm(reasoning):
-                    errors.append(
-                        f"{sid}: reasoning missing evidence text from {ref.get('title')}"
-                    )
+            # template_v0 embeds evidence spans; Kimi teacher is bridge-only
+            # and must NOT paste evidence verbatim.
+            reasoning_source = (row.get("provenance") or {}).get("reasoning_source")
+            require_evidence_spans = reasoning_source not in {
+                "kimi2.6",
+                "teacher",
+                "kimi",
+            }
+            if require_evidence_spans:
+                for ref in row.get("evidence_refs") or []:
+                    frag = whitespace_norm(ref.get("text") or "")
+                    if frag and frag not in whitespace_norm(reasoning):
+                        errors.append(
+                            f"{sid}: reasoning missing evidence text from "
+                            f"{ref.get('title')}"
+                        )
     elif category == "search_format":
         if (
             has_internal
