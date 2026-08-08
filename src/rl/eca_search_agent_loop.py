@@ -85,6 +85,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
             "duplicate_query_count": 0,
             "observation_tokens": 0,
             "finish": 0,
+            "used_internal": 0,
         }
         request_id = uuid4().hex
 
@@ -229,6 +230,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
                     continue
 
                 if has_internal:
+                    metrics["used_internal"] = 1
                     # Ask for final answer without search (same as Phase 3A).
                     nudge = (
                         "You chose <internal>. Now give the final answer in "
@@ -265,6 +267,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
             min_global_steps = 0
         if max_global_steps is None:
             max_global_steps = min_global_steps
+        # Flatten agent counters for Phase-3B2 TensorBoard (see phase3b_metrics.py).
         extra_fields = {
             "turn_scores": [],
             "tool_rewards": [],
@@ -273,6 +276,11 @@ class EcaSearchAgentLoop(AgentLoopBase):
             "sample_id": create_kwargs["sample_id"],
             "search_queries": search_queries,
             "finish": int(finished or metrics.get("finish") or 0),
+            "search_count": int(metrics.get("search_count") or 0),
+            "duplicate_query_count": int(metrics.get("duplicate_query_count") or 0),
+            "observation_tokens": int(metrics.get("observation_tokens") or 0),
+            "max_search_turns": int(self.max_search_turns),
+            "used_internal": int(metrics.get("used_internal") or 0),
             "metrics": metrics,
         }
 

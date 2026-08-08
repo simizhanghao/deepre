@@ -70,10 +70,15 @@ def compute_score(
     em = float(exact_match(pred, golds)) if pred else 0.0
     fmt = float(format_valid(solution_str))
     score = em + 0.1 * fmt
+    # Dual names: veRL NaiveRewardManager keeps all dict keys in reward_extra_info;
+    # answer_*/format_*/total_* are the Phase-3B2 TensorBoard names.
     info = {
         "score": score,
         "em": em,
         "format": fmt,
+        "answer_reward": em,
+        "format_reward": fmt,
+        "total_reward": score,
         "pred": pred,
         "gold": golds[0] if golds else "",
         "has_evidence_tag": 1.0 if _EVIDENCE_RE.search(solution_str or "") else 0.0,

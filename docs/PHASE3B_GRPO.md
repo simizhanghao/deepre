@@ -1,6 +1,6 @@
 # Phase 3B — Answer-only GRPO (Search-R1 baseline learnability)
 
-> **Status: 3B1 micro-smoke PASS (5 steps).** Next: tmux longer run (20–50 updates) + TB curves.  
+> **Status: 3B2 baseline in progress** — resume step 5 → 50 (then maybe 100). See [`PHASE3B2.md`](PHASE3B2.md).  
 > Frozen policy init: `outputs/sft_qwen25_3b_coldstart_v1_merged`.
 
 ## Decisions (locked 2026-08-08)
@@ -26,7 +26,7 @@
 ```text
 3B0  Docker + scaffolding + gates                 ✓
 3B1  2～5 step micro-smoke                         ✓ (2026-08-08)
-3B1+ 20～50 updates, learning-curve / TB           ← next
+3B2  5→50→100 answer-only GRPO baseline + TB      ← now
 3C   + Evidence Reward
 3D   + Cost / duplicate
 3E   Routing / cost tradeoff

@@ -43,8 +43,6 @@ curl -sf http://127.0.0.1:8001/health >/dev/null || {
 }
 # veRL V1 trainer requires TransferQueue (pip package name TransferQueue, import transfer_queue)
 python -c "import transfer_queue" 2>/dev/null || pip3 install -q TransferQueue
-# sgl055.latest image: patch veRL↔SGLang pause/continue API mismatch if needed
-python "$REPO/scripts/patch_verl_sgl055_compat.py"
 
 if [[ -f "$OUT_DIR/latest_checkpointed_iteration.txt" ]]; then
   LAST=$(tr -d '[:space:]' <"$OUT_DIR/latest_checkpointed_iteration.txt" || true)
@@ -55,8 +53,9 @@ else
   echo "[fresh] TB_DIR=$TENSORBOARD_DIR"
 fi
 
+# Same-process launch: sgl055 file patch + Phase3B2 metrics monkeypatch + main_ppo
 cd "$VERL_ROOT"
-python -m verl.trainer.main_ppo \
+python "$REPO/scripts/launch_grpo_main.py" \
   algorithm.adv_estimator=grpo \
   algorithm.use_kl_in_reward=False \
   data.train_files="$TRAIN_FILE" \

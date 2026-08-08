@@ -36,3 +36,4 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-08 | phase3b0-scaffold | Candidate BaseTool + smoke128 parquet + mask audit + GRPO launcher | `src/rl/*`, `configs/rl/*`, `docs/PHASE3B0.md` | pass | synthetic mask PASS; train=128; no GRPO steps yet
 2026-08-08 | phase3b1-smoke5 | `run_grpo_smoke.sh` STEPS=5 n=4 4GPU EM+0.1fmt | `outputs/rl/grpo_sftv1_smoke/global_step_5` | pass | step1 score≈0.225 loss≈0.118; step5 score≈0.191 loss≈0.389; ~4m43s; fixed min_global_steps + sgl055 stop_token_ids
 2026-08-08 | phase3b1-ops | tmux resume launcher + tensorboard logger + docker smokeok tag | `scripts/tmux_grpo_smoke.sh`, `eca-verl:sgl055-smokeok-20260808` | pass | resume_mode=auto; TB under outputs/rl/tensorboard/
+2026-08-08 | phase3b2-start | resume GRPO baseline step5→50 (n=4, EM+0.1fmt, frozen knobs) | `outputs/rl/grpo_sftv1_smoke` + TB | running | metrics: answer/format/zero_std/finish/search; see docs/PHASE3B2.md
