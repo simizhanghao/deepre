@@ -1,6 +1,6 @@
 # Phase 3B — Answer-only GRPO (Search-R1 baseline learnability)
 
-> **Status: 3B0 environment setup.** Prove the train chain can learn — not leaderboard chasing.  
+> **Status: 3B1 micro-smoke PASS (5 steps).** Next: tmux longer run (20–50 updates) + TB curves.  
 > Frozen policy init: `outputs/sft_qwen25_3b_coldstart_v1_merged`.
 
 ## Decisions (locked 2026-08-08)
@@ -24,8 +24,9 @@
 ## Stage split
 
 ```text
-3B0  Docker + 2～5 optimizer steps micro-smoke   ← now
-3B1  20～50 updates, learning-curve check
+3B0  Docker + scaffolding + gates                 ✓
+3B1  2～5 step micro-smoke                         ✓ (2026-08-08)
+3B1+ 20～50 updates, learning-curve / TB           ← next
 3C   + Evidence Reward
 3D   + Cost / duplicate
 3E   Routing / cost tradeoff

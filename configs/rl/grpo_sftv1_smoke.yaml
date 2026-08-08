@@ -1,0 +1,93 @@
+# Phase 3B0/3B1 — minimal GRPO smoke (NOT for performance)
+# Actor/Ref: SFT-v1 merged | 4×A100 | n=4 | EM+0.1*format | Candidate-BM25
+# Evidence / Cost / Duplicate / Full-Corpus: OFF
+#
+# Launch via scripts/run_grpo_smoke.sh (sets paths + hydra overrides).
+
+defaults:
+  - ppo_trainer
+  - _self_
+
+algorithm:
+  adv_estimator: grpo
+  use_kl_in_reward: false
+  norm_adv_by_std_in_grpo: true
+
+data:
+  train_files: /workspace/deepresearch/data/rl/grpo_smoke_128/train.parquet
+  val_files: /workspace/deepresearch/data/rl/grpo_smoke_128/val.parquet
+  train_batch_size: 8
+  max_prompt_length: 1024
+  max_response_length: 2048
+  filter_overlong_prompts: true
+  truncation: error
+  return_raw_chat: true
+
+actor_rollout_ref:
+  hybrid_engine: true
+  model:
+    path: /workspace/deepresearch/outputs/sft_qwen25_3b_coldstart_v1_merged
+    use_remove_padding: true
+    enable_gradient_checkpointing: true
+  actor:
+    optim:
+      lr: 1.0e-6
+    ppo_mini_batch_size: 8
+    ppo_micro_batch_size_per_gpu: 1
+    use_kl_loss: true
+    kl_loss_coef: 0.001
+    kl_loss_type: low_var_kl
+    entropy_coeff: 0.0
+    fsdp_config:
+      param_offload: false
+      optimizer_offload: false
+  ref:
+    log_prob_micro_batch_size_per_gpu: 1
+    fsdp_config:
+      param_offload: false
+  rollout:
+    name: sglang
+    mode: async
+    n: 4
+    temperature: 0.9
+    top_p: 0.95
+    tensor_model_parallel_size: 1
+    gpu_memory_utilization: 0.5
+    log_prob_micro_batch_size_per_gpu: 1
+    prompt_length: 1024
+    response_length: 2048
+    multi_turn:
+      enable: true
+      max_assistant_turns: 6
+      max_user_turns: 4
+      max_parallel_calls: 1
+      max_tool_response_length: 2048
+      tool_response_truncate_side: middle
+      tool_config_path: /workspace/deepresearch/configs/rl/candidate_bm25_tool.yaml
+      format: hermes  # unused by eca_search_agent (XML dialect); kept for schema completeness
+    agent:
+      default_agent_loop: eca_search_agent
+      agent_loop_config_path: /workspace/deepresearch/configs/rl/eca_agent_loop.yaml
+      num_workers: 4
+
+reward:
+  num_workers: 4
+  custom_reward_function:
+    path: /workspace/deepresearch/src/rl/rewards_3b.py
+    name: compute_score
+  reward_manager:
+    name: naive
+
+trainer:
+  nnodes: 1
+  n_gpus_per_node: 4
+  total_epochs: 1
+  total_training_steps: 5
+  save_freq: 5
+  test_freq: 5
+  critic_warmup: 0
+  logger: ["console", "tensorboard"]
+  resume_mode: auto
+  project_name: eca_phase3b
+  experiment_name: grpo_sftv1_smoke
+  default_local_dir: /workspace/deepresearch/outputs/rl/grpo_sftv1_smoke

@@ -1,6 +1,7 @@
 # Phase 3B0 — veRL Docker environment setup
 
-> First executable step only: image + container. No GRPO train yet.
+> **Status (2026-08-08):** image pinned + veRL installed; **3B1 GRPO micro-smoke PASS**.  
+> Prefer tag `eca-verl:sgl055-smokeok-20260808`. Pin: [`PHASE3B_ENV_PIN.md`](PHASE3B_ENV_PIN.md).
 
 ## Host paths
 
@@ -9,10 +10,10 @@ REPO=/data1/hcc/deepresearch
 HF=/data1/hcc/.hf_home
 SFT_V1=$REPO/outputs/sft_qwen25_3b_coldstart_v1_merged
 GPUS=4,5,6,7
-IMAGE=verlai/verl:sgl055.latest
+IMAGE=eca-verl:sgl055-pinned-20260808   # preferred (local pin of sgl055.latest)
+# Hub source (already pulled): verlai/verl:sgl055.latest
+# Digest: sha256:9eeb7f5323c67fcb00975bcb45d64d9e96837f990939df8057912a240e6a7bc7
 ```
-
-If pull of `sgl055.latest` fails, try `verlai/verl:sgl059.latest` (newer stable on Docker Hub) and pin that instead.
 
 ## 1) Pull image
 
@@ -98,9 +99,38 @@ docker start eca-verl
 docker exec -it eca-verl bash
 ```
 
-## Next after env OK (not this step)
+## 5) Install veRL into the running container (required)
 
-- Candidate-BM25 retrieve server + veRL `BaseTool`
-- Train subset parquet / agent data
-- GRPO yaml: 4 GPU, n=4, EM+0.1 format, 2–5 steps
-- Mask verification dump
+Hub image ships SGLang/torch/ray but **not** the `verl` Python package:
+
+```bash
+docker exec -it eca-verl bash
+# inside:
+cd /workspace
+git clone https://github.com/verl-project/verl.git
+cd verl
+pip3 install --no-deps -e .
+python -c "import verl; print(verl.__file__)"
+git rev-parse HEAD
+```
+
+Then on **host**, commit a ready image and (optionally) re-save tar:
+
+```bash
+docker commit eca-verl eca-verl:sgl055-ready-20260808
+# optional second backup after verl install
+# docker save eca-verl:sgl055-ready-20260808 -o /data1/hcc/docker_backups/eca-verl_sgl055_ready_20260808.tar
+```
+
+Record the verl git SHA into `PHASE3B_ENV_PIN.md`.
+
+## Next after verl import OK
+
+See **[`PHASE3B0.md`](PHASE3B0.md)** — scaffolding is in-repo:
+
+```bash
+python scripts/build_grpo_smoke_dataset.py --n-train 128
+python scripts/start_candidate_retrieval_server.py --port 8001
+python scripts/audit_response_mask.py
+# only after gates: bash scripts/run_grpo_smoke.sh   # inside eca-verl
+```

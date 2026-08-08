@@ -33,4 +33,6 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-08 | phase3a-n8 | `run_agent_rollout_smoke.py --max-samples 8` | `results/agent_rollout_n8_20260808_163047_phase3a_n8/` | pass | finish=1.0 search_count=1.0 obs_mask=1.0
 2026-08-08 | phase3a-n32 | `run_agent_rollout_smoke.py --max-samples 32` | `results/agent_rollout_n32_20260808_163356_phase3a_n32/` | pass | finish=0.969; 3A closed; handoff 3B GRPO plan
 2026-08-08 | phase3b-plan | lock veRL+SGLang docker GRPO decisions | `docs/PHASE3B_GRPO.md`, `docs/PHASE3B_SETUP.md` | pass | EM+0.1fmt; Candidate+sample_id; 4×GPU; no lf-sft reuse
-
+2026-08-08 | phase3b0-scaffold | Candidate BaseTool + smoke128 parquet + mask audit + GRPO launcher | `src/rl/*`, `configs/rl/*`, `docs/PHASE3B0.md` | pass | synthetic mask PASS; train=128; no GRPO steps yet
+2026-08-08 | phase3b1-smoke5 | `run_grpo_smoke.sh` STEPS=5 n=4 4GPU EM+0.1fmt | `outputs/rl/grpo_sftv1_smoke/global_step_5` | pass | step1 score≈0.225 loss≈0.118; step5 score≈0.191 loss≈0.389; ~4m43s; fixed min_global_steps + sgl055 stop_token_ids
+2026-08-08 | phase3b1-ops | tmux resume launcher + tensorboard logger + docker smokeok tag | `scripts/tmux_grpo_smoke.sh`, `eca-verl:sgl055-smokeok-20260808` | pass | resume_mode=auto; TB under outputs/rl/tensorboard/
