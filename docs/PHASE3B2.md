@@ -1,8 +1,25 @@
 # Phase 3B2 — Search-R1-style GRPO baseline (answer-only)
 
-> Status: **step 50 complete — hard audit done (conditional continue → 100)**  
+> Status: **formal 3B baseline — metrics fix then step50 → 100 (do not expand to 1000)**  
 > Experiment dir: `outputs/rl/grpo_sftv1_smoke` (name historical; ckpt continuity).  
-> Audit artifacts: [`results/phase3b2_grpo_sftv1_smoke_step50_20260808/`](../results/phase3b2_grpo_sftv1_smoke_step50_20260808/)
+> Step50 audit: [`results/phase3b2_grpo_sftv1_smoke_step50_20260808/`](../results/phase3b2_grpo_sftv1_smoke_step50_20260808/)
+
+## Plan locked (2026-08-08)
+
+```text
+1. Fix logging only (Ray TaskRunner metrics hook) — NO knob changes
+2. Resume global_step_50 → 100  (= formal 3B baseline, not "smoke")
+3. Hard audit @100: windows 1–20 / 21–50 / 51–100 + ckpt50 vs ckpt100 eval
+4. If learnable + stable → CLOSE 3B (no 200/500/1000 baseline grind)
+5. Phase 3C from SFT-v1 fresh init (NOT from step100 ckpt):
+     R_3B = Answer + 0.1 Format
+     R_3C = Answer + λ_e Evidence + 0.1 Format
+```
+
+Qualitative read of step50: pipeline stable, policy moving, not diverging;
+weak positive score trend; **learnability not closed** until zero_std + search
+metrics land inside Ray workers. `response_length 340→187` is ambiguous without
+`search_count` (concise finish vs shortcut).
 
 ## Frozen knobs (do not change mid-run)
 
@@ -19,19 +36,27 @@ kl_loss_coef = 0.001
 train      = 128 (smoke parquet), batch=8 → 16 steps/epoch
 ```
 
-## Launch (host)
-
-```bash
-STEPS=50 SAVE_FREQ=5 bash scripts/tmux_grpo_smoke.sh
-tmux attach -t eca-grpo   # Ctrl-b d to detach
-```
-
-Continue → 100 (same OUT_DIR, resume auto):
+## Launch (host) — resume 50→100 after metrics hook
 
 ```bash
 tmux kill-session -t eca-grpo 2>/dev/null || true
-STEPS=100 SAVE_FREQ=10 bash scripts/tmux_grpo_smoke.sh
+STEPS=100 SAVE_FREQ=5 bash scripts/tmux_grpo_smoke.sh
+tmux attach -t eca-grpo   # Ctrl-b d to detach
+# expect log lines: [phase3b] TaskRunner metrics: patched
+# then each step:   [phase3b] step=N answer=... zero_std=... search=...
 ```
+
+Must-have TB/console keys (51–100): `reward/answer_reward/{mean,std}`,
+`reward/format_reward/mean`, `reward/total_reward/{mean,std}`,
+`grpo/zero_std_group_rate`, `agent/finish_rate`, `agent/search_count/mean`,
+`agent/duplicate_query_count/mean`, `agent/max_search_hit_rate`,
+`agent/search_rate`, `agent/internal_rate`.
+
+**Metrics hook (2026-08-09):** file-patch `TaskRunnerV1.run` → `apply()` inside Ray
+actor (`scripts/patch_verl_phase3b_metrics.py`). Use `list(extra_fields)` not
+`.tolist()` (TransferQueue LinkedList). Verified live e.g.
+`[phase3b] step=61 answer=... | zero_std=... | search=...`.
+Watch whether `search_count→0` explains `response_length` drop (shortcut vs concise).
 
 ### Ops notes (false “crashes” at step 16)
 

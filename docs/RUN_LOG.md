@@ -39,3 +39,5 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-08 | phase3b2-start | resume GRPO baseline step5→50 (n=4, EM+0.1fmt, frozen knobs) | `outputs/rl/grpo_sftv1_smoke` + TB | superseded | early legs hit step16 false-stop
 2026-08-08 | phase3b2-resume15 | docker exec -d resume step15→50 after SIGTERM / total_epochs=1 false-stop | logs/grpo_sftv1_smoke_to50_resume15_* | fail→fixed | rootcause: (1) client-attached exec SIGTERM (2) total_epochs=1 ⇒ exit @16
 2026-08-08 | phase3b2-step50 | STEPS=50 TOTAL_EPOCHS=50 resume15→50; hard audit | `outputs/rl/grpo_sftv1_smoke/global_step_50` + `results/phase3b2_grpo_sftv1_smoke_step50_20260808/` | pass | score 0.245→0.286 (late); kl_loss→0.012; format late OK; no NaN; split metrics missing; **conditional →100**
+2026-08-08 | phase3b2-metrics-hook | file-patch TaskRunnerV1.run → apply() in Ray actor | `scripts/patch_verl_phase3b_metrics.py` | pass | fixes driver-only monkeypatch miss; no algo knobs touched
+2026-08-08 | phase3b2-to100 | STEPS=100 resume50→100 formal baseline + diagnostics | `outputs/rl/grpo_sftv1_smoke` | running | watch [phase3b] zero_std/answer/search; then close 3B → 3C from SFT-v1

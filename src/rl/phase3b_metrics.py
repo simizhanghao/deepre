@@ -134,16 +134,20 @@ def compute_phase3b_batch_metrics(
 
 
 def summarize_console_line(metrics: Mapping[str, float]) -> str:
-    keys = [
-        "reward/answer_reward/mean",
-        "reward/format_reward/mean",
-        "reward/total_reward/mean",
-        "grpo/zero_std_group_rate",
-        "agent/finish_rate",
-        "agent/search_count/mean",
-        "agent/max_search_hit_rate",
-        "actor/kl_loss",
-        "actor/grad_norm",
+    # Compact labels for the 3B hard-audit signals (must appear every step).
+    labeled = [
+        ("answer", "reward/answer_reward/mean"),
+        ("format", "reward/format_reward/mean"),
+        ("total", "reward/total_reward/mean"),
+        ("total_std", "reward/total_reward/std"),
+        ("zero_std", "grpo/zero_std_group_rate"),
+        ("finish", "agent/finish_rate"),
+        ("search", "agent/search_count/mean"),
+        ("max_hit", "agent/max_search_hit_rate"),
+        ("dup", "agent/duplicate_query_count/mean"),
+        ("search_rate", "agent/search_rate"),
+        ("internal", "agent/internal_rate"),
+        ("kl", "actor/kl_loss"),
     ]
-    parts = [f"{k.split('/')[-2] if k.count('/')>=2 else k}={metrics[k]:.4g}" for k in keys if k in metrics]
+    parts = [f"{label}={metrics[key]:.4g}" for label, key in labeled if key in metrics]
     return " | ".join(parts)

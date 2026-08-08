@@ -1,8 +1,9 @@
 # Phase 3B — Answer-only GRPO (Search-R1 baseline learnability)
 
-> **Status: 3B2 step 50 done — conditional continue → 100.** Hard audit in [`PHASE3B2.md`](PHASE3B2.md).  
-> Frozen policy init: `outputs/sft_qwen25_3b_coldstart_v1_merged`.  
-> Ckpt: `outputs/rl/grpo_sftv1_smoke/global_step_50`.
+> **Status: formal 3B baseline step50→100** (metrics hook fixed; no knob changes; no 1000-step grind).  
+> See [`PHASE3B2.md`](PHASE3B2.md). Init: `outputs/sft_qwen25_3b_coldstart_v1_merged`.  
+> Ckpt continuity: `outputs/rl/grpo_sftv1_smoke/` (resume from `global_step_50`).  
+> After step100 audit → close 3B → **3C from SFT-v1** (not from step100).
 
 ## Decisions (locked 2026-08-08)
 

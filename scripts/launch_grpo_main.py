@@ -38,9 +38,12 @@ def main() -> None:
     finally:
         sys.argv = saved
 
-    # In-process monkeypatch so TensorBoard gets answer/format/zero_std.
-    status = _load("patch_verl_phase3b_metrics", scripts / "patch_verl_phase3b_metrics.py").apply()
-    print(f"[launch] phase3b metrics: {status}", flush=True)
+    # File-patch TaskRunnerV1.run (Ray actor) + driver apply. Driver-only
+    # monkeypatch never reached _compute_metrics in prior 3B2 runs.
+    metrics_mod = _load("patch_verl_phase3b_metrics", scripts / "patch_verl_phase3b_metrics.py")
+    file_status = metrics_mod.file_patch_task_runner()
+    apply_status = metrics_mod.apply()
+    print(f"[launch] phase3b metrics: file={file_status} apply={apply_status}", flush=True)
 
     # Mimic `python -m verl.trainer.main_ppo ...`
     sys.argv = ["verl.trainer.main_ppo", *hydra_args]
