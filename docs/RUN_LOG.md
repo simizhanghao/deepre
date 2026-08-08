@@ -32,4 +32,5 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-08 | phase3a-scaffold | Search Agent rollout loop + Candidate-BM25 tool + smoke CLI | `src/agents/react_loop.py`, `src/tools/candidate_bm25.py`, `scripts/run_agent_rollout_smoke.py` | pass | max_search_turns=2; no train
 2026-08-08 | phase3a-n8 | `run_agent_rollout_smoke.py --max-samples 8` | `results/agent_rollout_n8_20260808_163047_phase3a_n8/` | pass | finish=1.0 search_count=1.0 obs_mask=1.0
 2026-08-08 | phase3a-n32 | `run_agent_rollout_smoke.py --max-samples 32` | `results/agent_rollout_n32_20260808_163356_phase3a_n32/` | pass | finish=0.969; 3A closed; handoff 3B GRPO plan
+2026-08-08 | phase3b-plan | lock veRL+SGLang docker GRPO decisions | `docs/PHASE3B_GRPO.md`, `docs/PHASE3B_SETUP.md` | pass | EM+0.1fmt; Candidate+sample_id; 4×GPU; no lf-sft reuse
 
