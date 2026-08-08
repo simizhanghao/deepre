@@ -22,6 +22,14 @@ STEPS=50 SAVE_FREQ=5 bash scripts/tmux_grpo_smoke.sh
 tmux attach -t eca-grpo   # Ctrl-b d to detach
 ```
 
+### Ops note (2026-08-08 crash at step16)
+
+Root cause: host used `nohup docker exec ... &` (client-attached). When the Cursor/agent
+shell ended, Docker sent **SIGTERM** into the container → Ray
+`INTENDED_USER_EXIT` / `ray.shutdown()` with **no Python traceback**.  
+Fix: launcher now uses **`docker exec -d`** so the train job is owned by the
+container daemon and survives SSH/tmux/Cursor disconnects.
+
 Resume after step 50 if healthy:
 
 ```bash
