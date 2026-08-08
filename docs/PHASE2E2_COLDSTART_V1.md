@@ -54,12 +54,15 @@ python scripts/build_sft_coldstart_v1.py \
   --audit-dir results/phase2e2_coldstart_v1
 ```
 
-## Smoke log (2026-08-07)
+## Smoke log
 
 - Candidate mine OK: persistent available **1586**, other hard **512**.
-- Smoke20 run: `results/teacher_reasoning_n20_20260807_213753_smoke20/`
-- **0/20 accepted** — endpoint timed out / 500 / then **connection refused** (service down mid-run).
-- Next: restart/check Kimi serving on `10.16.137.2:8000`, re-run smoke20, human spot-check accepted thinks, then scale to 400.
+- 2026-08-07: several smoke20 runs failed with timeout / 500 / connection refused under concurrency (service unstable).
+- 2026-08-08 `smoke20_c16`: API reachable; **0/20 accepted**.
+  - Dir: `results/teacher_reasoning_n20_20260808_113323_smoke20_c16/`
+  - Dominant reject: `need exactly one non-empty <think>...</think>`
+  - Kimi returns long meta-planning text without wrapping a single `<think>` block (connectivity OK, format supervision not OK yet).
+- Next: fix teacher prompt / post-parse for Kimi output shape, re-smoke, then scale to ~400.
 
 ## Non-goals
 

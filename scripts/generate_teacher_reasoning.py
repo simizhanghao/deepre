@@ -1,10 +1,10 @@
 """Phase 2E2: call Kimi teacher for grounded <think> on hard HotpotQA train items.
 
-Smoke (20):
-  python scripts/generate_teacher_reasoning.py --max-samples 20 --run-tag smoke20
+Smoke (20, concurrent):
+  python scripts/generate_teacher_reasoning.py --max-samples 20 --run-tag smoke20 --concurrency 16
 
 Full (~400):
-  python scripts/generate_teacher_reasoning.py --n-persistent 320 --n-other 80
+  python scripts/generate_teacher_reasoning.py --n-persistent 320 --n-other 80 --concurrency 32
 
 Env (optional overrides):
   KIMI_BASE_URL   default http://10.16.137.2:8000/v1
@@ -18,9 +18,11 @@ import argparse
 import json
 import os
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
@@ -58,6 +60,8 @@ DEFAULT_SFT_ORACLE = (
     / "results/phase2e1_sftv0_oracle_n8000_20260807_211627/merged/metrics.json"
 )
 
+_print_lock = threading.Lock()
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Generate Kimi grounded <think> cache.")
@@ -80,7 +84,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-tokens", type=int, default=256)
     p.add_argument("--timeout", type=float, default=300.0)
     p.add_argument("--retries", type=int, default=3)
-    p.add_argument("--retry-backoff", type=float, default=8.0)
+    p.add_argument("--retry-backoff", type=float, default=3.0)
+    p.add_argument(
+        "--concurrency",
+        type=int,
+        default=int(os.environ.get("KIMI_CONCURRENCY", "32")),
+        help="Parallel request workers (default 32).",
+    )
     p.add_argument(
         "--base-url",
         type=str,
@@ -125,7 +135,8 @@ def chat_complete(
     max_tokens: int,
     timeout: float,
     retries: int = 3,
-    retry_backoff: float = 5.0,
+    retry_backoff: float = 3.0,
+    quiet: bool = False,
 ) -> str:
     url = base_url.rstrip("/") + "/chat/completions"
     headers = {"Content-Type": "application/json"}
@@ -137,7 +148,7 @@ def chat_complete(
         "temperature": temperature,
         "max_tokens": max_tokens,
     }
-    last_err = None  # type: ignore[var-annotated]
+    last_err: Optional[Exception] = None
     for attempt in range(1, retries + 1):
         try:
             resp = requests.post(url, headers=headers, json=payload, timeout=timeout)
@@ -149,14 +160,126 @@ def chat_complete(
             if attempt >= retries:
                 break
             sleep_s = retry_backoff * attempt
-            print(f"[teacher] retry {attempt}/{retries} after error: {exc}; sleep {sleep_s}s")
+            if not quiet:
+                with _print_lock:
+                    print(
+                        f"[teacher] retry {attempt}/{retries} after error: {exc}; "
+                        f"sleep {sleep_s}s"
+                    )
             time.sleep(sleep_s)
     assert last_err is not None
     raise last_err
 
 
+def _pool_tag(sid: str, direct: Dict[str, Any], base_oracle: Dict[str, Any]) -> str:
+    d = direct.get(sid) or {}
+    d_ok = bool(d.get("direct_correct")) or float(d.get("exact_match") or 0) >= 1.0 - 1e-9
+    o_ok = float((base_oracle.get(sid) or {}).get("exact_match") or 0) >= 1.0 - 1e-9
+    if (not d_ok) and (not o_ok):
+        return "persistent_c_like"
+    return "other_hard"
+
+
+def process_one(
+    idx: int,
+    total: int,
+    sid: str,
+    sample: Dict[str, Any],
+    args: argparse.Namespace,
+    direct: Dict[str, Dict[str, Any]],
+    base_oracle: Dict[str, Dict[str, Any]],
+) -> Tuple[int, Dict[str, Any]]:
+    refs = resolve_evidence_refs(sample)
+    gold = gold_answer_of(sample)
+    user = format_teacher_user_prompt(sample, refs, gold)
+    t0 = time.time()
+    err = None
+    raw = ""
+    try:
+        raw = chat_complete(
+            base_url=args.base_url,
+            api_key=args.api_key,
+            model=args.model,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user},
+            ],
+            temperature=args.temperature,
+            max_tokens=args.max_tokens,
+            timeout=args.timeout,
+            retries=args.retries,
+            retry_backoff=args.retry_backoff,
+            quiet=args.concurrency > 1,
+        )
+    except Exception as exc:  # noqa: BLE001
+        err = str(exc)
+    latency_ms = round((time.time() - t0) * 1000, 1)
+    validation = (
+        validate_teacher_think(
+            raw,
+            gold_answer=gold,
+            question=sample["question"],
+            refs=refs,
+        )
+        if err is None
+        else {
+            "format_valid": False,
+            "answer_consistent": False,
+            "grounding_valid": False,
+            "length_valid": False,
+            "n_words": 0,
+            "novel_proper_nouns": [],
+            "errors": [err or "api_error"],
+            "accepted": False,
+            "think": None,
+        }
+    )
+    row = {
+        "sample_id": sid,
+        "question": sample["question"],
+        "gold_answer": gold,
+        "gold_answers": list(sample.get("gold_answers") or []),
+        "evidence_refs": refs,
+        "q_type": (sample.get("metadata") or {}).get("type"),
+        "teacher_model": args.model,
+        "teacher_prompt_version": PROMPT_VERSION,
+        "teacher_base_url": args.base_url,
+        "teacher_raw_output": raw,
+        "teacher_validation": {
+            k: validation[k]
+            for k in (
+                "format_valid",
+                "answer_consistent",
+                "grounding_valid",
+                "length_valid",
+                "n_words",
+                "novel_proper_nouns",
+                "errors",
+                "accepted",
+            )
+        },
+        "think": validation.get("think"),
+        "latency_ms": latency_ms,
+        "api_error": err,
+        "reasoning_source": "kimi2.6",
+        "pool": _pool_tag(sid, direct, base_oracle),
+    }
+    status = "OK" if validation["accepted"] else "REJECT"
+    with _print_lock:
+        print(
+            f"[{idx}/{total}] {sid} {status} "
+            f"words={validation.get('n_words')} lat={latency_ms}ms "
+            f"err={validation.get('errors')[:2]}",
+            flush=True,
+        )
+    return idx, row
+
+
 def main() -> None:
     args = parse_args()
+    if args.concurrency < 1:
+        raise SystemExit("--concurrency must be >= 1")
+
     train_path = resolve(args.train_file)
     samples = load_jsonl(str(train_path))
     by_id = {s["sample_id"]: s for s in samples}
@@ -188,120 +311,66 @@ def main() -> None:
     cache_path = run_dir / "reasoning_cache.jsonl"
     summary_path = run_dir / "summary.json"
 
-    print(f"[teacher] model={args.model} base_url={args.base_url}")
-    print(f"[teacher] run_dir={run_dir}")
-    print(f"[teacher] mine_stats={mine_stats}")
-    print(f"[teacher] generating n={len(chosen)}")
+    workers = min(args.concurrency, max(len(chosen), 1))
+    print(f"[teacher] model={args.model} base_url={args.base_url}", flush=True)
+    print(f"[teacher] run_dir={run_dir}", flush=True)
+    print(f"[teacher] mine_stats={mine_stats}", flush=True)
+    print(
+        f"[teacher] generating n={len(chosen)} concurrency={workers} "
+        f"(progress prints when each request returns)",
+        flush=True,
+    )
 
+    t_all = time.time()
+    results: Dict[int, Dict[str, Any]] = {}
     n_ok = 0
     n_fail = 0
-    with cache_path.open("w", encoding="utf-8") as out:
-        for i, sid in enumerate(chosen, 1):
-            sample = by_id[sid]
-            refs = resolve_evidence_refs(sample)
-            gold = gold_answer_of(sample)
-            user = format_teacher_user_prompt(sample, refs, gold)
-            t0 = time.time()
-            err = None
-            raw = ""
-            try:
-                raw = chat_complete(
-                    base_url=args.base_url,
-                    api_key=args.api_key,
-                    model=args.model,
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": user},
-                    ],
-                    temperature=args.temperature,
-                    max_tokens=args.max_tokens,
-                    timeout=args.timeout,
-                    retries=args.retries,
-                    retry_backoff=args.retry_backoff,
-                )
-            except Exception as exc:  # noqa: BLE001
-                err = str(exc)
-            latency_ms = round((time.time() - t0) * 1000, 1)
-            validation = (
-                validate_teacher_think(
-                    raw,
-                    gold_answer=gold,
-                    question=sample["question"],
-                    refs=refs,
-                )
-                if err is None
-                else {
-                    "format_valid": False,
-                    "answer_consistent": False,
-                    "grounding_valid": False,
-                    "length_valid": False,
-                    "n_words": 0,
-                    "novel_proper_nouns": [],
-                    "errors": [err or "api_error"],
-                    "accepted": False,
-                    "think": None,
-                }
+    n_done = 0
+    with cache_path.open("w", encoding="utf-8") as out, ThreadPoolExecutor(
+        max_workers=workers
+    ) as ex:
+        futs = [
+            ex.submit(
+                process_one,
+                i,
+                len(chosen),
+                sid,
+                by_id[sid],
+                args,
+                direct,
+                base_oracle,
             )
-            if validation["accepted"]:
+            for i, sid in enumerate(chosen, 1)
+        ]
+        print(f"[teacher] submitted {len(futs)} jobs", flush=True)
+        for fut in as_completed(futs):
+            idx, row = fut.result()
+            results[idx] = row
+            n_done += 1
+            if row["teacher_validation"]["accepted"]:
                 n_ok += 1
             else:
                 n_fail += 1
-            row = {
-                "sample_id": sid,
-                "question": sample["question"],
-                "gold_answer": gold,
-                "gold_answers": list(sample.get("gold_answers") or []),
-                "evidence_refs": refs,
-                "q_type": (sample.get("metadata") or {}).get("type"),
-                "teacher_model": args.model,
-                "teacher_prompt_version": PROMPT_VERSION,
-                "teacher_base_url": args.base_url,
-                "teacher_raw_output": raw,
-                "teacher_validation": {
-                    k: validation[k]
-                    for k in (
-                        "format_valid",
-                        "answer_consistent",
-                        "grounding_valid",
-                        "length_valid",
-                        "n_words",
-                        "novel_proper_nouns",
-                        "errors",
-                        "accepted",
-                    )
-                },
-                "think": validation.get("think"),
-                "latency_ms": latency_ms,
-                "api_error": err,
-                "reasoning_source": "kimi2.6",
-                "pool": (
-                    "persistent_c_like"
-                    if (
-                        not (
-                            bool((direct.get(sid) or {}).get("direct_correct"))
-                            or float((direct.get(sid) or {}).get("exact_match") or 0)
-                            >= 1.0 - 1e-9
-                        )
-                        and float((base_oracle.get(sid) or {}).get("exact_match") or 0)
-                        < 1.0 - 1e-9
-                    )
-                    else "other_hard"
-                ),
-            }
             out.write(json.dumps(row, ensure_ascii=False) + "\n")
             out.flush()
-            status = "OK" if validation["accepted"] else "REJECT"
-            print(
-                f"[{i}/{len(chosen)}] {sid} {status} "
-                f"words={validation.get('n_words')} lat={latency_ms}ms "
-                f"err={validation.get('errors')[:2]}"
-            )
+            if n_done % max(1, min(5, len(chosen))) == 0 or n_done == len(chosen):
+                elapsed_so_far = time.time() - t_all
+                print(
+                    f"[teacher] progress {n_done}/{len(chosen)} "
+                    f"ok={n_ok} reject={n_fail} "
+                    f"elapsed={elapsed_so_far:.1f}s",
+                    flush=True,
+                )
 
+    elapsed = round(time.time() - t_all, 2)
     summary = {
         "num_requested": len(chosen),
         "num_accepted": n_ok,
         "num_rejected": n_fail,
         "accept_rate": round(n_ok / max(len(chosen), 1), 4),
+        "concurrency": workers,
+        "elapsed_seconds": elapsed,
+        "throughput_qps": round(len(chosen) / max(elapsed, 1e-6), 3),
         "mine_stats": mine_stats,
         "teacher_model": args.model,
         "teacher_prompt_version": PROMPT_VERSION,
