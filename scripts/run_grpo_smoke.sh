@@ -23,6 +23,11 @@ OUT_DIR=${OUT_DIR:-$REPO/outputs/rl/grpo_sftv1_smoke}
 STEPS=${STEPS:-5}
 BATCH=${BATCH:-8}
 N=${N:-4}
+# veRL fit loop: while current_epoch < total_epochs AND global_steps <= total_training_steps.
+# steps_per_epoch = len(train) // batch (128/8=16). With total_epochs=1 the loop exits
+# after step 16 even when STEPS=50 — looks like a crash (Ray SIGTERM / empty GPUs).
+# Default: do not let epochs bind earlier than STEPS; override with TOTAL_EPOCHS if needed.
+TOTAL_EPOCHS=${TOTAL_EPOCHS:-$STEPS}
 GPU_MEM_UTIL=${GPU_MEM_UTIL:-0.4}
 # Skip val_before_train for first smoke (val path dies if rollout actors crash mid-batch)
 VAL_BEFORE_TRAIN=${VAL_BEFORE_TRAIN:-False}
@@ -97,7 +102,7 @@ python "$REPO/scripts/launch_grpo_main.py" \
   reward.custom_reward_function.name=compute_score \
   trainer.nnodes=1 \
   trainer.n_gpus_per_node=4 \
-  trainer.total_epochs=1 \
+  trainer.total_epochs="$TOTAL_EPOCHS" \
   trainer.total_training_steps="$STEPS" \
   trainer.val_before_train="$VAL_BEFORE_TRAIN" \
   trainer.save_freq="$SAVE_FREQ" \

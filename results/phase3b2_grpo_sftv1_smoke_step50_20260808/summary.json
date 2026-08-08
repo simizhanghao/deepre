@@ -1,0 +1,109 @@
+{
+  "experiment": "grpo_sftv1_smoke",
+  "init": "outputs/sft_qwen25_3b_coldstart_v1_merged",
+  "steps_completed": 50,
+  "latest_ckpt": "outputs/rl/grpo_sftv1_smoke/global_step_50",
+  "knobs": {
+    "n": 4,
+    "batch": 8,
+    "gpus": 4,
+    "max_search": 2,
+    "reward": "EM + 0.1 * format",
+    "lr": 1e-06,
+    "kl_loss_coef": 0.001,
+    "train_size": 128
+  },
+  "windows": {
+    "early_6_15": {
+      "critic/score/mean": {
+        "mean": 0.24531251937150955,
+        "std": 0.057320541486468944,
+        "n": 10
+      },
+      "actor/kl_loss": {
+        "mean": 0.0035884455127074945,
+        "std": 0.0017422899531021067,
+        "n": 10
+      },
+      "actor/entropy": {
+        "mean": 0.4636195957660675,
+        "std": 0.13789577027458025,
+        "n": 10
+      },
+      "response_length/mean": {
+        "mean": 339.896875,
+        "std": 135.81566238983862,
+        "n": 10
+      }
+    },
+    "mid_20_35": {
+      "critic/score/mean": {
+        "mean": 0.2548828162252903,
+        "std": 0.11009786899952004,
+        "n": 16
+      },
+      "actor/kl_loss": {
+        "mean": 0.00648251646140352,
+        "std": 0.0023057801978644764,
+        "n": 16
+      },
+      "actor/entropy": {
+        "mean": 0.5361793525516987,
+        "std": 0.08692573263098032,
+        "n": 16
+      },
+      "response_length/mean": {
+        "mean": 236.658203125,
+        "std": 77.39781370303376,
+        "n": 16
+      }
+    },
+    "late_40_50": {
+      "critic/score/mean": {
+        "mean": 0.2855113683776422,
+        "std": 0.12201166137290703,
+        "n": 11
+      },
+      "actor/kl_loss": {
+        "mean": 0.011928726060184337,
+        "std": 0.004460353871296314,
+        "n": 11
+      },
+      "actor/entropy": {
+        "mean": 0.5866727178747003,
+        "std": 0.09225037886208604,
+        "n": 11
+      },
+      "response_length/mean": {
+        "mean": 186.9005681818182,
+        "std": 57.979298412635934,
+        "n": 11
+      }
+    }
+  },
+  "step50": {
+    "critic/score/mean": 0.47499996423721313,
+    "critic/score/min": 0.10000000149011612,
+    "critic/score/max": 1.100000023841858,
+    "actor/kl_loss": 0.014299447553639766,
+    "actor/loss": 0.031399741768836975,
+    "actor/entropy": 0.6237424612045288,
+    "actor/grad_norm": 1.8274527788162231,
+    "response_length/mean": 151.34375,
+    "response_length/clip_ratio": 0.03125,
+    "response/aborted_ratio": 0.0,
+    "training/num_turns/mean": 2.0,
+    "timing_s/step": 42.756089989095926,
+    "rollout_corr/kl": 0.0002975101233460009
+  },
+  "notes": {
+    "phase3b_split_metrics": "not present in console/TB (Ray TaskRunner may miss in-process monkeypatch)",
+    "num_turns_mean": "stuck at 2.0 all logged steps",
+    "nan": false,
+    "aborted_ratio_late": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 11
+    }
+  }
+}

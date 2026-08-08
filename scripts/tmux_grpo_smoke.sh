@@ -2,8 +2,9 @@
 # Host-side Phase 3B2 launcher (detach-safe).
 #
 # Critical: must use `docker exec -d` so training is owned by the container
-# daemon. Plain `nohup docker exec ... &` dies when the host client/session
-# ends → container process gets SIGTERM → Ray INTENDED_USER_EXIT (seen at step16).
+# daemon. Plain `nohup docker exec ... &` dies when the host client/session ends.
+# Also: run_grpo_smoke.sh must set TOTAL_EPOCHS >= ceil(STEPS / steps_per_epoch);
+# total_epochs=1 with 128/batch8 stops at step 16 even when STEPS=50.
 #
 # Usage:
 #   STEPS=50 SAVE_FREQ=5 bash scripts/tmux_grpo_smoke.sh
@@ -54,8 +55,11 @@ echo RETRIEVER_OK
 
 # Optional: stop leftover Ray from a previous crashed job (keeps GPUs clean)
 if [[ "${RAY_STOP_FIRST:-1}" == "1" ]]; then
+  # Never let cleanup abort the launcher (set -e): docker exec can return non-zero
+  # if ray/pkill races with zombie reaping.
   docker exec "$CONTAINER" bash -lc \
-    'ray stop --force >/dev/null 2>&1 || true; pkill -9 -f "sglang.launch_server|sglang::" >/dev/null 2>&1 || true; true'
+    'ray stop --force >/dev/null 2>&1 || true; pkill -9 -f sglang.launch_server >/dev/null 2>&1 || true; exit 0' \
+    || true
   sleep 2
 fi
 
@@ -67,6 +71,7 @@ docker exec -d "$CONTAINER" bash -lc "\
   cd /workspace/deepresearch; \
   STEPS=${STEPS} SAVE_FREQ=${SAVE_FREQ} OUT_DIR=${OUT_DIR} \
   EXPERIMENT_NAME=${EXPERIMENT_NAME} RESUME_MODE=${RESUME_MODE} \
+  TOTAL_EPOCHS=${TOTAL_EPOCHS:-${STEPS}} \
   bash /workspace/deepresearch/scripts/run_grpo_smoke.sh \
     >${CONTAINER_LOG} 2>&1"
 

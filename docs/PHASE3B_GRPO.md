@@ -1,7 +1,8 @@
 # Phase 3B — Answer-only GRPO (Search-R1 baseline learnability)
 
-> **Status: 3B2 baseline in progress** — resume step 5 → 50 (then maybe 100). See [`PHASE3B2.md`](PHASE3B2.md).  
-> Frozen policy init: `outputs/sft_qwen25_3b_coldstart_v1_merged`.
+> **Status: 3B2 step 50 done — conditional continue → 100.** Hard audit in [`PHASE3B2.md`](PHASE3B2.md).  
+> Frozen policy init: `outputs/sft_qwen25_3b_coldstart_v1_merged`.  
+> Ckpt: `outputs/rl/grpo_sftv1_smoke/global_step_50`.
 
 ## Decisions (locked 2026-08-08)
 
@@ -26,7 +27,7 @@
 ```text
 3B0  Docker + scaffolding + gates                 ✓
 3B1  2～5 step micro-smoke                         ✓ (2026-08-08)
-3B2  5→50→100 answer-only GRPO baseline + TB      ← now
+3B2  5→50 answer-only GRPO baseline + TB           ✓ (audit 2026-08-08; next 50→100)
 3C   + Evidence Reward
 3D   + Cost / duplicate
 3E   Routing / cost tradeoff

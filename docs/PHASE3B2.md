@@ -1,7 +1,8 @@
 # Phase 3B2 — Search-R1-style GRPO baseline (answer-only)
 
-> Status: **running / next** — resume from `global_step_5` → 50, hard audit, then maybe 100.  
-> Experiment dir kept as `outputs/rl/grpo_sftv1_smoke` for checkpoint continuity (name = historical).
+> Status: **step 50 complete — hard audit done (conditional continue → 100)**  
+> Experiment dir: `outputs/rl/grpo_sftv1_smoke` (name historical; ckpt continuity).  
+> Audit artifacts: [`results/phase3b2_grpo_sftv1_smoke_step50_20260808/`](../results/phase3b2_grpo_sftv1_smoke_step50_20260808/)
 
 ## Frozen knobs (do not change mid-run)
 
@@ -13,6 +14,9 @@ retrieval  = Candidate-BM25 + sample_id
 max search = 2
 reward     = EM + 0.1 × format
 Evidence / Cost / Duplicate = OFF
+lr         = 1e-6
+kl_loss_coef = 0.001
+train      = 128 (smoke parquet), batch=8 → 16 steps/epoch
 ```
 
 ## Launch (host)
@@ -22,51 +26,115 @@ STEPS=50 SAVE_FREQ=5 bash scripts/tmux_grpo_smoke.sh
 tmux attach -t eca-grpo   # Ctrl-b d to detach
 ```
 
-### Ops note (2026-08-08 crash at step16)
-
-Root cause: host used `nohup docker exec ... &` (client-attached). When the Cursor/agent
-shell ended, Docker sent **SIGTERM** into the container → Ray
-`INTENDED_USER_EXIT` / `ray.shutdown()` with **no Python traceback**.  
-Fix: launcher now uses **`docker exec -d`** so the train job is owned by the
-container daemon and survives SSH/tmux/Cursor disconnects.
-
-Resume after step 50 if healthy:
+Continue → 100 (same OUT_DIR, resume auto):
 
 ```bash
 tmux kill-session -t eca-grpo 2>/dev/null || true
 STEPS=100 SAVE_FREQ=10 bash scripts/tmux_grpo_smoke.sh
 ```
 
-## Metrics (TensorBoard + `[phase3b]` console line)
+### Ops notes (false “crashes” at step 16)
+
+Two separate issues looked the same (GPU empty, Ray SIGTERM, no traceback):
+
+1. **Host `nohup docker exec ... &`**: Cursor/agent shell end → Docker SIGTERM into
+   container. Fix: launcher uses **`docker exec -d`**.
+2. **`trainer.total_epochs=1`**: with 128 samples / batch 8 → 16 steps/epoch. veRL exits
+   when `current_epoch >= total_epochs` even if `total_training_steps=50`. After step 16
+   the driver returns cleanly → Ray shutdown. Fix: `run_grpo_smoke.sh` sets
+   `TOTAL_EPOCHS=${TOTAL_EPOCHS:-$STEPS}` so epochs do not bind early.
+
+---
+
+## Hard audit @ step 50 (2026-08-08)
+
+### Completion
+
+| Item | Value |
+|------|-------|
+| Latest ckpt | `outputs/rl/grpo_sftv1_smoke/global_step_50` |
+| Saves | 5,10,15,20,25,30,35,40,45,50 |
+| Log (final leg) | `logs/grpo_sftv1_smoke_to50_resume15_20260808_231101.log` |
+| TB | `outputs/rl/tensorboard/grpo_sftv1_smoke` (INACTIVE after finish) |
+| NaN | **none** |
+| `response/aborted_ratio` (late) | **0.0** |
+
+### Proxy metrics (console / TB `actor/*`, `critic/score/*`)
+
+Split Phase3B tags (`reward/answer_reward`, `grpo/zero_std_group_rate`, `agent/finish_rate`,
+`agent/search_count/*`) **did not appear** in this run — Ray `TaskRunner` does not see the
+in-process monkeypatch. Audit below uses veRL native scalars; treat EM/format/search as
+**proxies**.
+
+`R = EM + 0.1×format` ⇒ `critic/score` ∈ {0, 0.1, 1.0, 1.1}. When `score/min=0.1` on a
+step, every sample in the batch had valid format; rough batch EM ≈ `score/mean − 0.1`.
+
+| Window | score mean±std | kl_loss | entropy | resp_len |
+|--------|----------------|---------|---------|----------|
+| early 6–15 | **0.245 ± 0.057** | 0.0036 | 0.464 | 340 |
+| mid 20–35 | **0.255 ± 0.110** | 0.0065 | 0.536 | 237 |
+| late 40–50 | **0.286 ± 0.122** | 0.0119 | 0.587 | 187 |
+| **step 50** | **0.475** (min=0.1, max=1.1) | 0.0143 | 0.624 | 151 |
+
+Milestone snapshot:
+
+| step | score | kl_loss | entropy | grad_norm | resp_len | clip |
+|------|------:|--------:|--------:|----------:|---------:|-----:|
+| 10 | 0.319 | 0.0065 | 0.631 | 0.90 | 171 | 0.031 |
+| 20 | 0.119 | 0.0030 | 0.489 | 1.82 | 404 | 0.094 |
+| 30 | 0.403 | 0.0042 | 0.362 | 1.17 | 366 | 0.094 |
+| 40 | 0.159 | 0.0107 | 0.534 | 0.97 | 195 | 0.031 |
+| 45 | 0.350 | 0.0100 | 0.615 | 1.02 | 135 | 0.031 |
+| 50 | 0.475 | 0.0143 | 0.624 | 1.83 | 151 | 0.031 |
+
+TB (actor filter) matches: entropy ↑ ~0.4→0.62, `kl_loss` ↑ ~0.002→0.014, `lr` flat 1e-6,
+`actor/loss` noisy then drops near end.
+
+### Gate checklist
+
+| Gate | Verdict | Evidence |
+|------|---------|----------|
+| Finish stable | **PASS (proxy)** | `aborted_ratio=0`; `num_turns/mean=2.0` every logged step |
+| Format OK | **PASS (improving)** | late steps often `score/min=0.1` (all-format batches); early often `min=0` |
+| EM / reward directional | **WEAK PASS** | window mean 0.245 → 0.286; high batch noise; step50 strong (≈EM 0.375 if format=1) |
+| zero_std not stuck | **UNKNOWN / soft OK** | no `zero_std_group_rate`; advantage spread stays ~2.3–2.5 (not collapsed) |
+| KL slow | **PASS** | kl_loss 0.0036 → 0.012; rollout_corr/kl ~1e-4; no spike |
+| Search not glued to max=2 | **UNKNOWN** | no search_count; `num_turns=2` always (likely 1 search + answer, not max-hit proof) |
+| No NaN | **PASS** | none in parsed steps |
+
+### Answers to the four 3B questions
+
+1. **Can agentic GRPO learn?** Mild yes — reward window up, format more consistent late, entropy/KL move as expected under small KL coef. Not a clean EM climb; smoke-128 + n=4 is noisy.
+2. **How sparse?** Unmeasured directly. Non-trivial advantage spread argues against total zero-std collapse; still need wired metrics or offline group-std before trusting.
+3. **Over-search?** Unmeasured. Fixed `num_turns=2` suggests a stable short tool pattern, not runaway multi-search; confirm with `search_count` / max-hit on next leg.
+4. **Stable?** Yes for train loop: no abort/NaN, KL controlled, resp_len/clip down (less ramble/truncation).
+
+### Decision
+
+**Conditional continue → 100** (same frozen knobs, same OUT_DIR).
+
+Do **not** change lr / n / reward mid-run. Before or during 50→100:
+
+- Prefer **file-patch** veRL `_compute_metrics` so `[phase3b]` / TB split tags stick on Ray workers.
+- Watch: score window, kl_loss slope, clip_ratio, and (once wired) zero_std + search_count.
+- Stop early only if zero_std≈1 chronic, finish/format collapse, KL spike, or NaN.
+
+Ablation for 3C: both B and C restart from **SFT-v1**, not from this 3B ckpt.
+
+---
+
+## Metrics map (intended)
 
 | Signal | TB key |
 |--------|--------|
 | Answer EM | `reward/answer_reward/mean` |
 | Format | `reward/format_reward/mean` |
-| Total R | `reward/total_reward/mean` |
+| Total R | `reward/total_reward/mean` / `critic/score/mean` |
 | Zero-std groups | `grpo/zero_std_group_rate` |
 | Finish | `agent/finish_rate` |
 | Search | `agent/search_count/mean`, `agent/max_search_hit_rate` |
-| Dup query | `agent/duplicate_query_count/mean` |
-| Routing | `agent/search_rate`, `agent/internal_rate` |
-| Obs tokens | `agent/observation_tokens/mean` |
 | KL / grad | `actor/kl_loss`, `rollout_corr/kl`, `actor/grad_norm` |
 
 ```bash
-tensorboard --logdir /data1/hcc/deepresearch/outputs/rl/tensorboard/grpo_sftv1_smoke --port 6006 --bind_all
+tensorboard --logdir /data1/hcc/deepresearch/outputs/rl/tensorboard/grpo_sftv1_smoke --port 6006 --bind_all --load_fast=false
 ```
-
-## Hard gates at step 50
-
-Continue → 100 if: finish stable, format OK, EM/reward directional, zero_std not stuck ≥0.8–0.9, KL slow, search not glued to max=2, no NaN.
-
-Stop / close 3B if: zero_std chronic, finish collapse, search max-hit + flat EM, KL spike, NaN.
-
-## 3B answers four questions then → 3C
-
-1. Can agentic GRPO learn? (answer_reward trend)  
-2. How sparse? (`zero_std_group_rate`)  
-3. Does GRPO over-search? (search_count / max-hit)  
-4. Stable? (finish / format / KL)
-
-Ablation for 3C: both B and C restart from **SFT-v1**, not from 3B ckpt.
