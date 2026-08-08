@@ -1,6 +1,8 @@
 # Phase 3A — SFT-v1 Search Agent Rollout (no training)
 
-> **Status: closed (smoke passed).** Agent loop healthy on n=8 and n=32. Next: Phase 3B GRPO.
+> **Status: closed (smoke passed).** Agent loop healthy on n=8 and n=32. Next: Phase 3B GRPO.  
+> **Code (tested):** `src/agents/react_loop.py`, `src/tools/candidate_bm25.py`, `scripts/run_agent_rollout_smoke.py` (landed in `aa80f33`).  
+> **Frozen metrics:** `docs/artifacts/phase3a_smoke_summaries.json`
 
 ## Goal
 
