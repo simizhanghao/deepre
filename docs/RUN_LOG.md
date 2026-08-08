@@ -27,4 +27,7 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-08 | phase2e3-export | `export_coldstart_sharegpt.py --prefix eca_coldstart_v1` | `data/sft/llamafactory/eca_coldstart_v1_*.jsonl` | pass | train/dev/smoke 4322/228/80
 2026-08-08 | phase2e3-sft | LF docker LoRA train + merge | `outputs/sft_qwen25_3b_lora_coldstart_v1` → `..._v1_merged` | pass | train_loss 0.082 eval_loss 0.042; from Base
 2026-08-08 | phase2e4-baselines | `run_baseline.py` Direct/Oracle/Candidate v1 | `results/baseline_*_phase2e4_sftv1_n200/` | pass | EM 0.175 / 0.660 / 0.485 (vs v0 0.170/0.650/0.470)
+2026-08-08 | phase2e4c-protocol | `run_protocol_eval.py` evidence_oracle/candidate + routing v1 | `results/protocol_*_20260808_153215_phase2e4c/` | pass | EvidF1 0.835/0.725; route 12%/88%; freeze SFT-v1
+2026-08-08 | phase2-closed | freeze SFT-v1 as RL init | `docs/PHASE2_CLOSED.md` | pass | no SFT-v2; handoff Phase 3A
+2026-08-08 | phase3a-scaffold | Search Agent rollout loop + Candidate-BM25 tool + smoke CLI | `src/agents/react_loop.py`, `src/tools/candidate_bm25.py`, `scripts/run_agent_rollout_smoke.py` | pass | max_search_turns=2; no train
 

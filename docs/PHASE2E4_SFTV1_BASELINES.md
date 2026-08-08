@@ -1,6 +1,6 @@
 # Phase 2E4 — SFT-v1 answer baselines (frozen val-200)
 
-> **Status: answer baselines closed.** Protocol routing/evidence eval still pending.  
+> **Status: closed.** Answer baselines + protocol trio done. Phase 2 frozen → see `docs/PHASE2_CLOSED.md`.  
 > Model: `outputs/sft_qwen25_3b_coldstart_v1_merged` · n=200 HotpotQA distractor validation (frozen).
 
 ## Capability table (Exact Match)
@@ -39,17 +39,17 @@ Format valid rate: **1.0** on all three.
 4. **Direct flat (~0.175)** — routing calibration (P0) is **not** measurable from Direct/Oracle/Candidate alone; need protocol `routing` eval (internal% / search%).
 5. Do **not** treat these EM deltas as GRPO-ready proof; next gate is protocol evidence F1 + routing mix vs v0 (internal 29% / search 71%).
 
+## Protocol trio (phase2e4c) — done
+
+| Metric | v0 | **v1** |
+|--------|---:|------:|
+| Evid F1 Oracle | 0.818 | **0.835** |
+| Evid F1 Candidate | 0.665 | **0.725** |
+| internal / search | 29%/71% | **12%/88%** |
+| protocol valid routing | 1.0 | **1.0** |
+
+Artifacts: `results/protocol_*_n200_20260808_153215_phase2e4c/`.
+
 ## Next
 
-```bash
-MERGED=outputs/sft_qwen25_3b_coldstart_v1_merged
-CUDA_VISIBLE_DEVICES=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-  python scripts/run_protocol_eval.py --mode evidence_oracle \
-  --model-path $MERGED --max-samples 200 --run-tag phase2e4c
-CUDA_VISIBLE_DEVICES=5 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-  python scripts/run_protocol_eval.py --mode evidence_candidate \
-  --model-path $MERGED --max-samples 200 --run-tag phase2e4c
-CUDA_VISIBLE_DEVICES=6 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-  python scripts/run_protocol_eval.py --mode routing \
-  --model-path $MERGED --max-samples 200 --run-tag phase2e4c
-```
+Phase 3A Search Agent rollout — `docs/PHASE3A_ROLLOUT.md` (no more SFT).
