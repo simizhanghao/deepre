@@ -1,0 +1,48 @@
+{
+  "pass": true,
+  "gates": {
+    "synthetic_distinguish": true,
+    "n_smoke_scored": true,
+    "perfect_gt_none": true,
+    "group_std_from_evidence": true
+  },
+  "synthetic": [
+    {
+      "name": "perfect",
+      "evidence_f1": 1.0,
+      "total": 0.6,
+      "expect_f1": 1.0,
+      "ok": true
+    },
+    {
+      "name": "half",
+      "evidence_f1": 0.5,
+      "total": 0.35,
+      "expect_f1": 0.5,
+      "ok": true
+    },
+    {
+      "name": "none",
+      "evidence_f1": 0.0,
+      "total": 1.1,
+      "expect_f1": 0.0,
+      "ok": true
+    },
+    {
+      "name": "malformed",
+      "evidence_f1": 0.0,
+      "total": 1.1,
+      "expect_f1": 0.0,
+      "ok": true
+    }
+  ],
+  "n_smoke_samples": 48,
+  "n_scored_rows": 144,
+  "evidence_perfect_mean": 1.0,
+  "evidence_half_mean": 0.631970833333333,
+  "evidence_none_mean": 0.0,
+  "sim_group_reward_std_mean": 0.21423518028318161,
+  "sim_zero_std_group_rate": 0.0,
+  "lambda_e": 0.5,
+  "formula": "R = answer + 0.5*evidence_f1 + 0.1*format"
+}

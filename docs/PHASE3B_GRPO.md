@@ -3,7 +3,7 @@
 > **Status: Phase 3B CLOSED @ step100.** See hard audit in [`PHASE3B2.md`](PHASE3B2.md).  
 > Init was `outputs/sft_qwen25_3b_coldstart_v1_merged`; final ckpt `.../grpo_sftv1_smoke/global_step_100`.  
 > Finding: stable GRPO + **search collapse** + high zero_std under answer-only.  
-> **Next: Phase 3C Evidence from SFT-v1** (not from step100).
+> **Next: Phase 3C Evidence from SFT-v1** — see [`PHASE3C.md`](PHASE3C.md) (λ_e=0.5, STEPS=500).
 
 ## Decisions (locked 2026-08-08)
 

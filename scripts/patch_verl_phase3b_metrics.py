@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Patch veRL so Phase-3B diagnostics run inside the Ray TaskRunner process.
+"""Patch veRL so Phase-3B/3C diagnostics run inside the Ray TaskRunner process.
 
 Why file-patch TaskRunnerV1.run (not only driver monkeypatch):
   launch_grpo_main applies an in-process monkeypatch on the *driver*.
@@ -84,7 +84,17 @@ def apply() -> str:
     if str(REPO) not in sys.path:
         sys.path.insert(0, str(REPO))
 
-    from src.rl.phase3b_metrics import compute_phase3b_batch_metrics, summarize_console_line
+    # Prefer 3C metrics (superset); fall back to 3B if import fails.
+    try:
+        from src.rl.phase3c_metrics import compute_phase3c_batch_metrics as _compute_batch
+        from src.rl.phase3c_metrics import summarize_console_line
+
+        log_tag = "phase3c"
+    except Exception:
+        from src.rl.phase3b_metrics import compute_phase3b_batch_metrics as _compute_batch
+        from src.rl.phase3b_metrics import summarize_console_line
+
+        log_tag = "phase3b"
 
     mod = importlib.import_module("verl.trainer.ppo.v1.trainer_base")
     cls = mod.PPOTrainer
@@ -132,20 +142,20 @@ def apply() -> str:
             if seq_scores is not None:
                 scores_np = [seq_scores[i] for i in range(len(seq_scores)) if non_padding_mask[i]]
 
-            phase_m = compute_phase3b_batch_metrics(extras_np, uids=uids_np, sequence_scores=scores_np)
+            phase_m = _compute_batch(extras_np, uids=uids_np, sequence_scores=scores_np)
             metrics.update(phase_m)
             if phase_m:
                 print(
-                    f"[phase3b] step={global_steps} {summarize_console_line({**metrics, **phase_m})}",
+                    f"[{log_tag}] step={global_steps} {summarize_console_line({**metrics, **phase_m})}",
                     flush=True,
                 )
         except Exception as exc:  # never break training for metrics
-            print(f"[phase3b] metrics patch skipped: {type(exc).__name__}: {exc}", flush=True)
+            print(f"[{log_tag}] metrics patch skipped: {type(exc).__name__}: {exc}", flush=True)
         return metrics
 
     _compute_metrics._phase3b_metrics_patched = True  # type: ignore[attr-defined]
     cls._compute_metrics = _compute_metrics
-    return "patched"
+    return f"patched:{log_tag}"
 
 
 def main() -> None:

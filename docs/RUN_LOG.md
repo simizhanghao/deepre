@@ -42,3 +42,6 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-08 | phase3b2-metrics-hook | file-patch TaskRunnerV1.run → apply() in Ray actor | `scripts/patch_verl_phase3b_metrics.py` | pass | fixes driver-only monkeypatch miss; no algo knobs touched
 2026-08-08 | phase3b2-to100 | STEPS=100 resume50→100 formal baseline + diagnostics | `outputs/rl/grpo_sftv1_smoke` | running | hook live @61+; resume from ckpt60 after LinkedList fix; early signal search=0 zero_std↑ — watch to 100
 2026-08-09 | phase3b2-step100 | hard audit close 3B | `global_step_100` + `results/phase3b2_grpo_sftv1_baseline_step100_20260809/` | pass→close | score 0.23→0.29; search=0 (61–100); zero_std≈0.77; format/finish≈1; **next 3C from SFT-v1**
+2026-08-09 | phase3c0-scaffold | Evidence F1 reward + breakdown + SF parquet + metrics + launchers | `src/rl/rewards_3c.py`, `docs/PHASE3C.md` | pass | λ_e=0.5; Cost weights reserved
+2026-08-09 | phase3c0-offline | `offline_reward_replay_3c.py` | `results/phase3c_offline_reward_replay/` | pass | perfect=1.0 none=0; sim zero_std=0; group_std≈0.21
+2026-08-09 | phase3c1-to500 | STEPS=500 SAVE_FREQ=25 from SFT-v1 (not 3B ckpt) | `outputs/rl/grpo_sftv1_evidence_3c` | running | tmux eca-grpo-3c; TB :6007

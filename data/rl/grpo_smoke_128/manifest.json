@@ -18,7 +18,8 @@
     "supporting_facts"
   ],
   "reward_sees": [
-    "gold_answers"
+    "gold_answers",
+    "supporting_facts"
   ],
   "tool_sees": [
     "sample_id",

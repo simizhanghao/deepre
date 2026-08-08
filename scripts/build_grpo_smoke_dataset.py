@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Build Phase 3B0 GRPO smoke dataset (default n=128).
+"""Build Phase 3B/3C GRPO smoke dataset (default n=128).
 
-Policy sees: system + Question only (NO gold, NO contexts).
-Reward sees: gold_answers via reward_model.ground_truth.
+Policy sees: system + Question only (NO gold, NO contexts, NO supporting_facts).
+Reward sees: gold_answers + supporting_facts (title, sentence_id) via ground_truth.
 Retriever sees: sample_id -> contexts jsonl index.
 """
 
@@ -39,10 +39,23 @@ def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
     return rows
 
 
+def _sf_minimal(sample: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Reward-only supporting facts (title + sentence_id). No sentence text."""
+    out: List[Dict[str, Any]] = []
+    for sf in sample.get("supporting_facts") or []:
+        title = sf.get("title")
+        sid = sf.get("sentence_id", sf.get("sent_id"))
+        if title is None or sid is None:
+            continue
+        out.append({"title": str(title), "sentence_id": int(sid)})
+    return out
+
+
 def _to_verl_row(sample: Dict[str, Any], *, split: str, idx: int) -> Dict[str, Any]:
     sid = str(sample["sample_id"])
     question = sample["question"]
     golds = list(sample.get("gold_answers") or [])
+    sf = _sf_minimal(sample)
     return {
         "data_source": "hotpotqa_distractor_candidate",
         "agent_name": "eca_search_agent",
@@ -54,13 +67,14 @@ def _to_verl_row(sample: Dict[str, Any], *, split: str, idx: int) -> Dict[str, A
         "reward_model": {
             "style": "rule",
             # Reward only — never put into prompt.
-            "ground_truth": {"target": golds},
+            "ground_truth": {"target": golds, "supporting_facts": sf},
         },
         "extra_info": {
             "split": split,
             "index": idx,
             "sample_id": sid,
             "question": question,
+            "supporting_facts": sf,
             "need_tools_kwargs": True,
             "tools_kwargs": {
                 "search": {
@@ -151,7 +165,7 @@ def main() -> None:
         "agent_name": "eca_search_agent",
         "policy_sees": ["system", "question"],
         "policy_must_not_see": ["gold_answers", "contexts", "supporting_facts"],
-        "reward_sees": ["gold_answers"],
+        "reward_sees": ["gold_answers", "supporting_facts"],
         "tool_sees": ["sample_id", "contexts", "query"],
         "train_ids": [r["sample_id"] for r in train_raw],
         "val_ids": [r["sample_id"] for r in val_raw],
