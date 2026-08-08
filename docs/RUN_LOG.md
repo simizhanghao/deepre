@@ -22,4 +22,9 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-08 | phase2e2-teacher-smoke20-c16 | `generate_teacher_reasoning.py --max-samples 20 --concurrency 16` | `results/teacher_reasoning_n20_20260808_113323_smoke20_c16/` | fail | API OK but 0/20 accept; missing `<think>` wrapper (meta-planning raw text)
 2026-08-08 | phase2e2-teacher-io-v2 | rewrite Teacher contract: JSON rationale + code `<think>` wrap; modes A/B/C; API metadata | `src/sft/teacher_reasoning.py`, `scripts/generate_teacher_reasoning.py` | pass | stop asking LLM for XML; thinking disabled by default
 2026-08-08 | phase2e2-teacher-smoke-abc | `generate_teacher_reasoning.py --mode abc --max-samples 5` | `results/teacher_reasoning_n5_*_smoke_abc_mode{A,B,C}/` | pass | A/B/C all parse=1.0 accept=0.8; choose mode A
+2026-08-08 | phase2e2-teacher550 | `generate_teacher_reasoning.py --mode A --n-persistent 440 --n-other 110` | `results/teacher_reasoning_n550_20260808_115020_teacher550_modeA/` | pass | parse=1.0 accept=513/550; keep 400 in mix
+2026-08-08 | phase2e2-build-v1 | `build_sft_coldstart_v1.py` | `data/sft/coldstart_v1.jsonl` + `results/phase2e2_coldstart_v1_20260808/` | pass | 4550 rows; kimi=400; val overlap 0
+2026-08-08 | phase2e3-export | `export_coldstart_sharegpt.py --prefix eca_coldstart_v1` | `data/sft/llamafactory/eca_coldstart_v1_*.jsonl` | pass | train/dev/smoke 4322/228/80
+2026-08-08 | phase2e3-sft | LF docker LoRA train + merge | `outputs/sft_qwen25_3b_lora_coldstart_v1` → `..._v1_merged` | pass | train_loss 0.082 eval_loss 0.042; from Base
+2026-08-08 | phase2e4-baselines | `run_baseline.py` Direct/Oracle/Candidate v1 | `results/baseline_*_phase2e4_sftv1_n200/` | pass | EM 0.175 / 0.660 / 0.485 (vs v0 0.170/0.650/0.470)
 

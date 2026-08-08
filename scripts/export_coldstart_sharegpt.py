@@ -1,4 +1,4 @@
-"""Phase 2D0: export coldstart_v0 → LlamaFactory ShareGPT JSONL.
+"""Export coldstart JSONL → LlamaFactory ShareGPT JSONL.
 
 Hard gates:
   1) <reasoning> → <think> (system + target)
@@ -6,9 +6,10 @@ Hard gates:
 
 Usage (repo root):
   python scripts/export_coldstart_sharegpt.py \
-    --input data/sft/coldstart_v0.jsonl \
+    --input data/sft/coldstart_v1.jsonl \
+    --prefix eca_coldstart_v1 \
     --output-dir data/sft/llamafactory \
-    --seed 42 --dev-ratio 0.05 --smoke-size 80
+    --register-llamafactory /data1/hcc/LlamaFactory/data/dataset_info.json
 """
 
 from __future__ import annotations
@@ -44,6 +45,13 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Export coldstart to ShareGPT for LF.")
     p.add_argument("--input", type=str, default="data/sft/coldstart_v0.jsonl")
     p.add_argument("--output-dir", type=str, default="data/sft/llamafactory")
+    p.add_argument(
+        "--prefix",
+        type=str,
+        default="",
+        help="Output/dataset name prefix, e.g. eca_coldstart_v1. "
+        "Default: infer from input stem (coldstart_v1 -> eca_coldstart_v1).",
+    )
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--dev-ratio", type=float, default=0.05)
     p.add_argument("--smoke-size", type=int, default=80)
@@ -54,6 +62,15 @@ def parse_args() -> argparse.Namespace:
         help="Optional path to LlamaFactory/data/dataset_info.json to patch.",
     )
     return p.parse_args()
+
+
+def infer_prefix(input_path: Path, explicit: str) -> str:
+    if explicit.strip():
+        return explicit.strip()
+    stem = input_path.stem  # coldstart_v1
+    if stem.startswith("eca_"):
+        return stem
+    return f"eca_{stem}"
 
 
 def resolve(path_str: str) -> Path:
@@ -174,29 +191,20 @@ def stratified_smoke(
     return picked
 
 
-def patch_dataset_info(path: Path, out_dir: Path) -> None:
+def patch_dataset_info(path: Path, prefix: str) -> None:
     info = json.loads(path.read_text(encoding="utf-8"))
     # Prefer files copied/symlinked under LlamaFactory/data/
-    entries = {
-        "eca_coldstart_v0_train": {
-            "file_name": "eca_coldstart_v0_train.jsonl",
+    entries = {}
+    for split in ("train", "dev", "smoke"):
+        name = f"{prefix}_{split}"
+        entries[name] = {
+            "file_name": f"{name}.jsonl",
             "formatting": "sharegpt",
             "columns": {"messages": "conversations", "system": "system"},
-        },
-        "eca_coldstart_v0_dev": {
-            "file_name": "eca_coldstart_v0_dev.jsonl",
-            "formatting": "sharegpt",
-            "columns": {"messages": "conversations", "system": "system"},
-        },
-        "eca_coldstart_v0_smoke": {
-            "file_name": "eca_coldstart_v0_smoke.jsonl",
-            "formatting": "sharegpt",
-            "columns": {"messages": "conversations", "system": "system"},
-        },
-    }
+        }
     info.update(entries)
     path.write_text(json.dumps(info, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"patched dataset_info entries into {path}")
+    print(f"patched dataset_info entries {list(entries)} into {path}")
 
 
 def validate_export(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -239,6 +247,7 @@ def main() -> None:
     out_dir = resolve(args.output_dir)
     if not in_path.is_file():
         raise SystemExit(f"missing input: {in_path}")
+    prefix = infer_prefix(in_path, args.prefix)
 
     raw = [
         json.loads(l)
@@ -268,18 +277,31 @@ def main() -> None:
     train = converted[n_dev:]
     smoke = stratified_smoke(train, min(args.smoke_size, len(train)), rng)
 
-    write_jsonl(out_dir / "eca_coldstart_v0_train.jsonl", train)
-    write_jsonl(out_dir / "eca_coldstart_v0_dev.jsonl", dev)
-    write_jsonl(out_dir / "eca_coldstart_v0_smoke.jsonl", smoke)
+    train_path = out_dir / f"{prefix}_train.jsonl"
+    dev_path = out_dir / f"{prefix}_dev.jsonl"
+    smoke_path = out_dir / f"{prefix}_smoke.jsonl"
+    write_jsonl(train_path, train)
+    write_jsonl(dev_path, dev)
+    write_jsonl(smoke_path, smoke)
+    # keep a versioned report next to outputs (do not clobber other prefixes)
+    report_name = (
+        "export_report.json" if prefix.endswith("v0") else f"export_report_{prefix}.json"
+    )
 
     report = {
         "input": str(in_path),
+        "prefix": prefix,
         "n_input": len(raw),
         "n_train": len(train),
         "n_dev": len(dev),
         "n_smoke": len(smoke),
         "seed": args.seed,
         "dev_ratio": args.dev_ratio,
+        "outputs": {
+            "train": str(train_path),
+            "dev": str(dev_path),
+            "smoke": str(smoke_path),
+        },
         "protocol": {
             "think_tag": True,
             "reasoning_tag_forbidden": True,
@@ -288,7 +310,7 @@ def main() -> None:
         "validate_all": validate_export(converted),
         "validate_smoke": validate_export(smoke),
     }
-    (out_dir / "export_report.json").write_text(
+    (out_dir / report_name).write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
 
@@ -296,14 +318,14 @@ def main() -> None:
         raise SystemExit("FAIL: <reasoning> still present after export")
 
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    print(f"wrote {out_dir}")
+    print(f"wrote {out_dir} prefix={prefix}")
 
     if args.register_llamafactory:
         lf_info = Path(args.register_llamafactory)
         if not lf_info.is_absolute():
-            lf_info = Path(args.register_llamafactory)
+            lf_info = REPO_ROOT / lf_info
         if lf_info.is_file():
-            patch_dataset_info(lf_info, out_dir)
+            patch_dataset_info(lf_info, prefix)
         else:
             print(f"WARNING: dataset_info not found: {lf_info}", file=sys.stderr)
 

@@ -22,5 +22,29 @@
       "messages": "conversations",
       "system": "system"
     }
+  },
+  "eca_coldstart_v1_train": {
+    "file_name": "eca_coldstart_v1_train.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "system": "system"
+    }
+  },
+  "eca_coldstart_v1_dev": {
+    "file_name": "eca_coldstart_v1_dev.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "system": "system"
+    }
+  },
+  "eca_coldstart_v1_smoke": {
+    "file_name": "eca_coldstart_v1_smoke.jsonl",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "system": "system"
+    }
   }
 }

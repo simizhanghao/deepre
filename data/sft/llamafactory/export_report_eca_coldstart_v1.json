@@ -1,0 +1,46 @@
+{
+  "input": "/data1/hcc/deepresearch/data/sft/coldstart_v1.jsonl",
+  "prefix": "eca_coldstart_v1",
+  "n_input": 4550,
+  "n_train": 4322,
+  "n_dev": 228,
+  "n_smoke": 80,
+  "seed": 42,
+  "dev_ratio": 0.05,
+  "outputs": {
+    "train": "/data1/hcc/deepresearch/data/sft/llamafactory/eca_coldstart_v1_train.jsonl",
+    "dev": "/data1/hcc/deepresearch/data/sft/llamafactory/eca_coldstart_v1_dev.jsonl",
+    "smoke": "/data1/hcc/deepresearch/data/sft/llamafactory/eca_coldstart_v1_smoke.jsonl"
+  },
+  "protocol": {
+    "think_tag": true,
+    "reasoning_tag_forbidden": true,
+    "observation_as_sharegpt_role": true
+  },
+  "validate_all": {
+    "n": 4550,
+    "n_with_think_tag": 4550,
+    "n_reasoning_tag_remaining": 0,
+    "n_search_style": 1250,
+    "n_observation_role": 1250,
+    "by_category": {
+      "evidence": 1150,
+      "evidence_reasoning": 1200,
+      "internal": 950,
+      "search_format": 1250
+    }
+  },
+  "validate_smoke": {
+    "n": 80,
+    "n_with_think_tag": 80,
+    "n_reasoning_tag_remaining": 0,
+    "n_search_style": 20,
+    "n_observation_role": 20,
+    "by_category": {
+      "search_format": 20,
+      "evidence_reasoning": 20,
+      "internal": 20,
+      "evidence": 20
+    }
+  }
+}

@@ -1,7 +1,6 @@
 # Phase 2E2 — Coldstart v1 construction
 
-> **Status: Teacher I/O contract rewritten (JSON rationale + code `<think>` wrap).**  
-> Train from Base with identical LoRA hparams after `coldstart_v1.jsonl` passes audit (Phase 2E3).
+> **Status: closed.** `coldstart_v1.jsonl` built; SFT-v1 trained + val-200 answer baselines in `docs/PHASE2E4_SFTV1_BASELINES.md`.
 
 ## Design
 
@@ -36,90 +35,31 @@ Default call (mode **A**):
 - `response_format: json_schema` (`{"reasoning": string}`)
 - `max_tokens: 512`, `temperature: 0.3`
 
-Fallback **B**: `json_object` if schema unsupported.  
-Ablation **C**: thinking enabled, `temperature=1.0`, `max_tokens=16384` (content JSON only enters SFT).
-
-Acceptance (semantic only):
-
-- parseable JSON
-- answer consistent
-- grounded (no novel proper nouns)
-- both gold evidences lexically used (multi-hop)
-- length ~20–150 words
-- `quality_score >= 4`
-- no meta/protocol phrases
-
-Over-generate + filter: ~550 requests → keep best ~400.
-
-## Code
+## Deliverables
 
 | Path | Role |
 |------|------|
-| `src/sft/teacher_reasoning.py` | mining + JSON prompt + semantic validation |
-| `scripts/generate_teacher_reasoning.py` | API caller (modes A/B/C) → `reasoning_cache.jsonl` |
-| `src/sft/coldstart_v1_builder.py` | mixture assembly (`think` = bare rationale) |
-| `scripts/build_sft_coldstart_v1.py` | write `data/sft/coldstart_v1.jsonl` + audit |
+| `data/sft/coldstart_v1.jsonl` | 4550-row mixture |
+| `data/sft/llamafactory/eca_coldstart_v1_{train,dev,smoke}.jsonl` | ShareGPT for LlamaFactory |
+| `configs/sft/qwen25_3b_lora_coldstart_v1.yaml` | LoRA train (same hparams as v0) |
+| `configs/sft/qwen25_3b_lora_coldstart_v1_merge.yaml` | merge export |
+| `results/phase2e2_coldstart_v1_20260808/` | build audit (local) |
+| `results/teacher_reasoning_n550_*_teacher550_modeA/` | Teacher cache (local) |
 
-Endpoint defaults (override with env):
+## Teacher scale-up
 
-```bash
-export KIMI_BASE_URL=http://10.16.137.2:8000/v1
-export KIMI_API_KEY=EMPTY          # do not commit real keys
-export KIMI_MODEL=Kimi-K2.6-CT-FP8KV
-```
+| Run | parse | accept | notes |
+|-----|------:|-------:|-------|
+| smoke_abc (5×3) | 1.0 | 0.8 | chose mode A |
+| smoke20_A | 1.0 | 0.95 | 19/20 |
+| teacher550 | 1.0 | **0.933** (513/550) | used top 400 in mix |
 
-## Commands
+## Build audit (4550)
 
-```bash
-# 1) A/B/C smoke (5 each) — pick stable mode
-python scripts/generate_teacher_reasoning.py \
-  --mode abc --max-samples 5 --run-tag smoke_abc --concurrency 4
-
-# 2) Mode A smoke 20
-python scripts/generate_teacher_reasoning.py \
-  --mode A --max-samples 20 --run-tag smoke20_A --concurrency 8
-
-# 3) Over-generate ~550 → later filter to ~400
-python scripts/generate_teacher_reasoning.py \
-  --mode A --n-persistent 440 --n-other 110 \
-  --run-tag teacher550 --concurrency 16
-
-# 4) Build v1
-python scripts/build_sft_coldstart_v1.py \
-  --teacher-cache results/teacher_reasoning_n*_*/reasoning_cache.jsonl \
-  --n-teacher-reasoning 400 \
-  --output-jsonl data/sft/coldstart_v1.jsonl \
-  --audit-dir results/phase2e2_coldstart_v1
-```
-
-## Smoke pass bar (not 20/20)
-
-- parse success ≥ 95%
-- semantic accept ≥ 70%
-- answer consistency ≥ 95%
-- grounding ≥ 90%
-- mean accepted rationale ≈ 30–100 words
-- human check 10–20: bridge across 2 evidences? no new facts? better than `template_v0`?
-
-## Smoke log
-
-- Candidate mine OK: persistent available **1586**, other hard **512**.
-- 2026-08-07: smoke20 failed (timeout / 500 / connection refused).
-- 2026-08-08 `smoke20_c16`: API OK but **0/20** — XML `<think>` gate + thinking-mode budget mismatch.
-- 2026-08-08: **I/O rewrite** — Teacher JSON rationale; code wraps `<think>`; modes A/B/C.
-- 2026-08-08 `smoke_abc` (5 each):
-
-  | Mode | parse | accept | ans | ground | avg words | finish |
-  |------|------:|-------:|----:|-------:|----------:|--------|
-  | **A** (default) | 1.00 | 0.80 | 0.80 | 1.00 | 44.8 | stop×5 |
-  | B | 1.00 | 0.80 | 0.80 | 1.00 | 46.0 | stop×5 |
-  | C | 1.00 | 0.80 | 0.80 | 1.00 | 50.0 | stop×5 |
-
-  - Artifacts: `results/teacher_reasoning_n5_*_smoke_abc_mode{A,B,C}/`
-  - Compare: `results/teacher_mode_compare_*_smoke_abc.json`
-  - All `finish_reason=stop`; no `reasoning_content` on this endpoint (thinking flag likely ignored).
-  - Single reject: pathological long gold string (bio) vs short comparison answer — filter is working as designed.
-  - **Select mode A** → next smoke20, then over-generate ~550.
+- kimi2.6 reasoning: **400**
+- template_v0 reasoning fill: 800
+- val-200 overlap: **0**
+- rejected rows: **0**
 
 ## Non-goals
 
