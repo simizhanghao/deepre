@@ -20,4 +20,6 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-07 | phase2e2-teacher-smoke20 | `generate_teacher_reasoning.py --max-samples 20` | `results/teacher_reasoning_n20_20260807_213753_smoke20/` | fail | 0/20; Kimi `10.16.137.2:8000` timeout/500 then connection refused — retry when service up
 2026-08-08 | phase2e2-teacher-concurrent | add `--concurrency` + live progress flush | `scripts/generate_teacher_reasoning.py` | pass | default workers via env `KIMI_CONCURRENCY`
 2026-08-08 | phase2e2-teacher-smoke20-c16 | `generate_teacher_reasoning.py --max-samples 20 --concurrency 16` | `results/teacher_reasoning_n20_20260808_113323_smoke20_c16/` | fail | API OK but 0/20 accept; missing `<think>` wrapper (meta-planning raw text)
+2026-08-08 | phase2e2-teacher-io-v2 | rewrite Teacher contract: JSON rationale + code `<think>` wrap; modes A/B/C; API metadata | `src/sft/teacher_reasoning.py`, `scripts/generate_teacher_reasoning.py` | pass | stop asking LLM for XML; thinking disabled by default
+2026-08-08 | phase2e2-teacher-smoke-abc | `generate_teacher_reasoning.py --mode abc --max-samples 5` | `results/teacher_reasoning_n5_*_smoke_abc_mode{A,B,C}/` | pass | A/B/C all parse=1.0 accept=0.8; choose mode A
 
