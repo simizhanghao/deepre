@@ -1,25 +1,29 @@
 # Phase 3B2 — Search-R1-style GRPO baseline (answer-only)
 
-> Status: **formal 3B baseline — metrics fix then step50 → 100 (do not expand to 1000)**  
-> Experiment dir: `outputs/rl/grpo_sftv1_smoke` (name historical; ckpt continuity).  
-> Step50 audit: [`results/phase3b2_grpo_sftv1_smoke_step50_20260808/`](../results/phase3b2_grpo_sftv1_smoke_step50_20260808/)
+> Status: **CLOSED @ step 100** — do **not** extend answer-only baseline.  
+> Ckpt: `outputs/rl/grpo_sftv1_smoke/global_step_100`  
+> Audits: [step50](../results/phase3b2_grpo_sftv1_smoke_step50_20260808/) · [step100](../results/phase3b2_grpo_sftv1_baseline_step100_20260809/)
 
-## Plan locked (2026-08-08)
+## Verdict (one paragraph)
+
+veRL+SGLang multi-turn GRPO **pipeline is stable** (abort=0, finish≈1, format≈1, no NaN).  
+Native `critic/score` rises weakly across windows (0.23→0.27→0.29) so the policy moves,  
+but with diagnostics on (steps 61–100): **`search_count = 0` every step**,  
+`zero_std_group_rate ≈ 0.77` (42% of steps ≥0.8), response length collapses (~326→75),  
+KL climbs (~0.004→0.07→0.10). Answer-only GRPO learned a **no-search shortcut** with  
+sparse group signal — enough to **close 3B and motivate 3C Evidence**, not to grind 200/1000.
+
+## Plan locked → executed
 
 ```text
-1. Fix logging only (Ray TaskRunner metrics hook) — NO knob changes
-2. Resume global_step_50 → 100  (= formal 3B baseline, not "smoke")
-3. Hard audit @100: windows 1–20 / 21–50 / 51–100 + ckpt50 vs ckpt100 eval
-4. If learnable + stable → CLOSE 3B (no 200/500/1000 baseline grind)
-5. Phase 3C from SFT-v1 fresh init (NOT from step100 ckpt):
+1. Fix logging only (Ray TaskRunner metrics hook) — NO knob changes     ✓
+2. Resume → 100 formal baseline                                        ✓
+3. Hard audit @100 (windows + diagnostics)                             ✓
+4. CLOSE 3B (no 200/500/1000 baseline grind)                           ← now
+5. Phase 3C from SFT-v1 fresh init (NOT from step100):
      R_3B = Answer + 0.1 Format
      R_3C = Answer + λ_e Evidence + 0.1 Format
 ```
-
-Qualitative read of step50: pipeline stable, policy moving, not diverging;
-weak positive score trend; **learnability not closed** until zero_std + search
-metrics land inside Ray workers. `response_length 340→187` is ambiguous without
-`search_count` (concise finish vs shortcut).
 
 ## Frozen knobs (do not change mid-run)
 
@@ -68,6 +72,79 @@ Two separate issues looked the same (GPU empty, Ray SIGTERM, no traceback):
    when `current_epoch >= total_epochs` even if `total_training_steps=50`. After step 16
    the driver returns cleanly → Ray shutdown. Fix: `run_grpo_smoke.sh` sets
    `TOTAL_EPOCHS=${TOTAL_EPOCHS:-$STEPS}` so epochs do not bind early.
+
+---
+
+## Hard audit @ step 100 (2026-08-09) — CLOSE 3B
+
+### Completion
+
+| Item | Value |
+|------|-------|
+| Latest ckpt | `outputs/rl/grpo_sftv1_smoke/global_step_100` |
+| Saves | every 5 through 100 |
+| Log | `logs/grpo_grpo_sftv1_smoke_to100_20260809_000013.log` (resume@60) |
+| Phase3B lines | steps **61–100** (40 steps; earlier legs pre-hook) |
+| NaN / abort | **none** / **0** |
+
+### Window trends (native `critic/score`, full run)
+
+| Window | score mean±std | kl_loss | entropy | resp_len |
+|--------|----------------|---------|---------|----------|
+| 1–20 | **0.234 ± 0.085** | 0.0035 | 0.470 | 326 |
+| 21–50 | **0.275 ± 0.108** | 0.0087 | 0.553 | 207 |
+| 51–100 | **0.291 ± 0.132** | 0.068 | 0.568 | 122 |
+| late 80–100 | 0.308 ± 0.128 | **0.099** | 0.617 | **75** |
+| **step 100** | 0.413 | 0.123 | 0.574 | 74 |
+
+Score is a **weak upward** window trend with huge step noise (e.g. 50=0.475, 60=0.100, 90=0.131, 100=0.413).  
+Do **not** treat step100 alone as “learned.”
+
+### Diagnostics (phase3b, steps 61–100 only)
+
+| Metric | 61–80 | 81–100 | 61–100 |
+|--------|------:|-------:|-------:|
+| answer_reward | 0.205 | 0.205 | **0.205** |
+| format_reward | 0.983 | 0.997 | **0.990** |
+| total_reward | 0.303 | 0.304 | 0.304 |
+| zero_std_group_rate | 0.756 | 0.788 | **0.772** |
+| finish_rate | 0.983 | 0.997 | **0.990** |
+| search_count | **0.000** | **0.000** | **0.000** (0/40 steps nonzero) |
+| max_search_hit | 0 | 0 | 0 |
+| kl_loss | 0.057 | 0.099 | 0.078 |
+
+### Gate checklist @100
+
+| Gate | Verdict | Evidence |
+|------|---------|----------|
+| Finish stable | **PASS** | finish≈0.99; abort=0 |
+| Format OK | **PASS** | format≈0.99 |
+| EM / reward directional | **WEAK / noisy** | native score 0.23→0.29; phase answer flat ~0.20 on 61–100 |
+| zero_std not stuck | **FAIL (chronic high)** | mean 0.77; 42% steps ≥0.8 |
+| KL slow | **BORDERLINE** | late kl_loss→0.10–0.12 (still no NaN/explosion) |
+| Search healthy | **FAIL (collapse)** | search_count=0 all diagnosed steps |
+| No NaN | **PASS** | none |
+
+### Four 3B questions — final
+
+1. **Can agentic GRPO learn?** Pipeline yes; **search behavior no** — policy moved toward format-stable no-search answers.  
+2. **How sparse?** **Severe**: zero_std≈0.77 under n=4 answer-only.  
+3. **Over-search?** Opposite: **under-search / zero-search** shortcut.  
+4. **Stable?** Train loop yes; **behaviorally degraded** (len↓, search→0, KL↑).
+
+### Decision
+
+**CLOSE Phase 3B.** Do not run 200/500/1000 answer-only.
+
+Next: **Phase 3C Evidence Reward**, same frozen infra knobs where possible, init = **SFT-v1 merged** (not `global_step_100`).
+
+```text
+SFT-v1
+ ├── 3B: R = Answer + 0.1 Format          ← done (baseline pathology documented)
+ └── 3C: R = Answer + λ_e Evidence + 0.1 Format   ← next (50–100 step recipe probe)
+```
+
+Optional before 3C coding: short frozen-eval ckpt50 vs ckpt100 (Candidate EM / search_count) to quantify shortcut on held-out; not required to start 3C scaffolding.
 
 ---
 

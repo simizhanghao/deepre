@@ -1,9 +1,9 @@
 # Phase 3B — Answer-only GRPO (Search-R1 baseline learnability)
 
-> **Status: formal 3B baseline step50→100** (metrics hook fixed; no knob changes; no 1000-step grind).  
-> See [`PHASE3B2.md`](PHASE3B2.md). Init: `outputs/sft_qwen25_3b_coldstart_v1_merged`.  
-> Ckpt continuity: `outputs/rl/grpo_sftv1_smoke/` (resume from `global_step_50`).  
-> After step100 audit → close 3B → **3C from SFT-v1** (not from step100).
+> **Status: Phase 3B CLOSED @ step100.** See hard audit in [`PHASE3B2.md`](PHASE3B2.md).  
+> Init was `outputs/sft_qwen25_3b_coldstart_v1_merged`; final ckpt `.../grpo_sftv1_smoke/global_step_100`.  
+> Finding: stable GRPO + **search collapse** + high zero_std under answer-only.  
+> **Next: Phase 3C Evidence from SFT-v1** (not from step100).
 
 ## Decisions (locked 2026-08-08)
 
@@ -28,8 +28,8 @@
 ```text
 3B0  Docker + scaffolding + gates                 ✓
 3B1  2～5 step micro-smoke                         ✓ (2026-08-08)
-3B2  5→50 answer-only GRPO baseline + TB           ✓ (audit 2026-08-08; next 50→100)
-3C   + Evidence Reward
+3B2  5→100 answer-only GRPO baseline + TB          ✓ CLOSED (audit 2026-08-09)
+3C   + Evidence Reward                             ← next (from SFT-v1)
 3D   + Cost / duplicate
 3E   Routing / cost tradeoff
 4    Formal EM/F1/Pareto / ablation
