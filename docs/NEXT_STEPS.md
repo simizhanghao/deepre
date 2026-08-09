@@ -7,26 +7,17 @@
 
 - [x] SFT-v1 · 3A · 3B@100 · 3C@400 closed
 
-## 1) 3C-GEN ⬜ ← execute now
+## 1) 3C-GEN ✅ PASS
 
-```bash
-# see docs/PHASE3C_GEN.md and scripts/run_phase3c_gen.sh
-```
+See [PHASE3C_GEN.md](PHASE3C_GEN.md): val-200 Agent EM **3C 0.54 > SFT 0.475 > 3B 0.19**; search **1.0 vs 3B 0.09**.
 
-Checklist:
+## 2) NEXT — 3D0 → 3D1
 
-- [ ] Merge FSDP → HF: 3B@100, 3C@400  
-- [ ] Agent val-200: SFT-v1 | 3B@100 | 3C@400 (Candidate-BM25, max_search=2, T=0)  
-- [ ] Metrics: EM/F1, Evid F1, search_rate, search_count + P(0/1/2), finish, obs tokens  
-- [ ] Apply PASS/FAIL gates in ROADMAP  
-- [ ] Write `results/phase3c_gen_val200_*/` + freeze note in PHASE3C_GEN.md  
+- [ ] 3D0 offline λ_search sweep  
+- [ ] 3D1 Uniform Cost GRPO (fresh SFT-v1)  
+- [ ] Pareto + stratified routing gate → maybe 3D2  
 
-**Do not** start 3D0 λ sweep until this table exists.
-
-## 2) After GEN
-
-- PASS → 3D0 → 3D1 Uniform Cost → Pareto gate → (maybe) 3D2  
-- FAIL → enlarge train ~1k–2k before heavy Cost / 3D2  
+GEN **PASS** → small-pool Cost mechanism OK to start; enlarge train still for formal Phase 4.
 
 ## 3) Later
 

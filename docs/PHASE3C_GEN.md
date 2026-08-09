@@ -1,47 +1,36 @@
 # Phase 3C-GEN — Held-out Agent generalization gate
 
-> Status: **IN PROGRESS** (2026-08-09)  
-> Purpose: smoke128 train-window `answer≈0.61` is **not** val EM. Measure transfer on frozen val-200.
+> Status: **PASS** (2026-08-09)  
+> Artifacts: `results/phase3c_gen_val200_20260809_120709/`  
+> Purpose: smoke128 train-window metrics ≠ val EM. Measure transfer on frozen val-200.
 
 ## Protocol (locked)
 
 | Knob | Value |
 |------|--------|
 | Eval | `data/eval/hotpotqa_200.jsonl` |
-| Loop | `scripts/run_agent_rollout_smoke.py` (Agentic, **not** single-turn baseline) |
-| Retriever | in-process Candidate-BM25 (`contexts`) |
-| max_search_turns | 2 |
-| top_k | 5 |
-| temperature | 0.0 |
-| Models | SFT-v1 merged · 3B `global_step_100` · 3C `global_step_400` |
+| Loop | Agentic Candidate-BM25 (`run_agent_rollout_smoke.py`) |
+| max_search_turns / top_k / T | 2 / 5 / 0.0 |
+| Models | SFT-v1 · 3B HF@100 · 3C HF@400 |
 
-## Merge
+## Results (n=200)
 
-```bash
-bash scripts/export_verl_fsdp_to_hf.sh \
-  outputs/rl/grpo_sftv1_smoke/global_step_100 \
-  outputs/rl/hf_merged/grpo_sftv1_smoke_step100
+| Model | Answer EM | Token F1 | Evid F1 | search_rate | search_count | P0 / P1 / P2 | finish |
+|-------|----------:|---------:|--------:|------------:|-------------:|-------------:|-------:|
+| SFT-v1 | 0.475 | 0.609 | 0.566 | 0.88 | 0.88 | 0.12 / 0.88 / 0.00 | 0.955 |
+| 3B@100 | 0.190 | 0.249 | 0.251 | **0.09** | 0.09 | **0.91** / 0.09 / 0.00 | 0.900 |
+| **3C@400** | **0.540** | **0.666** | **0.667** | **1.00** | **1.00** | 0.00 / **1.00** / 0.00 | **1.000** |
 
-bash scripts/export_verl_fsdp_to_hf.sh \
-  outputs/rl/grpo_sftv1_evidence_3c/global_step_400 \
-  outputs/rl/hf_merged/grpo_sftv1_evidence_3c_step400
-```
+HF merges: `outputs/rl/hf_merged/grpo_sftv1_{smoke_step100,evidence_3c_step400}`.
 
-## Eval
+## Gate verdict: **PASS**
 
-```bash
-bash scripts/run_phase3c_gen.sh
-# or per-model commands in that script
-```
+| Criterion | Result |
+|-----------|--------|
+| 3C Answer ≥ SFT and ≥ 3B | **0.540 ≥ 0.475 ≥ 0.190** |
+| 3C Evid ≫ 3B | **0.667 ≫ 0.251** |
+| Search recovers from 3B no-search | **1.00 vs 0.09** (P0: 0 vs 0.91) |
 
-## Gates
+**Interpretation:** Evidence GRPO transfers to held-out val-200 — not only smoke128 memorization. Gap train-window (~0.61) → val EM (0.54) is expected. Always-search (P1=1.0) also transfers → Cost (3D) still needed.
 
-See [ROADMAP.md](ROADMAP.md) §3C-GEN. Fill table after runs:
-
-| Model | Answer EM | Evid F1 | search_rate | search_count | P0/P1/P2 | finish |
-|-------|----------:|--------:|------------:|-------------:|----------|-------:|
-| SFT-v1 | | | | | | |
-| 3B@100 | | | | | | |
-| 3C@400 | | | | | | |
-
-Verdict: _pending_
+**Next (per ROADMAP v2):** 3D0 offline λ sweep → 3D1 Uniform Cost (still may use small train for mechanism; enlarge later for formal). Do **not** grind more 3C steps.
