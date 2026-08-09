@@ -1,6 +1,7 @@
-"""Phase 3C reward: R = Answer + λ_e EvidenceF1 + 0.1 Format (Cost OFF).
+"""Phase 3C/3D reward: R = Answer + λ_e EvidenceF1 + 0.1 Format − λ_s N_search.
 
-Deterministic supporting-fact F1 on (title, sentence_id). Default λ_e=0.5.
+Deterministic supporting-fact F1 on (title, sentence_id).
+Default λ_e=0.5; λ_s=0 (3C). Set ECA_SEARCH_COST_WEIGHT or reward_weights for 3D.
 """
 
 from __future__ import annotations
@@ -100,13 +101,26 @@ def evidence_f1_score(solution_str: str, gold_keys: Set[EvidenceKey]) -> Dict[st
 
 
 def _weights(extra_info: Dict[str, Any] | None) -> RewardWeights:
-    env_w = os.environ.get("ECA_EVIDENCE_WEIGHT")
     mapping: Dict[str, Any] = {}
     if isinstance(extra_info, dict) and isinstance(extra_info.get("reward_weights"), dict):
         mapping.update(extra_info["reward_weights"])
-    if env_w is not None:
-        mapping["evidence_weight"] = float(env_w)
+    env_e = os.environ.get("ECA_EVIDENCE_WEIGHT")
+    if env_e is not None:
+        mapping["evidence_weight"] = float(env_e)
+    env_s = os.environ.get("ECA_SEARCH_COST_WEIGHT")
+    if env_s is not None:
+        mapping["search_cost_weight"] = float(env_s)
     return weights_from_mapping(mapping)
+
+
+def _search_count(solution_str: str, extra_info: Dict[str, Any] | None) -> float:
+    if isinstance(extra_info, dict):
+        if extra_info.get("search_count") is not None:
+            return float(extra_info["search_count"])
+        cost = extra_info.get("cost_info")
+        if isinstance(cost, dict) and cost.get("search_count") is not None:
+            return float(cost["search_count"])
+    return float(len(_SEARCH_RE.findall(solution_str or "")))
 
 
 def compute_score(
@@ -123,11 +137,13 @@ def compute_score(
     fmt = float(format_valid(solution_str))
     gold_keys = _gold_sf_keys(ground_truth, extra_info)
     ev = evidence_f1_score(solution_str, gold_keys)
+    n_search = _search_count(solution_str, extra_info)
     w = _weights(extra_info)
     br = combine_rewards(
         answer=em,
         evidence=ev["evidence_f1"],
         format_r=fmt,
+        cost=n_search,
         weights=w,
     )
     return {
@@ -138,6 +154,9 @@ def compute_score(
         "format": fmt,
         "format_reward": br.format_reward,
         "evidence_reward": br.evidence_reward,
+        "search_count": n_search,
+        "cost_reward": br.cost_reward,
+        "search_cost_weight": w.search_cost_weight,
         "evidence_precision": ev["evidence_precision"],
         "evidence_recall": ev["evidence_recall"],
         "evidence_f1": ev["evidence_f1"],

@@ -13,8 +13,9 @@
 | 3A | **CLOSED** | Search-agent rollout smoke OK |
 | 3B | **CLOSED @100** | Pipeline OK; **no-search shortcut** |
 | **3C** | **CLOSED @400** | Evidence restores search; answer+evid ↑; search→1 |
-| **3C-GEN** | **PASS** | val EM 3C **0.54** > SFT 0.475 > 3B 0.19; search 1.0 vs 3B 0.09 ([PHASE3C_GEN](PHASE3C_GEN.md)) |
-| 3D0 → 3D1 | **NEXT** | Uniform Cost; 3D2 only if Pareto gate fails |
+| **3C-GEN** | **PASS** | **dev-200** Agent EM 3C **0.54** > SFT 0.475 > 3B 0.19; search 1.0 vs 0.09 ([PHASE3C_GEN](PHASE3C_GEN.md)) |
+| **3D0** | **DONE** | calib-512 offline → **λ_s=0.40** (0.20/0.30 cannot stop Evid farming) ([PHASE3D0](PHASE3D0.md)) |
+| **3D1** | **NEXT** | Uniform Cost GRPO λ=0.40 @400 from SFT-v1 ([PHASE3D1](PHASE3D1.md)) |
 | 3E / CIPO | later | Full-Corpus; CIPO if evidence-use/gold audit fails |
 | P4 | later | matched-step + GRPO vs REINFORCE |
 | 5M multimodal | **deferred** | After text ECA |
@@ -112,15 +113,22 @@ SFT-v1
 Multimodal (Phase 5M): separate branch after text mainline — see ROADMAP.md
 ```
 
-## Immediate next (not more 3C steps)
+## Immediate next
 
-1. **3C-GEN** — FSDP→eval loader; frozen val-200 Agent; compare SFT-v1 / 3B@100 / 3C@400  
-2. **3D0** — offline λ_search (center ~0.1–0.3); audit `search_count` (3C late ≈1.0)  
-3. **3D1** — fresh Cost-aware GRPO; optimize quality–cost triad, not search↓ alone  
+1. **3D1** — `STEPS=400 ECA_SEARCH_COST_WEIGHT=0.40 bash scripts/tmux_grpo_cost.sh`  
+2. Merge @400 → Agent **dev-200** vs 3C → Pareto / routing gate → maybe 3D2  
+
+## Causal chain (current)
+
+```text
+3B  Answer-only → search=.09  Answer=.19   (no-search)
+3C  +Evidence   → search=1.00 Answer=.54   (always-search, GEN PASS)
+3D0 offline     → λ_s=0.40 needed to prefer internal on I
+3D1 Uniform Cost → ??? quality–cost tradeoff
+```
 
 ## What is not claimed
 
-- Not full HotpotQA val / leaderboard EM (GRPO smoke128 only; **0.61 ≠ val EM**).  
-- Not production cost-optimal agent (no Cost reward yet).  
-- Not open-web / multimodal Deep Research yet (L3 / 5M deferred).  
-- Intermediate LoRA / mid GRPO steps are **not** kept as deliverables.
+- smoke128 train-window ≠ leaderboard; **dev-200 is a development set** (not final untouched test).  
+- Not production cost-optimal yet (3D1 not run).  
+- Not open-web / multimodal (L3 / 5M deferred).

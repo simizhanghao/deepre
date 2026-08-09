@@ -13,8 +13,9 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 | SFT-v1 | frozen | `outputs/sft_qwen25_3b_coldstart_v1_merged` |
 | 3B Answer-only GRPO | closed @100 | `outputs/rl/grpo_sftv1_smoke/global_step_100` |
 | 3C Evidence GRPO | **closed @400** | `outputs/rl/grpo_sftv1_evidence_3c/global_step_400` |
-| 3C-GEN | **next gate** | frozen val-200 Agent eval |
-| 3D Cost | after GEN | fresh from SFT-v1 |
+| 3C-GEN | **PASS** | dev-200 Agent EM 0.54 |
+| 3D0 | **DONE** | λ_s=**0.40** |
+| 3D1 Cost | **next** | fresh SFT-v1 @400 |
 | 5M Multimodal | deferred | after text ECA |
 
 ### 3C 一句话结果（smoke128）

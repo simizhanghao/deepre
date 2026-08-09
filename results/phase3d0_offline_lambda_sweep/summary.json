@@ -1,0 +1,112 @@
+{
+  "phase": "3D0",
+  "formula": "R = EM + 0.5*EvidF1 + 0.1*Format - \u03bb_s * N_search",
+  "n_pairs": 512,
+  "lambdas": [
+    0.0,
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5
+  ],
+  "by_lambda": {
+    "0.00": {
+      "lambda": 0.0,
+      "n_I": 256,
+      "n_S": 256,
+      "prefer_internal_on_I": 0.0,
+      "prefer_search_on_S": 1.0,
+      "mean_delta_S_minus_I_on_I": 0.3508,
+      "mean_delta_S_minus_I_on_S": 1.3586,
+      "tie_rate_I": 0.0,
+      "tie_rate_S": 0.0
+    },
+    "0.05": {
+      "lambda": 0.05,
+      "n_I": 256,
+      "n_S": 256,
+      "prefer_internal_on_I": 0.0,
+      "prefer_search_on_S": 1.0,
+      "mean_delta_S_minus_I_on_I": 0.3008,
+      "mean_delta_S_minus_I_on_S": 1.3086,
+      "tie_rate_I": 0.0,
+      "tie_rate_S": 0.0
+    },
+    "0.10": {
+      "lambda": 0.1,
+      "n_I": 256,
+      "n_S": 256,
+      "prefer_internal_on_I": 0.0,
+      "prefer_search_on_S": 1.0,
+      "mean_delta_S_minus_I_on_I": 0.2508,
+      "mean_delta_S_minus_I_on_S": 1.2586,
+      "tie_rate_I": 0.0,
+      "tie_rate_S": 0.0
+    },
+    "0.20": {
+      "lambda": 0.2,
+      "n_I": 256,
+      "n_S": 256,
+      "prefer_internal_on_I": 0.0,
+      "prefer_search_on_S": 1.0,
+      "mean_delta_S_minus_I_on_I": 0.1508,
+      "mean_delta_S_minus_I_on_S": 1.1586,
+      "tie_rate_I": 0.0,
+      "tie_rate_S": 0.0
+    },
+    "0.30": {
+      "lambda": 0.3,
+      "n_I": 256,
+      "n_S": 256,
+      "prefer_internal_on_I": 0.0,
+      "prefer_search_on_S": 1.0,
+      "mean_delta_S_minus_I_on_I": 0.0508,
+      "mean_delta_S_minus_I_on_S": 1.0586,
+      "tie_rate_I": 0.0,
+      "tie_rate_S": 0.0
+    },
+    "0.40": {
+      "lambda": 0.4,
+      "n_I": 256,
+      "n_S": 256,
+      "prefer_internal_on_I": 0.7617,
+      "prefer_search_on_S": 1.0,
+      "mean_delta_S_minus_I_on_I": -0.0492,
+      "mean_delta_S_minus_I_on_S": 0.9586,
+      "tie_rate_I": 0.1992,
+      "tie_rate_S": 0.0
+    },
+    "0.50": {
+      "lambda": 0.5,
+      "n_I": 256,
+      "n_S": 256,
+      "prefer_internal_on_I": 1.0,
+      "prefer_search_on_S": 1.0,
+      "mean_delta_S_minus_I_on_I": -0.1492,
+      "mean_delta_S_minus_I_on_S": 0.8586,
+      "tie_rate_I": 0.0,
+      "tie_rate_S": 0.0
+    }
+  },
+  "recommendation": {
+    "chosen_lambda_s": 0.4,
+    "operational_lambda_s": 0.4,
+    "strict_lambda_s": 0.5,
+    "rule": "operational = smallest \u03bb with prefer_I>=0.5, mean\u0394_I<0, prefer_S>=0.95; strict = prefer_I>=0.95 & prefer_S>=0.95",
+    "rationale": {
+      "lambda": 0.4,
+      "n_I": 256,
+      "n_S": 256,
+      "prefer_internal_on_I": 0.7617,
+      "prefer_search_on_S": 1.0,
+      "mean_delta_S_minus_I_on_I": -0.0492,
+      "mean_delta_S_minus_I_on_S": 0.9586,
+      "tie_rate_I": 0.1992,
+      "tie_rate_S": 0.0
+    },
+    "note": "Break-even \u2248 0.5 * EvidF1. With typical EvidF1\u22480.67, \u03bb\u22480.33 ties; \u03bb=0.40 flips majority I pairs; \u03bb=0.50 flips all. \u03bb\u2208{0.05,0.10,0.20,0.30} do NOT stop evidence-farming on I."
+  },
+  "next": "3D1 Uniform Cost GRPO fresh from SFT-v1, STEPS=400, \u03bb_s=chosen"
+}

@@ -51,4 +51,7 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-09 | docs-board | freeze RESULTS_BOARD + PHASE3C closeout | `docs/RESULTS_BOARD.md`, `docs/PHASE3C.md` | pass | push GitHub
 2026-08-09 | docs-roadmap | freeze text ECA mainline + defer multimodal 5M | `docs/ROADMAP.md`, `docs/NEXT_STEPS.md` | pass | 3C-GEN→3D0→3D; MM after text
 2026-08-09 | docs-roadmap-v2 | Pareto-gated 3D2 + capability gating + CIPO conditional | `docs/ROADMAP.md` v2 | pass | 3C-GEN only active work
-2026-08-09 | phase3c-gen-export | FSDP→HF merge 3B@100 + 3C@400 | `outputs/rl/hf_merged/` | running | then val-200 Agent
+2026-08-09 | phase3c-gen-export | FSDP→HF merge 3B@100 + 3C@400 | `outputs/rl/hf_merged/` | pass | then val-200 Agent
+2026-08-09 | phase3c-gen | Agent n200 SFT/3B/3C | `results/phase3c_gen_val200_20260809_120709/` | **PASS** | EM .475/.19/.54; search .88/.09/1.0
+2026-08-09 | phase3d0 | calib512 + offline λ sweep | `results/phase3d0_offline_lambda_sweep/` | pass | **λ_s=0.40** (strict 0.50); 0.2/0.3 fail I-ranking
+2026-08-09 | phase3d1-scaffold | run_grpo_cost + tmux λ=0.40 STEPS=400 | `scripts/tmux_grpo_cost.sh` | ready | fresh SFT-v1; not launched yet

@@ -1,0 +1,12 @@
+{
+  "phase": "3D0",
+  "seed": 42,
+  "n_internal": 256,
+  "n_search": 256,
+  "n_total": 512,
+  "exclude_n": 344,
+  "pool_I_available": 1472,
+  "pool_S_available": 4072,
+  "disjoint_smoke128_val200": true,
+  "note": "dev calibration only; not Phase-4 final test"
+}

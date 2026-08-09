@@ -36,12 +36,12 @@ NOW → 3C-GEN only
 │     SFT-v1 | 3B@100 | 3C@400
 │     Gates below → decide small-pool 3D vs enlarge train first
 │
-├── ⬜ 3D0   (AFTER GEN numbers)
-│     offline λ_search sweep; static Phase2 labels for sanity
+├── ✅ 3D0   offline λ on calib-512 → λ_s=0.40 (strict 0.50)
+│     NOTE: 0.05–0.30 cannot stop Evid farming on I
 │
-├── ⬜ 3D1 Uniform Cost         MUST
-│     R = R_A + 0.5 R_E + 0.1 R_F − λ_s N_search
-│     fresh SFT-v1; GRPO unchanged
+├── ⬜ 3D1 Uniform Cost         MUST / NEXT
+│     R = R_A + 0.5 R_E + 0.1 R_F − 0.40 N_search
+│     fresh SFT-v1; STEPS=400; GRPO unchanged
 │
 ├── ⬜ Pareto + stratified routing gate
 │     ├── uniform works → skip 3D2 mainline
