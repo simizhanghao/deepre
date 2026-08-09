@@ -33,7 +33,8 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 
 | Doc | 内容 |
 |-----|------|
-| [ROADMAP.md](docs/ROADMAP.md) | **主线 + 多模态分支冻结计划** |
+| [ROADMAP.md](docs/ROADMAP.md) | **主线 v2（门禁触发 3D2/CIPO）** |
+| [PHASE3C_GEN.md](docs/PHASE3C_GEN.md) | **当前：val-200 泛化门禁** |
 | [NEXT_STEPS.md](docs/NEXT_STEPS.md) | 当前待办顺序 |
 | [RESULTS_BOARD.md](docs/RESULTS_BOARD.md) | 全部实验结果总表 |
 | [PHASE3C.md](docs/PHASE3C.md) | 3C 结案与窗口指标 |

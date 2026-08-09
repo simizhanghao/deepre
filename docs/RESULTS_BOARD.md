@@ -13,10 +13,11 @@
 | 3A | **CLOSED** | Search-agent rollout smoke OK |
 | 3B | **CLOSED @100** | Pipeline OK; **no-search shortcut** |
 | **3C** | **CLOSED @400** | Evidence restores search; answer+evid ↑; search→1 |
-| **3C-GEN** | **NEXT gate** | val-200 Agentic eval (SFT / 3B / 3C) — not train 0.61 |
-| 3D0 → 3D | after GEN | Cost λ sweep → fresh Cost GRPO from SFT-v1 |
-| 3E / P4 | later | Full-Corpus + larger train / matched-step |
-| 5M multimodal | **deferred** | After text ECA; do **not** insert into 3D |
+| **3C-GEN** | **NOW** | val-200 Agent; see [PHASE3C_GEN.md](PHASE3C_GEN.md) |
+| 3D0 → 3D1 | after GEN | Uniform Cost; 3D2 only if Pareto gate fails |
+| 3E / CIPO | later | Full-Corpus; CIPO if evidence-use/gold audit fails |
+| P4 | later | matched-step + GRPO vs REINFORCE |
+| 5M multimodal | **deferred** | After text ECA |
 
 **Final ckpts (local, not in git):**
 

@@ -1,128 +1,140 @@
-# Roadmap — Evidence-Cost-Aware Deep Research Agent
+# Roadmap — Evidence-Cost-Aware Deep Research Agent (v2)
 
-> Frozen **2026-08-09**. Text ECA causal chain first; multimodal is a **later branch**.  
-> Board: [RESULTS_BOARD.md](RESULTS_BOARD.md) · Next actions: [NEXT_STEPS.md](NEXT_STEPS.md)
+> Frozen **2026-08-09 (v2)**. Problem-driven tech only.  
+> Board: [RESULTS_BOARD.md](RESULTS_BOARD.md) · Actions: [NEXT_STEPS.md](NEXT_STEPS.md)
 
 ## Principle
 
 ```text
 Do NOT insert multimodal into Phase 3D.
-Changing base model + modality + tools + reward + data + retrieval
-at once destroys the 3B / 3C / 3D ablation.
+Do NOT add AutoSearch / CIPO / REINFORCE “because papers are new”.
+Tech enters only via pre-registered failure gates.
 ```
 
-Interview / report story stays:
+Causal story:
 
 ```text
-Sparse Answer Reward  →  no-search shortcut   (3B)
-+ Evidence            →  always-search        (3C)
-+ Cost                →  search when needed   (3D)
+3B  sparse answer     → no-search
+3C  + evidence        → always-search
+3D1 uniform cost      → quality–cost baseline
+3D2 capability cost   → ONLY if uniform cost fails routing gate
 ```
 
 ---
 
-## A. Text ECA mainline (current — do in order)
+## A. Text ECA mainline
 
 ```text
-NOW
+NOW → 3C-GEN only
 │
-├── ✅ 3B CLOSED @100     Answer+Format → search=0
-├── ✅ 3C CLOSED @400     +Evidence     → search≈1
+├── ✅ 3B CLOSED @100
+├── ✅ 3C CLOSED @400
 │
-├── ⬜ 3C-GEN             (gate — short, mandatory)
-│     FSDP ckpt → HF / Agent eval loader
-│     frozen HotpotQA val-200
-│     same protocol: Candidate-BM25, max_search=2
-│     compare: SFT-v1 | 3B@100 | 3C@400
-│     metrics: Answer EM/F1, Evid F1, search_rate,
-│              search_count (+ P0/P1/P2), finish, obs tokens
-│     Purpose: mechanism vs smoke128 memorization
-│     NOT: continue grinding 3C to 500/1000
+├── ⬜ 3C-GEN                    ← ONLY active work item
+│     FSDP → HF merge
+│     frozen val-200 Agent (Candidate-BM25, max_search=2)
+│     SFT-v1 | 3B@100 | 3C@400
+│     Gates below → decide small-pool 3D vs enlarge train first
 │
-├── ⬜ 3D0
-│     audit search_count / duplicate on 3C rollouts
-│     offline λ_search sweep (center ~0.1–0.3)
-│     prefer penalizing wasteful search, not all search
-│     Duplicate = secondary (late 3C search_count≈1, not 2)
+├── ⬜ 3D0   (AFTER GEN numbers)
+│     offline λ_search sweep; static Phase2 labels for sanity
 │
-├── ⬜ 3D1
-│     fresh from SFT-v1 (NOT continue 3C@400)
-│     R = Answer + 0.5 Evid + 0.1 Format − λ_s C_search
-│         (− λ_d C_dup optional / later)
-│     success = quality–cost tradeoff, not “search↓ alone”
+├── ⬜ 3D1 Uniform Cost         MUST
+│     R = R_A + 0.5 R_E + 0.1 R_F − λ_s N_search
+│     fresh SFT-v1; GRPO unchanged
 │
-├── ⬜ 3D2
-│     cost–quality Pareto vs 3B/3C (train windows + GEN)
+├── ⬜ Pareto + stratified routing gate
+│     ├── uniform works → skip 3D2 mainline
+│     └── only shifts global bias → 3D2
 │
-├── ⬜ 3E Full-Corpus     (after Candidate 3D mechanism OK)
-│     Wikipedia BM25 + HTTP retriever
-│     Candidate Tool → Full-Corpus Tool
+├── ⬜ 3D2 Capability-Aware Cost   GATE-TRIGGERED (not unconditional)
+│     periodic n=4 tool-free capability refresh (window freeze)
+│     R = R_A + λ_e(1−p_int)R_E + λ_f R_F − λ_s p_int 1[N_s>0]
+│
+├── ⬜ 3E Full-Corpus (passage BM25 + rerank)
+│     └── gold-evidence / evidence-use audit → CIPO only if bottleneck
 │
 └── ⬜ Phase 4
-      larger train pool (if 3C-GEN weak / for claims)
-      matched-step 3B/3C/3D
-      frozen eval, ablations, Pareto, README/interview pack
+      larger train + matched-step
+      GRPO vs REINFORCE on final frozen Candidate-ECA reward
+      optional CIGPO ablation (read first; implement later)
 ```
 
-### Ablation tree (locked)
+### 3C-GEN pass / fail (pre-registered)
 
-```text
-SFT-v1
- ├── 3B Answer+Format              CLOSED
- ├── 3C Answer+Evidence+Format     CLOSED
- └── 3D Answer+Evidence+Format−Cost(+Dup)   NEXT (fresh)
-```
+**PASS** (held-out val-200 Agent):
 
-Optional later (still text, not multimodal):
+- Answer: 3C ≥ SFT-v1 Agent **and** ≥ 3B  
+- Evidence F1: 3C ≫ 3B  
+- Search: recovers from 3B no-search (search_rate / count ↑ vs 3B)  
+- Prefer paired Wrong→Right > Right→Wrong  
 
-```text
-ECA-v3 — Knowledge-boundary / process-aware cost
-         (penalize unnecessary search; do not punish necessary search)
-```
+→ 3D0/3D1 may start on smoke/small pool; enlarge train for formal later.
 
-### Retrieval maturity (text)
+**FAIL** (train128 high, val≈SFT):
 
-| Level | Scope | When |
-|-------|--------|------|
-| **L1** | Candidate-BM25 + `sample_id` | **now** (3B–3D) |
-| **L2** | Full Wikipedia BM25 | **3E** (parallel prep OK) |
-| **L3** | Open web (Serper/Bing/…) | **after** text ECA + preferably after M1; not in 3D critical path |
+- Mechanism still credited on-train; **enlarge train (~1k–2k) becomes hard prerequisite** before complex 3D2.  
+- Do **not** overturn 3C closeout.
+
+### 3D2 trigger (pre-registered; option B)
+
+After 3D1 λ∈{0, 0.05, 0.10, 0.20, 0.30}, require a Pareto point with:
+
+1. Search cost ↓ substantively (e.g. ≥20% relative)  
+2. Answer/Evidence not collapsed (Answer loss ≲2–3pp)  
+3. Stratified: high-capability / Direct✓ → less search  
+4. Search-required → search stays high  
+
+If no such point (only global bias knob) → **trigger 3D2**.
+
+### 3D2 capability protocol (when triggered)
+
+- **Not** every-step online; **periodic refresh** (e.g. every 25/50 steps), freeze labels in window  
+- tool-free n=4, temp aligned with policy; success = **normalized EM**  
+- \(p_{int}\in\{0,.25,.5,.75,1\}\)  
+- Phase2 Direct labels = **audit/reference only** (3D0 sanity), not final 3D2 reward labels  
+- Evidence gated by \((1-p_{int})\); cost gated by \(p_{int}\) — do not only raise λ  
+
+### CIPO / CIGPO / REINFORCE / retrieval extras
+
+| Item | Role |
+|------|------|
+| CIPO evidence-use | After Full-Corpus **audit** shows gold SF brittle or unused evidence |
+| CIGPO info-gain | Phase4 **candidate** ablation; read now, do not implement in 3D |
+| REINFORCE vs GRPO | Phase4; **same** final Candidate-ECA reward (3D1 or 3D2 if that won) |
+| AgentIR / ReSeek / SAPO | Condition on measured bottleneck / ISDR |
+| AdaCoM / memory | **Out** (horizon too short) |
+| Multimodal 5M | After text mainline ([§B](#b-multimodal-branch-phase-5m-deferred)) |
 
 ---
 
-## B. Multimodal branch (deferred — Phase 5M)
+## B. Multimodal branch (Phase 5M — deferred)
 
-Start **only after** text mainline through 3D (and preferably 3E/Phase4 claims) is solid.
-
-```text
-Phase 5M — Multimodal ECA Extension
-│
-├── M1  Tool-augmented (keep Qwen2.5-3B text actor)
-│     + image_search / image_inspect(frozen VLM) / OCR / crop
-│     discovery ≠ load (metadata first, inspect on demand)
-│     schema: VisualDocument / VisualObservation / VisualEvidence
-│     50–200 multimodal bench → inference first → decide RL
-│
-└── M2  End-to-end VLM actor (Qwen2.5-VL + GRPO)
-      text/image/crop/OCR in the loop
-      toward MMSearch-R1 / OpenSearch-VL class systems
-```
-
-Do **not** swap to Qwen-VL for the current 3D run.
-
-Suggested framing later:
-
-> Not “add an image tool”, but **modality-aware information acquisition**  
-> under Answer / Evidence / Cost (text search vs image search vs vision ops).
-
-Reading list (branch prep, not blocking 3D): MMSearch-R1, WebWatcher, Vision-DeepResearch, OpenSearch-VL, ProMMSearchAgent, DeepVoyager-VL, MTA-Agent / MM-DeepResearch.
+Unchanged: M1 text-actor + frozen VLM tools → M2 Qwen-VL. **Not in 3D.**
 
 ---
 
-## C. Explicit non-goals (now)
+## C. Reading list (docs only; PDF not blocking GEN)
+
+```text
+11 AutoSearch
+12 How to Train Your Deep Research Agent / Search-R1++
+13 CIGPO          (Hotpot + Qwen2.5-3B + GRPO zero-advantage — must read)
+14 CIPO
+15 Revisiting Text Ranking in Deep Research
+16 AgentIR
+
+conditional: 17 ReSeek  18 SAPO
+```
+
+Priority for *understanding* current failures: **AutoSearch → CIGPO → Search-R1++ → CIPO**.
+
+---
+
+## D. Explicit non-goals (now)
 
 - Grind 3C to 500/1000  
-- Continue GRPO from 3C@400 for the **ablation** 3D line  
-- Claim smoke128 `answer≈0.61` as HotpotQA val EM  
+- Write 3D2 / CIPO code before GEN (+ 3D1 gate)  
+- Resume ablation 3D from 3C@400  
+- Claim smoke128 answer≈0.61 as val EM  
 - Open-web or multimodal as 3D blockers  
-- Rebuild SFT/RL stack on VL before text Cost story is done

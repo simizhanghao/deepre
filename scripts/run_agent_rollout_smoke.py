@@ -78,6 +78,13 @@ def aggregate(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
         if any(s.get("step_type") == "observation" and s.get("loss_mask") is False for s in r["steps"])
         or r["metrics"].get("search_count", 0) == 0
     )
+    counts = [int(r["metrics"].get("search_count") or 0) for r in rows]
+    hist = {
+        "p_search_0": round(sum(1 for c in counts if c == 0) / n, 4),
+        "p_search_1": round(sum(1 for c in counts if c == 1) / n, 4),
+        "p_search_2": round(sum(1 for c in counts if c == 2) / n, 4),
+        "p_search_ge3": round(sum(1 for c in counts if c >= 3) / n, 4),
+    }
     return {
         "num_samples": len(rows),
         "finish_rate": round(n_fin / n, 4),
@@ -104,6 +111,7 @@ def aggregate(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
             sum(float((r.get("cost_info") or {}).get("generated_tokens") or 0) for r in rows) / n,
             1,
         ),
+        **hist,
     }
 
 
