@@ -105,9 +105,14 @@ STEPS=400 SAVE_FREQ=50 bash scripts/tmux_grpo_evidence.sh   # historical
 
 ## Next
 
+Do **not** continue 3C to 500/1000. Plan: [ROADMAP.md](ROADMAP.md).
+
 ```text
 SFT-v1
  ├── 3B Answer+Format          CLOSED @100 (no-search pathology)
  ├── 3C Answer+Evidence+Format CLOSED @400  ← here
- └── 3D +Cost (+Dup)          NEXT, from SFT-v1
+ │     └── 3C-GEN  NEXT gate: frozen val-200 Agent (≠ smoke128 0.61)
+ └── 3D +Cost (+Dup)          after GEN, fresh from SFT-v1
+
+Multimodal = Phase 5M later — not part of 3D.
 ```

@@ -1,7 +1,8 @@
 # Results Board — Evidence-Cost-Aware Deep Research Agent
 
 > Updated **2026-08-09**. Smoke / val-200 / GRPO smoke128 unless noted.  
-> Model family: **Qwen2.5-3B-Instruct** → SFT-v1 → GRPO (veRL + SGLang, 4×A100).
+> Model family: **Qwen2.5-3B-Instruct** → SFT-v1 → GRPO (veRL + SGLang, 4×A100).  
+> Plan freeze: [ROADMAP.md](ROADMAP.md) · [NEXT_STEPS.md](NEXT_STEPS.md)
 
 ## Executive summary
 
@@ -12,7 +13,10 @@
 | 3A | **CLOSED** | Search-agent rollout smoke OK |
 | 3B | **CLOSED @100** | Pipeline OK; **no-search shortcut** |
 | **3C** | **CLOSED @400** | Evidence restores search; answer+evid ↑; search→1 |
-| 3D | **NEXT** | Cost (+Dup) from SFT-v1 |
+| **3C-GEN** | **NEXT gate** | val-200 Agentic eval (SFT / 3B / 3C) — not train 0.61 |
+| 3D0 → 3D | after GEN | Cost λ sweep → fresh Cost GRPO from SFT-v1 |
+| 3E / P4 | later | Full-Corpus + larger train / matched-step |
+| 5M multimodal | **deferred** | After text ECA; do **not** insert into 3D |
 
 **Final ckpts (local, not in git):**
 
@@ -102,11 +106,20 @@ Init: **SFT-v1** (not 3B ckpt). Stopped at 400 by request after disk-full resume
 SFT-v1
  ├── 3B Answer+Format           CLOSED @100
  ├── 3C Answer+Evidence+Format  CLOSED @400
- └── 3D +Cost (+Duplicate)     NEXT (fresh from SFT-v1)
+ └── 3D Answer+Evidence−Cost(+Dup)  NEXT (fresh from SFT-v1)
+
+Multimodal (Phase 5M): separate branch after text mainline — see ROADMAP.md
 ```
+
+## Immediate next (not more 3C steps)
+
+1. **3C-GEN** — FSDP→eval loader; frozen val-200 Agent; compare SFT-v1 / 3B@100 / 3C@400  
+2. **3D0** — offline λ_search (center ~0.1–0.3); audit `search_count` (3C late ≈1.0)  
+3. **3D1** — fresh Cost-aware GRPO; optimize quality–cost triad, not search↓ alone  
 
 ## What is not claimed
 
-- Not full HotpotQA val / leaderboard EM (GRPO smoke128 only).  
+- Not full HotpotQA val / leaderboard EM (GRPO smoke128 only; **0.61 ≠ val EM**).  
 - Not production cost-optimal agent (no Cost reward yet).  
+- Not open-web / multimodal Deep Research yet (L3 / 5M deferred).  
 - Intermediate LoRA / mid GRPO steps are **not** kept as deliverables.

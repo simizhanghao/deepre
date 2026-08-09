@@ -49,3 +49,4 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-09 | phase3c-resume300 | STEPS=500 SAVE_FREQ=50 resume auto from 300 | same OUT_DIR | pass→stop@400 | user stop after global_step_400
 2026-08-09 | phase3c-step400 | hard audit close 3C | `global_step_400` + `results/phase3c_grpo_sftv1_evidence_step400_20260809/` | pass→close | late answer≈0.61 evid≈0.62 search≈1 zero_std≈0.58; **next 3D Cost from SFT-v1**
 2026-08-09 | docs-board | freeze RESULTS_BOARD + PHASE3C closeout | `docs/RESULTS_BOARD.md`, `docs/PHASE3C.md` | pass | push GitHub
+2026-08-09 | docs-roadmap | freeze text ECA mainline + defer multimodal 5M | `docs/ROADMAP.md`, `docs/NEXT_STEPS.md` | pass | 3C-GEN→3D0→3D; MM after text

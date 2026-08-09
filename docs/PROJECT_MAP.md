@@ -1,11 +1,15 @@
 # Project Map — Evidence-Cost-Aware Deep Research Agent
 
-> 状态：Phase 0 骨架已建（方案 A：沿用 deepresearch/，内部按 src/ 重建）；代码模块待建
+> 状态：**3C CLOSED @400**；下一执行项见 [NEXT_STEPS.md](NEXT_STEPS.md)；全路线见 [ROADMAP.md](ROADMAP.md)
 
 ## 路线
 
-Search-R1 最小闭环 → + evidence reward → + cost-aware reward → + internal/external routing → 包装成 Deep Research Agent
+```text
+Search-R1 (3B) → Evidence (3C) → Cost (3D) → Full-Corpus (3E) → Phase4
+                                                      ↘ Phase5M Multimodal (later)
+```
 
+Do **not** put multimodal inside 3D. Open-web = L3 after text ECA.
 ## Pipeline Overview
 
 ```text

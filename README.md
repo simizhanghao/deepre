@@ -4,15 +4,18 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 
 ## 状态
 
-🟢 **Phase 3C CLOSED @400**（2026-08-09）— Evidence F1 GRPO 已结案；下一步 **Phase 3D Cost**。  
-结果总表：[docs/RESULTS_BOARD.md](docs/RESULTS_BOARD.md)
+🟢 **Phase 3C CLOSED @400**（2026-08-09）— Evidence 机制已验证；**不磨 500**。  
+下一步：**3C-GEN（val-200）→ 3D0 λ sweep → 3D Cost**（仍从 SFT-v1）。多模态 = **Phase 5M 后续分支**。  
+结果 / 路线：[docs/RESULTS_BOARD.md](docs/RESULTS_BOARD.md) · [docs/ROADMAP.md](docs/ROADMAP.md) · [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
 
 | 阶段 | 状态 | 产物 |
 |------|------|------|
 | SFT-v1 | frozen | `outputs/sft_qwen25_3b_coldstart_v1_merged` |
 | 3B Answer-only GRPO | closed @100 | `outputs/rl/grpo_sftv1_smoke/global_step_100` |
 | 3C Evidence GRPO | **closed @400** | `outputs/rl/grpo_sftv1_evidence_3c/global_step_400` |
-| 3D Cost | next | from SFT-v1 |
+| 3C-GEN | **next gate** | frozen val-200 Agent eval |
+| 3D Cost | after GEN | fresh from SFT-v1 |
+| 5M Multimodal | deferred | after text ECA |
 
 ### 3C 一句话结果（smoke128）
 
@@ -30,7 +33,9 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 
 | Doc | 内容 |
 |-----|------|
-| [RESULTS_BOARD.md](docs/RESULTS_BOARD.md) | **全部实验结果总表** |
+| [ROADMAP.md](docs/ROADMAP.md) | **主线 + 多模态分支冻结计划** |
+| [NEXT_STEPS.md](docs/NEXT_STEPS.md) | 当前待办顺序 |
+| [RESULTS_BOARD.md](docs/RESULTS_BOARD.md) | 全部实验结果总表 |
 | [PHASE3C.md](docs/PHASE3C.md) | 3C 结案与窗口指标 |
 | [PHASE3B2.md](docs/PHASE3B2.md) | 3B 结案（no-search） |
 | [PHASE2_CLOSED.md](docs/PHASE2_CLOSED.md) | SFT-v1 freeze |
