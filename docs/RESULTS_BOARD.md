@@ -16,7 +16,8 @@
 | **3C-GEN** | **PASS** | **dev-200** Agent EM 3C **0.54** > SFT 0.475 > 3B 0.19; search 1.0 vs 0.09 ([PHASE3C_GEN](PHASE3C_GEN.md)) |
 | **3D0** | **DONE** | calib-512 offline → **λ_s=0.40** (0.20/0.30 cannot stop Evid farming) ([PHASE3D0](PHASE3D0.md)) |
 | **3D1** | **FAIL @250** | λ=0.40 → search=0 after step5, KL~0.58; not a tradeoff ([PHASE3D1](PHASE3D1.md)) |
-| 3D1b / 3D2 | **NEXT** | Lower λ smoke and/or capability-aware cost |
+| 3D1b | **CLOSED** | No Uniform Pareto; phase transition → trigger 3D2 ([PHASE3D1B](PHASE3D1B.md)) |
+| 3D2 w1@50 | **DONE** | No extinction; late search≈0.98; **Δ_route≈0 FAIL** — hold 400 ([PHASE3D2](PHASE3D2.md)) |
 | 3E / CIPO | later | Full-Corpus; CIPO if evidence-use/gold audit fails |
 | P4 | later | matched-step + GRPO vs REINFORCE |
 | 5M multimodal | **deferred** | After text ECA |
@@ -116,8 +117,8 @@ Multimodal (Phase 5M): separate branch after text mainline — see ROADMAP.md
 
 ## Immediate next
 
-1. **3D1b** lower λ smoke (`0.10–0.20`) and/or **3D2** capability-aware cost  
-2. Do not GEN-eval collapsed λ=0.40 as success  
+1. **3D2 routing diagnosis** @ckpt50 (refresh \(p_{int}\), stratified search) before 400  
+2. Do not Uniform-λ micro-sweep. Do not blind segmented@400.
 
 ## Causal chain (current)
 
@@ -125,7 +126,9 @@ Multimodal (Phase 5M): separate branch after text mainline — see ROADMAP.md
 3B  Answer-only → search=.09  Answer=.19   (no-search)
 3C  +Evidence   → search=1.00 Answer=.54   (always-search, GEN PASS)
 3D0 offline     → λ_s=0.40 flips I ranking on synthetic pairs
-3D1 Uniform@0.40→ search=0 after step5, KL↑  (FAIL — global kill-switch)
+3D1 Uniform@0.40→ search=0 after step5, KL↑  (FAIL)
+3D1b online λ   → no stable Pareto (CLOSED) → trigger 3D2
+3D2 w1@50       → no extinction; search→.98; Δ_route≈0 (routing FAIL; hold 400)
 ```
 
 ## What is not claimed

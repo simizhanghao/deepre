@@ -81,7 +81,7 @@ Also: λ=0.40 was calibrated to stop *unnecessary* search when both answers are 
 ## Next (ROADMAP gate → triggered)
 
 ```text
-Option A (fast): 3D1b  λ_s ∈ {0.10, 0.15, 0.20} short smoke (≤100–150)
+Option A (NOW): 3D1b online λ∈{0.05,0.10,0.15,0.20} × 40–60 step — see PHASE3D1B.md
                  pick first λ with search_rate ∈ [0.4, 0.9] and KL stable
 Option B (planned): 3D2 Capability-Aware Cost
                  (uniform cost only shifts global bias — gate condition met)

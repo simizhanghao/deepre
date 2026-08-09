@@ -42,6 +42,7 @@ def compute_phase3c_batch_metrics(
     ev_p, ev_r, ev_f1, ev_nonempty, ev_valid = [], [], [], [], []
     finish, search_counts, dup_counts, obs_tokens = [], [], [], []
     max_hit, internal, search_route = [], [], []
+    p_ints, eff_e_ws, eff_s_ws, search_inds = [], [], [], []
 
     for extra in extra_fields:
         extra = extra or {}
@@ -93,6 +94,16 @@ def compute_phase3c_batch_metrics(
             search_route.append(0.0)
             internal.append(0.0)
 
+        # 3D2 capability fields (absent on 3C/3D1 → skipped)
+        if "p_int" in rinfo:
+            p_ints.append(_as_float(rinfo["p_int"]))
+        if "eff_evidence_weight" in rinfo:
+            eff_e_ws.append(_as_float(rinfo["eff_evidence_weight"]))
+        if "eff_search_cost_weight" in rinfo:
+            eff_s_ws.append(_as_float(rinfo["eff_search_cost_weight"]))
+        if "search_indicator" in rinfo:
+            search_inds.append(_as_float(rinfo["search_indicator"]))
+
     out: Dict[str, float] = {}
 
     def _mean_std(name: str, vals: List[float]) -> None:
@@ -130,6 +141,39 @@ def compute_phase3c_batch_metrics(
         out["agent/search_rate"] = float(np.mean(search_route))
     if internal:
         out["agent/internal_rate"] = float(np.mean(internal))
+    if p_ints:
+        _mean_std("capability/p_int", p_ints)
+        out["capability/p_int_mean"] = float(np.mean(p_ints))
+    if eff_e_ws:
+        _mean_std("capability/eff_evidence_weight", eff_e_ws)
+    if eff_s_ws:
+        _mean_std("capability/eff_search_cost_weight", eff_s_ws)
+    if search_inds:
+        out["capability/search_indicator_rate"] = float(np.mean(search_inds))
+
+    # Δ_route = P(search|p_int≤0.25) − P(search|p_int≥0.75)
+    if p_ints and search_route and len(p_ints) == len(search_route):
+        low = [s for p, s in zip(p_ints, search_route) if p <= 0.25 + 1e-9]
+        high = [s for p, s in zip(p_ints, search_route) if p >= 0.75 - 1e-9]
+        buckets = {
+            "0.00": [],
+            "0.25": [],
+            "0.50": [],
+            "0.75": [],
+            "1.00": [],
+        }
+        for p, s in zip(p_ints, search_route):
+            key = f"{round(p * 4) / 4:.2f}"
+            if key in buckets:
+                buckets[key].append(s)
+        for bk, vals in buckets.items():
+            if vals:
+                out[f"capability/search_rate_p{bk}"] = float(np.mean(vals))
+                out[f"capability/n_p{bk}"] = float(len(vals))
+        if low and high:
+            out["capability/search_rate_low_pint"] = float(np.mean(low))
+            out["capability/search_rate_high_pint"] = float(np.mean(high))
+            out["capability/delta_route"] = float(np.mean(low) - np.mean(high))
 
     # zero-std by question group (uid), not whole-batch std
     scores = list(sequence_scores) if sequence_scores is not None else list(total)
@@ -168,6 +212,8 @@ def summarize_console_line(metrics: Mapping[str, float]) -> str:
         ("search_rate", "agent/search_rate"),
         ("ev_f1", "evidence/f1/mean"),
         ("ev_nz", "evidence/nonempty_rate"),
+        ("p_int", "capability/p_int_mean"),
+        ("d_route", "capability/delta_route"),
         ("kl", "actor/kl_loss"),
     ]
     return " | ".join(f"{lab}={metrics[k]:.4g}" for lab, k in labeled if k in metrics)
