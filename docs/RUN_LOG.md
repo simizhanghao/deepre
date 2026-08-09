@@ -54,4 +54,5 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-09 | phase3c-gen-export | FSDP→HF merge 3B@100 + 3C@400 | `outputs/rl/hf_merged/` | pass | then val-200 Agent
 2026-08-09 | phase3c-gen | Agent n200 SFT/3B/3C | `results/phase3c_gen_val200_20260809_120709/` | **PASS** | EM .475/.19/.54; search .88/.09/1.0
 2026-08-09 | phase3d0 | calib512 + offline λ sweep | `results/phase3d0_offline_lambda_sweep/` | pass | **λ_s=0.40** (strict 0.50); 0.2/0.3 fail I-ranking
-2026-08-09 | phase3d1-scaffold | run_grpo_cost + tmux λ=0.40 STEPS=400 | `scripts/tmux_grpo_cost.sh` | ready | fresh SFT-v1; not launched yet
+2026-08-09 | phase3d1-scaffold | run_grpo_cost + tmux λ=0.40 STEPS=400 | `scripts/tmux_grpo_cost.sh` | ready | fresh SFT-v1
+2026-08-09 | phase3d1-run | STEPS=400 λ_s=0.40 fresh SFT-v1 | `outputs/rl/grpo_sftv1_cost_3d1` | **FAIL→stop@250** | search=0 after step5; KL~0.58; audit `results/phase3d1_uniform_cost_lambda040_stopped/`

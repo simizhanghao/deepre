@@ -39,15 +39,13 @@ NOW → 3C-GEN only
 ├── ✅ 3D0   offline λ on calib-512 → λ_s=0.40 (strict 0.50)
 │     NOTE: 0.05–0.30 cannot stop Evid farming on I
 │
-├── ⬜ 3D1 Uniform Cost         MUST / NEXT
-│     R = R_A + 0.5 R_E + 0.1 R_F − 0.40 N_search
-│     fresh SFT-v1; STEPS=400; GRPO unchanged
+├── ❌ 3D1 Uniform Cost λ=0.40  FAIL @~250
+│     search→0 after step5; KL→~0.58; no Pareto
 │
-├── ⬜ Pareto + stratified routing gate
-│     ├── uniform works → skip 3D2 mainline
-│     └── only shifts global bias → 3D2
+├── ⬜ 3D1b lower-λ smoke OR jump 3D2   NEXT
+│     gate: uniform@0.40 only killed global search → 3D2 eligible
 │
-├── ⬜ 3D2 Capability-Aware Cost   GATE-TRIGGERED (not unconditional)
+├── ⬜ 3D2 Capability-Aware Cost   GATE-TRIGGERED (eligible now)
 │     periodic n=4 tool-free capability refresh (window freeze)
 │     R = R_A + λ_e(1−p_int)R_E + λ_f R_F − λ_s p_int 1[N_s>0]
 │

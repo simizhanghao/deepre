@@ -15,7 +15,8 @@
 | **3C** | **CLOSED @400** | Evidence restores search; answer+evid ↑; search→1 |
 | **3C-GEN** | **PASS** | **dev-200** Agent EM 3C **0.54** > SFT 0.475 > 3B 0.19; search 1.0 vs 0.09 ([PHASE3C_GEN](PHASE3C_GEN.md)) |
 | **3D0** | **DONE** | calib-512 offline → **λ_s=0.40** (0.20/0.30 cannot stop Evid farming) ([PHASE3D0](PHASE3D0.md)) |
-| **3D1** | **NEXT** | Uniform Cost GRPO λ=0.40 @400 from SFT-v1 ([PHASE3D1](PHASE3D1.md)) |
+| **3D1** | **FAIL @250** | λ=0.40 → search=0 after step5, KL~0.58; not a tradeoff ([PHASE3D1](PHASE3D1.md)) |
+| 3D1b / 3D2 | **NEXT** | Lower λ smoke and/or capability-aware cost |
 | 3E / CIPO | later | Full-Corpus; CIPO if evidence-use/gold audit fails |
 | P4 | later | matched-step + GRPO vs REINFORCE |
 | 5M multimodal | **deferred** | After text ECA |
@@ -115,16 +116,16 @@ Multimodal (Phase 5M): separate branch after text mainline — see ROADMAP.md
 
 ## Immediate next
 
-1. **3D1** — `STEPS=400 ECA_SEARCH_COST_WEIGHT=0.40 bash scripts/tmux_grpo_cost.sh`  
-2. Merge @400 → Agent **dev-200** vs 3C → Pareto / routing gate → maybe 3D2  
+1. **3D1b** lower λ smoke (`0.10–0.20`) and/or **3D2** capability-aware cost  
+2. Do not GEN-eval collapsed λ=0.40 as success  
 
 ## Causal chain (current)
 
 ```text
 3B  Answer-only → search=.09  Answer=.19   (no-search)
 3C  +Evidence   → search=1.00 Answer=.54   (always-search, GEN PASS)
-3D0 offline     → λ_s=0.40 needed to prefer internal on I
-3D1 Uniform Cost → ??? quality–cost tradeoff
+3D0 offline     → λ_s=0.40 flips I ranking on synthetic pairs
+3D1 Uniform@0.40→ search=0 after step5, KL↑  (FAIL — global kill-switch)
 ```
 
 ## What is not claimed

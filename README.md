@@ -4,9 +4,8 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 
 ## 状态
 
-🟢 **Phase 3C CLOSED @400**（2026-08-09）— Evidence 机制已验证；**不磨 500**。  
-下一步：**3C-GEN（val-200）→ 3D0 λ sweep → 3D Cost**（仍从 SFT-v1）。多模态 = **Phase 5M 后续分支**。  
-结果 / 路线：[docs/RESULTS_BOARD.md](docs/RESULTS_BOARD.md) · [docs/ROADMAP.md](docs/ROADMAP.md) · [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
+🟡 **3D1 λ=0.40 FAIL**（search→0、KL 爆炸，已停 @250）— 下一步降 λ 探针或 3D2。  
+结果：[RESULTS_BOARD](docs/RESULTS_BOARD.md) · [PHASE3D1](docs/PHASE3D1.md)
 
 | 阶段 | 状态 | 产物 |
 |------|------|------|
