@@ -1,0 +1,112 @@
+# Results Board — Evidence-Cost-Aware Deep Research Agent
+
+> Updated **2026-08-09**. Smoke / val-200 / GRPO smoke128 unless noted.  
+> Model family: **Qwen2.5-3B-Instruct** → SFT-v1 → GRPO (veRL + SGLang, 4×A100).
+
+## Executive summary
+
+| Phase | Status | One-line outcome |
+|-------|--------|------------------|
+| 0–1 | done | HotpotQA contracts + Candidate-BM25 baselines |
+| 2 (SFT) | **CLOSED** | Freeze **SFT-v1** as RL init |
+| 3A | **CLOSED** | Search-agent rollout smoke OK |
+| 3B | **CLOSED @100** | Pipeline OK; **no-search shortcut** |
+| **3C** | **CLOSED @400** | Evidence restores search; answer+evid ↑; search→1 |
+| 3D | **NEXT** | Cost (+Dup) from SFT-v1 |
+
+**Final ckpts (local, not in git):**
+
+```text
+outputs/sft_qwen25_3b_coldstart_v1_merged
+outputs/rl/grpo_sftv1_smoke/global_step_100          # 3B
+outputs/rl/grpo_sftv1_evidence_3c/global_step_400    # 3C
+```
+
+---
+
+## Phase 2 — SFT freeze (val-200)
+
+Details: [PHASE2_CLOSED.md](PHASE2_CLOSED.md) · [PHASE2E4](PHASE2E4_SFTV1_BASELINES.md)
+
+| Setting | Base | SFT-v0 | **SFT-v1** |
+|---------|-----:|-------:|----------:|
+| Direct EM | 0.180 | 0.170 | **0.175** |
+| Candidate EM | 0.435 | 0.470 | **0.485** |
+| Oracle EM | 0.595 | 0.650 | **0.660** |
+| Evid F1 Oracle | — | 0.818 | **0.835** |
+| Evid F1 Candidate | — | 0.665 | **0.725** |
+| route internal/search | — | 29%/71% | **12%/88%** |
+
+---
+
+## Phase 3A — Rollout smoke
+
+| Run | finish | search_count | notes |
+|-----|-------:|-------------:|-------|
+| n=8 | 1.0 | 1.0 | obs mask OK |
+| n=32 | 0.969 | — | closed → 3B |
+
+---
+
+## Phase 3B — Answer-only GRPO @100
+
+Details: [PHASE3B2.md](PHASE3B2.md) · [audit](../results/phase3b2_grpo_sftv1_baseline_step100_20260809/)  
+Reward: \(R=EM+0.1\times\mathrm{format}\)
+
+| Window | score (approx) | answer | search | zero_std | notes |
+|--------|---------------:|-------:|-------:|---------:|-------|
+| early | ~0.23 | — | — | — | pipeline up |
+| 61–100 | ~0.29 | ~0.205 | **0** | **0.77** | **pathology** |
+
+**Close reason:** format/finish≈1 but policy learns **never search** + high group zero-std.
+
+---
+
+## Phase 3C — Evidence GRPO @400
+
+Details: [PHASE3C.md](PHASE3C.md) · [audit](../results/phase3c_grpo_sftv1_evidence_step400_20260809/)  
+Reward: \(R=EM+0.5\times\mathrm{EvidF1}+0.1\times\mathrm{format}\)  
+Init: **SFT-v1** (not 3B ckpt). Stopped at 400 by request after disk-full resume from 300.
+
+| Window | answer | evidence | search_rate | zero_std | finish | kl |
+|--------|-------:|---------:|------------:|---------:|-------:|---:|
+| 1–50 | 0.098 | 0.272 | 0.408 | 0.193 | 0.970 | 0.003 |
+| 51–100 | 0.203 | 0.498 | 0.950 | 0.220 | 0.971 | 0.016 |
+| 101–200 | 0.482 | 0.558 | 1.000 | 0.351 | 0.998 | 0.013 |
+| 201–300 | 0.572 | 0.590 | 1.000 | 0.479 | 0.999 | 0.016 |
+| 301–350 | 0.602 | 0.595 | 0.999 | 0.430 | 0.999 | 0.020 |
+| **351–399** | **0.614** | **0.617** | **0.999** | **0.582** | **0.999** | **0.015** |
+
+### Head-to-head (same infra)
+
+| Metric | 3B@61–100 | 3C@61–100 | 3C@351–399 |
+|--------|----------:|----------:|-----------:|
+| answer | 0.205 | ~0.22 | **0.614** |
+| evidence | ~0 | **~0.51** | **0.617** |
+| search | 0 | **~0.98** | **~1.0** |
+| zero_std | 0.77 | **~0.24** | 0.58 |
+
+**Close reason:** Evidence objective succeeds; late **search≡1** + rising zero_std → **3D Cost**, not longer 3C.
+
+### Ops notes
+
+- Disk full @~324; resume from `global_step_300`; `SAVE_FREQ=50`.  
+- TB: `outputs/rl/tensorboard/grpo_sftv1_evidence_3c` (port 6007).  
+- `grad_norm` spikes = GRPO noise (OK); entropy≠loss; `agent/*` = behavior monitors.
+
+---
+
+## Ablation tree (locked)
+
+```text
+SFT-v1
+ ├── 3B Answer+Format           CLOSED @100
+ ├── 3C Answer+Evidence+Format  CLOSED @400
+ └── 3D +Cost (+Duplicate)     NEXT (fresh from SFT-v1)
+```
+
+## What is not claimed
+
+- Not full HotpotQA val / leaderboard EM (GRPO smoke128 only).  
+- Not production cost-optimal agent (no Cost reward yet).  
+- Intermediate LoRA / mid GRPO steps are **not** kept as deliverables.

@@ -1,18 +1,41 @@
 # DeepResearch-Agent-RL
 
-基于开源数据的 DeepResearch / Search-R1 风格 Agentic RL 后训练系统。
+Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agentic RL（SFT 冷启动 → GRPO）。
 
 ## 状态
 
-🟡 工程初始化中 — skills 与 guardrails 已就绪，代码模块待建。
+🟢 **Phase 3C CLOSED @400**（2026-08-09）— Evidence F1 GRPO 已结案；下一步 **Phase 3D Cost**。  
+结果总表：[docs/RESULTS_BOARD.md](docs/RESULTS_BOARD.md)
+
+| 阶段 | 状态 | 产物 |
+|------|------|------|
+| SFT-v1 | frozen | `outputs/sft_qwen25_3b_coldstart_v1_merged` |
+| 3B Answer-only GRPO | closed @100 | `outputs/rl/grpo_sftv1_smoke/global_step_100` |
+| 3C Evidence GRPO | **closed @400** | `outputs/rl/grpo_sftv1_evidence_3c/global_step_400` |
+| 3D Cost | next | from SFT-v1 |
+
+### 3C 一句话结果（smoke128）
+
+相对 3B（search=0, answer≈0.20）：3C 将 **search→~1**，**Evidence F1≈0.62**，**Answer≈0.61**；后期 zero_std↑ / 必搜 → 交给 3D。
 
 ## 方法概要
 
-- **范式:** WebDancer 四阶段（数据 → SFT 冷启动 → RL 泛化）
-- **RL:** Search-R1 多轮搜索 + retrieved token masking
-- **Reward:** R-Search 多奖励 + R1-Searcher++ 搜索成本控制
-- **框架:** veRL / DeepResearch-R1（待集成）
-- **模型:** Qwen2.5-7B-Instruct
+- **范式:** 数据 → SFT 冷启动 → 多轮检索 GRPO
+- **检索:** Candidate-BM25 + `sample_id`（非开放网页）
+- **Reward 演进:** Answer+Format（3B）→ +Evidence F1（3C）→ +Cost（3D）
+- **框架:** veRL + SGLang（容器 `eca-verl`）
+- **模型:** Qwen2.5-**3B**-Instruct → SFT-v1
+
+## 文档
+
+| Doc | 内容 |
+|-----|------|
+| [RESULTS_BOARD.md](docs/RESULTS_BOARD.md) | **全部实验结果总表** |
+| [PHASE3C.md](docs/PHASE3C.md) | 3C 结案与窗口指标 |
+| [PHASE3B2.md](docs/PHASE3B2.md) | 3B 结案（no-search） |
+| [PHASE2_CLOSED.md](docs/PHASE2_CLOSED.md) | SFT-v1 freeze |
+| [RUN_LOG.md](docs/RUN_LOG.md) | 逐次跑数日志 |
+| [PROJECT_MAP.md](docs/PROJECT_MAP.md) | 仓库地图 |
 
 ## 目录结构
 
@@ -20,26 +43,10 @@
 
 ## Cursor Agent Skills
 
-本项目使用 `.cursor/skills/` 下的 8 个专用 skills，不要安装第三方 marketplace skills。
-
-| Skill | 用途 |
-|-------|------|
-| `repo-orientation` | 仓库结构与模块定位 |
-| `data-contract-validation` | 数据 schema 与校验 |
-| `search-tool-protocol` | ReAct 格式与搜索工具 |
-| `sft-coldstart-training` | SFT 冷启动 |
-| `rl-reward-grpo` | RL reward 与 GRPO |
-| `eval-ablation` | 评测与消融 |
-| `experiment-smoke-test` | Smoke 测试门禁 |
-| `report-readme-writing` | 文档与报告 |
-| `theory-paper-reading` | 10 篇论文精读导读 |
-
-## 下一步
-
-见 [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
+本项目使用 `.cursor/skills/` 下的专用 skills（勿装 marketplace skills）。
 
 ## 工程约束
 
-- 所有产物写入 `outputs/{run_name}/`
-- Smoke 默认 ≤8 samples，长训需明确批准
+- 大权重 / `outputs/` / 多数 `results/` 默认 gitignore；结案 audit 用 `git add -f results/...` 入库
+- ckpt 不每 step 保存（GRPO 默认 `SAVE_FREQ=50`）
 - 详见 `.cursor/rules/00-deepresearch-guardrails.mdc`

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Phase 3C Evidence GRPO — from SFT-v1 (NOT from 3B step100).
-# Default: λ_e=0.5, STEPS=500, SAVE_FREQ=25, same infra knobs as 3B.
+# Default: λ_e=0.5, STEPS=500, SAVE_FREQ=50, same infra knobs as 3B.
 set -euo pipefail
 
 REPO=${REPO:-/workspace/deepresearch}
@@ -22,7 +22,7 @@ BATCH=${BATCH:-8}
 N=${N:-4}
 GPU_MEM_UTIL=${GPU_MEM_UTIL:-0.4}
 VAL_BEFORE_TRAIN=${VAL_BEFORE_TRAIN:-False}
-SAVE_FREQ=${SAVE_FREQ:-25}
+SAVE_FREQ=${SAVE_FREQ:-50}
 RESUME_MODE=${RESUME_MODE:-auto}
 EXPERIMENT_NAME=${EXPERIMENT_NAME:-grpo_sftv1_evidence_3c}
 export TENSORBOARD_DIR=${TENSORBOARD_DIR:-$REPO/outputs/rl/tensorboard/${EXPERIMENT_NAME}}
@@ -36,7 +36,6 @@ curl -sf http://127.0.0.1:8001/health >/dev/null || {
 }
 python -c "import transfer_queue" 2>/dev/null || pip3 install -q TransferQueue
 
-# Hard gate: ground_truth must carry supporting_facts for Evidence reward.
 python - <<PY
 import datasets
 ds = datasets.Dataset.from_parquet("$TRAIN_FILE")
@@ -49,7 +48,7 @@ PY
 
 if [[ -f "$OUT_DIR/latest_checkpointed_iteration.txt" ]]; then
   LAST=$(tr -d '[:space:]' <"$OUT_DIR/latest_checkpointed_iteration.txt" || true)
-  echo "[resume] OUT_DIR=$OUT_DIR last=${LAST:-none} target_steps=$STEPS"
+  echo "[resume] OUT_DIR=$OUT_DIR last=${LAST:-none} target_steps=$STEPS save_freq=$SAVE_FREQ"
 else
   echo "[fresh] 3C from SFT-v1 → STEPS=$STEPS λ_e=$ECA_EVIDENCE_WEIGHT OUT_DIR=$OUT_DIR"
 fi

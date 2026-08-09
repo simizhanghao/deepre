@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Host-side Phase 3C launcher (detach-safe). Fresh OUT_DIR from SFT-v1.
 # Usage:
-#   STEPS=500 SAVE_FREQ=25 bash scripts/tmux_grpo_evidence.sh
+#   STEPS=500 SAVE_FREQ=50 bash scripts/tmux_grpo_evidence.sh
 #   tmux attach -t eca-grpo-3c
 set -euo pipefail
 
@@ -9,7 +9,7 @@ REPO=${REPO:-/data1/hcc/deepresearch}
 SESSION=${SESSION:-eca-grpo-3c}
 CONTAINER=${CONTAINER:-eca-verl}
 STEPS=${STEPS:-500}
-SAVE_FREQ=${SAVE_FREQ:-25}
+SAVE_FREQ=${SAVE_FREQ:-50}
 OUT_DIR=${OUT_DIR:-/workspace/deepresearch/outputs/rl/grpo_sftv1_evidence_3c}
 EXPERIMENT_NAME=${EXPERIMENT_NAME:-grpo_sftv1_evidence_3c}
 RESUME_MODE=${RESUME_MODE:-auto}

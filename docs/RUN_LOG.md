@@ -44,4 +44,8 @@ YYYY-MM-DD | stage | command | output_dir | pass/fail | notes
 2026-08-09 | phase3b2-step100 | hard audit close 3B | `global_step_100` + `results/phase3b2_grpo_sftv1_baseline_step100_20260809/` | pass→close | score 0.23→0.29; search=0 (61–100); zero_std≈0.77; format/finish≈1; **next 3C from SFT-v1**
 2026-08-09 | phase3c0-scaffold | Evidence F1 reward + breakdown + SF parquet + metrics + launchers | `src/rl/rewards_3c.py`, `docs/PHASE3C.md` | pass | λ_e=0.5; Cost weights reserved
 2026-08-09 | phase3c0-offline | `offline_reward_replay_3c.py` | `results/phase3c_offline_reward_replay/` | pass | perfect=1.0 none=0; sim zero_std=0; group_std≈0.21
-2026-08-09 | phase3c1-to500 | STEPS=500 SAVE_FREQ=25 from SFT-v1 (not 3B ckpt) | `outputs/rl/grpo_sftv1_evidence_3c` | running | tmux eca-grpo-3c; TB :6007
+2026-08-09 | phase3c1-to500 | STEPS=500 SAVE_FREQ=25 from SFT-v1 (not 3B ckpt) | `outputs/rl/grpo_sftv1_evidence_3c` | partial | disk full @~324; incomplete 325 dropped
+2026-08-09 | phase3c-cleanup | drop non-final 0/1/2 LoRA + mid 3B/3C ckpts; SAVE_FREQ→50 | kept SFT merged + 3B@100 + 3C@300 | pass | /data1 ~73% free
+2026-08-09 | phase3c-resume300 | STEPS=500 SAVE_FREQ=50 resume auto from 300 | same OUT_DIR | pass→stop@400 | user stop after global_step_400
+2026-08-09 | phase3c-step400 | hard audit close 3C | `global_step_400` + `results/phase3c_grpo_sftv1_evidence_step400_20260809/` | pass→close | late answer≈0.61 evid≈0.62 search≈1 zero_std≈0.58; **next 3D Cost from SFT-v1**
+2026-08-09 | docs-board | freeze RESULTS_BOARD + PHASE3C closeout | `docs/RESULTS_BOARD.md`, `docs/PHASE3C.md` | pass | push GitHub
