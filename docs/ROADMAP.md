@@ -1,14 +1,16 @@
 # Roadmap — Evidence-Cost-Aware Deep Research Agent (v2)
 
-> Frozen **2026-08-09 (v2)**. Problem-driven tech only.  
+> Frozen **2026-08-11 (v2.1)**. Problem-driven tech only.  
 > Board: [RESULTS_BOARD.md](RESULTS_BOARD.md) · Actions: [NEXT_STEPS.md](NEXT_STEPS.md)
 
 ## Principle
 
 ```text
 Do NOT insert multimodal into Phase 3D.
-Do NOT add AutoSearch / CIPO / REINFORCE “because papers are new”.
+Do NOT add AutoSearch / CIPO / REINFORCE / Branching “because papers are new”.
 Tech enters only via pre-registered failure gates.
+SGLang is historical baseline after SGLANG_ROUTE_TOKEN_LOGIT_TIM —
+mainline RL requires trainer-aligned Exact Rollout (VeXact / HFExact).
 ```
 
 Causal story:
@@ -16,8 +18,13 @@ Causal story:
 ```text
 3B  sparse answer     → no-search
 3C  + evidence        → always-search
-3D1 uniform cost      → quality–cost baseline
-3D2 capability cost   → ONLY if uniform cost fails routing gate
+3D1 uniform cost      → quality–cost baseline FAIL routing
+3D2 capability / Boundary → Stage-II routing FAIL (search≡1)
+Routing audit         → SGLANG_ROUTE_TOKEN_LOGIT_TIM
+                      → trainer π ≠ SGLang μ on route token
+NOW                   → Rollout Alignment Recovery (VeXact / HFExact)
+THEN                  → Boundary@50 on Exact Rollout (same reward)
+THEN                  → Candidate ECA PASS → Full-Corpus → Phase4
 ```
 
 ---
@@ -25,26 +32,32 @@ Causal story:
 ## A. Text ECA mainline
 
 ```text
-NOW → Boundary Stage-II
+NOW → Rollout Alignment Recovery
 │
 ├── ✅ Answer-only CLOSED @100
 ├── ✅ Evidence CLOSED @400 + GEN PASS
+├── ✅ Offline λ → λ_s=0.40
+├── ❌ Uniform Cost FAIL @~250
+├── ✅ Capability-only Cost @50 CLOSED (routing FAIL)
+├── ❌ Boundary Stage-II on SGLang routing FAIL (Δ≈0; search≡1)
+├── ✅ Routing Sampler Alignment Audit CLOSED
+│     gate = SGLANG_ROUTE_TOKEN_LOGIT_TIM
+│     HF@.95 NoSearch internal≈0.28; SGLang tok0 p(search)≈0.997
 │
-├── ✅ Offline λ on calib-512 → λ_s=0.40
-├── ❌ Uniform Cost λ=0.40 FAIL @~250
-├── ✅ Uniform λ diagram CLOSED → trigger Boundary
-├── ✓ Capability-only Cost @50 CLOSED (routing FAIL)
-├── ◐ Boundary Stage-II from Evidence@400 (NEXT)
-│     no Uniform extinction; Δ_route FAIL / late search≈1
-│     HOLD segmented@400 until routing diagnosis
-│     R = R_A + λ_e(1−p_int)R_E + λ_f R_F − λ_s p_int 1[N_s>0]
+├── ◐ Rollout Alignment Recovery (NEXT) → `results/17_rollout_alignment/`
+│     freeze eca-verl · fresh eca-verl-vexact (official VeXact pins; not clone eca-verl)
+│     A0 env → A1 calib → Gate A → A2 loop → A3 budget → Gate B → A4 32×4 → Boundary@50
+│     VeXact hold after 2 effective working days → auto HFExact (same Gate A)
+│     abstract RolloutBackend only after Gate A PASS
+│     reward/table frozen until Exact backend proven
 │
+├── ⬜ Candidate ECA PASS → freeze
 ├── ⬜ 3E Full-Corpus (passage BM25 + rerank)
 │     └── gold-evidence / evidence-use audit → CIPO only if bottleneck
 │
 └── ⬜ Phase 4
-      larger train + matched-step
       GRPO vs REINFORCE on final frozen Candidate-ECA reward
+      Root Branching only if Exact+Boundary still lacks counterfactuals
       optional CIGPO ablation (read first; implement later)
 ```
 

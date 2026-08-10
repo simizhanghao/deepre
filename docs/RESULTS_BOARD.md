@@ -1,7 +1,7 @@
 # Results Board — Evidence-Cost-Aware Deep Research Agent
 
-> Updated **2026-08-10**. Smoke / val-200 / GRPO `train_smoke_128` unless noted.  
-> Model family: **Qwen2.5-3B-Instruct** → SFT-v1 → GRPO (veRL + SGLang, 4×A100).  
+> Updated **2026-08-11**. Smoke / val-200 / GRPO `train_smoke_128` unless noted.  
+> Model family: **Qwen2.5-3B-Instruct** → SFT-v1 → GRPO (veRL; Exact Rollout recovery NOW).  
 > Plan freeze: [ROADMAP.md](ROADMAP.md) · [NEXT_STEPS.md](NEXT_STEPS.md)
 
 ## Executive summary
@@ -19,8 +19,8 @@
 | Uniform λ diagram | **CLOSED** | No stable Pareto → trigger Boundary |
 | Capability cost @50 | **CLOSED** | SOFT_PASS stability / FAIL routing |
 | Boundary Stage-II | routing **FAIL** | search≡1 · Δ_boundary≈0 @~42 |
-| Routing Exploration HF smoke | **PASS** | gate=`NATURAL_EXPLORATION_OK` (HF react_loop) |
-| Training-parity SGLang 32×4 | **FAIL** | gate=`TRAINING_PARITY_EXPLORATION_FAIL` → dual-arm / fix rollout |
+| Routing / TIM audit | **CLOSED** | `SGLANG_ROUTE_TOKEN_LOGIT_TIM` (HF≈0.68/0.32 vs SGLang≈0.997/0) |
+| **Rollout Alignment Recovery** | **NOW** | VeXact preferred · HFExact fallback · then Boundary@50 |
 
 **Final ckpts (local, not in git):**
 
@@ -113,8 +113,8 @@ Protocol: Evidence@400 · `EcaSearchAgentLoop` · veRL+SGLang · 8×A100 · STEP
 Train metrics agree: `agent/search_rate=1`, `agent/internal_rate=0`, `boundary/delta_boundary=0`.
 
 **Gate:** `TRAINING_PARITY_EXPLORATION_FAIL`  
-**Read:** real worker path has **no** spontaneous `internal` / mixed groups — HF smoke overstated exploration. Do **not** Mixed-action GRPO yet.  
-**Next:** Routing Worker Mismatch Audit (Path C/B/A → hard verdict), not Dual-arm train yet.
+**Read:** real worker path has **no** spontaneous `internal` / mixed groups — HF smoke overstated exploration.  
+**Superseded by:** Path C/B + sampler-align + Path B forensic → `SGLANG_ROUTE_TOKEN_LOGIT_TIM` → **Rollout Alignment Recovery** (not Mixed-action / Dual-arm).
 
 ### Routing Worker Mismatch — Path C interim (2026-08-10)
 
@@ -146,13 +146,19 @@ Forensic: `stop_token_ids=[29]` only (`>`), **last-token collision** → `STOP_H
 - HF greedy 20/20 search; Path B tok0 agree 100%  
 - Forensic `sampling_params`: `T=0.9, top_p=0.95, top_k=-1, logprobs=true`（配置正确）  
 - **SGLang `logp(tok0)≈−0.003` (p≈0.997)** vs HF ≈−0.39 (p≈0.68) → **route-token TIM**  
-Verdict: `SGLANG_ROUTE_TOKEN_LOGIT_TIM`. Not top_p; not collapse; fix/calibrate sampler logits before RL.
+Verdict: `SGLANG_ROUTE_TOKEN_LOGIT_TIM`.  
+SGLang is **not** an acceptable RL rollout contract for ECA until replaced/calibrated.  
+Do **not** dig SGLang kernels further; do **not** Mixed-action / Branching / REINFORCE yet.
 
 ## Immediate next
 
-1. Formal TIM δ_t on route tok0 (+ optional debug env)  
-2. Do **not** Branching / Mixed-action / top_p=1-as-fix  
-3. Multi-turn LENGTH_CONTRACT deferred
+Artifacts: `results/17_rollout_alignment/{environment,calibration,parity_32x4,trajectory_budget}/`  
+(Details locked in [NEXT_STEPS.md](NEXT_STEPS.md).)
+
+1. **A0** — fresh `eca-verl-vexact` from VeXact official pinned stack (do not clone `eca-verl`)  
+2. **A1 / Gate A** — Evidence@400 exact-20 route calibration (no budget edit yet)  
+3. On Gate A PASS: **A2–A3 / Gate B** → **A4** 32×4 → Boundary@50 (reward/table unchanged)  
+4. VeXact blocked after **2 effective working days** → auto `HFEXACT_FALLBACK` (same Gate A)
 
 ## What is not claimed
 

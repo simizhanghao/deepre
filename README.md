@@ -4,7 +4,7 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 
 ## 状态
 
-当前主线：**Dual-arm / fix rollout mismatch**（SGLang parity → `TRAINING_PARITY_EXPLORATION_FAIL`）。  
+当前主线：**Rollout Alignment Recovery**（硬结论 `SGLANG_ROUTE_TOKEN_LOGIT_TIM` → VeXact / HFExact）。  
 结果板：[docs/RESULTS_BOARD.md](docs/RESULTS_BOARD.md) · 待办：[docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
 
 | 阶段 | 状态 | 产物 |
@@ -17,21 +17,21 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 | Uniform cost | **FAIL** | `results/12_audit_uniform_cost_fail/` |
 | Boundary table | **PASS** | `outputs/rl/04_table_search_boundary` |
 | Boundary GRPO | routing **FAIL** | `outputs/rl/06_ckpt_grpo_boundary` · `src/rl/rewards_boundary.py` |
-| Routing Exploration HF | smoke **PASS** | `results/16_audit_routing_exploration/` |
-| Training-parity SGLang | **FAIL** | `parity_sglang_32x4/` · gate FAIL → dual-arm |
-| Dual-arm / fix mismatch | **NOW** | real worker counterfactuals |
+| Routing / TIM audit | **CLOSED** | `results/16_.../worker_mismatch/` · `SGLANG_ROUTE_TOKEN_LOGIT_TIM` |
+| **Rollout Alignment Recovery** | **NOW** | `results/17_rollout_alignment/` · VeXact → Gate A → budget → Boundary@50 |
 
 ### Evidence 一句话结果（train_smoke_128）
 
-相对 Answer-only（search≈0）：Evidence 将 **search→~1**，**Evidence F1≈0.62**，**Answer≈0.61**；后期必搜 → Boundary / Cost。
+相对 Answer-only（search≈0）：Evidence 将 **search→~1**，**Evidence F1≈0.62**，**Answer≈0.61**；后期必搜 → Boundary。  
+Boundary 学不动的主因现已定位为 **SGLang route-token TIM**（非单纯 reward/GRPO）。
 
 ## 方法概要
 
-- **范式:** 数据 → SFT 冷启动 → 多轮检索 GRPO
+- **范式:** 数据 → SFT 冷启动 → 多轮检索 GRPO（**须 trainer-aligned rollout**）
 - **检索:** Candidate-BM25 + `sample_id`（非开放网页）
-- **Reward:** Answer+Format → +Evidence F1 → Boundary-aware cost
-- **框架:** veRL + SGLang（容器 `eca-verl`）
-- **模型:** Qwen2.5-**3B**-Instruct → SFT-v1
+- **Reward:** Answer+Format → +Evidence F1 → Boundary-aware cost（对齐前不改）
+- **框架:** veRL；历史基线 SGLang（`eca-verl`）；**对齐主线** VeXact / HFExact（`eca-verl-vexact`）
+- **模型:** Qwen2.5-**3B**-Instruct → SFT-v1 → Evidence@400
 
 ## 文档
 
