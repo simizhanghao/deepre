@@ -46,7 +46,8 @@ NOW → 3C-GEN only
 │     no stable Pareto (0.05 always-search; ≥0.10 collapse)
 │     → formally triggers 3D2
 │
-├── ◐ 3D2 Capability-Aware Cost   window-1@50 DONE
+├── ✓ 3D2-v0 Capability-only Cost  @50 CLOSED (routing FAIL)
+├── ◐ 3D2b Search-Boundary Stage-II  from 3C@400 (NEXT)
 │     no Uniform extinction; Δ_route FAIL / late search≈1
 │     HOLD segmented@400 until routing diagnosis
 │     R = R_A + λ_e(1−p_int)R_E + λ_f R_F − λ_s p_int 1[N_s>0]

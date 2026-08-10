@@ -43,6 +43,7 @@ def compute_phase3c_batch_metrics(
     finish, search_counts, dup_counts, obs_tokens = [], [], [], []
     max_hit, internal, search_route = [], [], []
     p_ints, eff_e_ws, eff_s_ws, search_inds = [], [], [], []
+    boundaries: List[str] = []
 
     for extra in extra_fields:
         extra = extra or {}
@@ -103,6 +104,8 @@ def compute_phase3c_batch_metrics(
             eff_s_ws.append(_as_float(rinfo["eff_search_cost_weight"]))
         if "search_indicator" in rinfo:
             search_inds.append(_as_float(rinfo["search_indicator"]))
+        if "boundary" in rinfo and rinfo["boundary"] is not None:
+            boundaries.append(str(rinfo["boundary"]))
 
     out: Dict[str, float] = {}
 
@@ -175,6 +178,26 @@ def compute_phase3c_batch_metrics(
             out["capability/search_rate_high_pint"] = float(np.mean(high))
             out["capability/delta_route"] = float(np.mean(low) - np.mean(high))
 
+    # 3D2b: Δ_boundary = P(search|NeedSearch) − P(search|NoSearch)
+    if boundaries and search_route and len(boundaries) == len(search_route):
+        by_lab: dict[str, list[float]] = defaultdict(list)
+        for lab, s in zip(boundaries, search_route):
+            by_lab[lab].append(s)
+        for lab, vals in by_lab.items():
+            if vals:
+                out[f"boundary/search_rate_{lab}"] = float(np.mean(vals))
+                out[f"boundary/n_{lab}"] = float(len(vals))
+        need = by_lab.get("NeedSearch") or []
+        nos = by_lab.get("NoSearch") or []
+        if need and nos:
+            out["boundary/delta_boundary"] = float(np.mean(need) - np.mean(nos))
+        n_b = float(len(boundaries))
+        out["boundary/frac_NoSearch"] = float(len(nos) / n_b)
+        out["boundary/frac_NeedSearch"] = float(len(need) / n_b)
+        out["boundary/frac_Undetermined"] = float(
+            len(by_lab.get("Undetermined") or []) / n_b
+        )
+
     # zero-std by question group (uid), not whole-batch std
     scores = list(sequence_scores) if sequence_scores is not None else list(total)
     if uids is not None and scores and len(uids) == len(scores):
@@ -214,6 +237,9 @@ def summarize_console_line(metrics: Mapping[str, float]) -> str:
         ("ev_nz", "evidence/nonempty_rate"),
         ("p_int", "capability/p_int_mean"),
         ("d_route", "capability/delta_route"),
+        ("d_bnd", "boundary/delta_boundary"),
+        ("sr_need", "boundary/search_rate_NeedSearch"),
+        ("sr_no", "boundary/search_rate_NoSearch"),
         ("kl", "actor/kl_loss"),
     ]
     return " | ".join(f"{lab}={metrics[k]:.4g}" for lab, k in labeled if k in metrics)

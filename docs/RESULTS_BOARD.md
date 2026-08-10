@@ -17,7 +17,9 @@
 | **3D0** | **DONE** | calib-512 offline → **λ_s=0.40** (0.20/0.30 cannot stop Evid farming) ([PHASE3D0](PHASE3D0.md)) |
 | **3D1** | **FAIL @250** | λ=0.40 → search=0 after step5, KL~0.58; not a tradeoff ([PHASE3D1](PHASE3D1.md)) |
 | 3D1b | **CLOSED** | No Uniform Pareto; phase transition → trigger 3D2 ([PHASE3D1B](PHASE3D1B.md)) |
-| 3D2 w1@50 | **DONE** | No extinction; late search≈0.98; **Δ_route≈0 FAIL** — hold 400 ([PHASE3D2](PHASE3D2.md)) |
+| 3D2-v0 w1@50 | **CLOSED** | SOFT_PASS stability / FAIL routing; hold 400 ([PHASE3D2](PHASE3D2.md)) |
+| 3D2b bootstrap | **DONE** | Need/No/Und = 67/28/33 @3C400; dual-probe δ=2 ([PHASE3D2B](PHASE3D2B.md)) |
+| 3D2b Stage-II @50 | **RUNNING** | Boundary-aware refine from 3C@400 ([PHASE3D2B](PHASE3D2B.md)) |
 | 3E / CIPO | later | Full-Corpus; CIPO if evidence-use/gold audit fails |
 | P4 | later | matched-step + GRPO vs REINFORCE |
 | 5M multimodal | **deferred** | After text ECA |

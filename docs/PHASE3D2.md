@@ -1,4 +1,7 @@
-# Phase 3D2 — Capability-Aware Cost
+# Phase 3D2 — Capability-Aware Cost (v0)
+
+> **Status: CLOSED @50 — SOFT_PASS stability / FAIL routing. Do not continue to 400.**  
+> Upgrade: [PHASE3D2B.md](PHASE3D2B.md) (on-policy search-boundary + Stage-II from 3C@400).
 
 ## Status
 

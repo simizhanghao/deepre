@@ -364,11 +364,14 @@ def run_search_agent_rollout(
     # Evidence F1 when gold supporting facts exist and evidence was emitted.
     evid_meta: Dict[str, Any] = {}
     evid_texts = [s.content for s in steps if s.step_type == "evidence"]
-    if evid_texts and sample.get("supporting_facts"):
+    sf = sample.get("supporting_facts")
+    if hasattr(sf, "tolist"):
+        sf = list(sf.tolist())
+    if evid_texts and sf:
         try:
             joined = "\n\n".join(evid_texts)
             fake_gen = f"<evidence>\n{joined}\n</evidence><answer>\n{pred}\n</answer>"
-            evid_meta = score_evidence_use(fake_gen, sample)
+            evid_meta = score_evidence_use(fake_gen, {**sample, "supporting_facts": sf})
         except Exception as exc:  # noqa: BLE001
             evid_meta = {"evidence_score_error": str(exc)}
 
