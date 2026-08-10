@@ -18,7 +18,8 @@
 | Uniform cost | **FAIL @250** | λ=0.40 → search=0; not a tradeoff |
 | Uniform λ diagram | **CLOSED** | No stable Pareto → trigger Boundary |
 | Capability cost @50 | **CLOSED** | SOFT_PASS stability / FAIL routing |
-| Boundary Stage-II | **active** | From Evidence@400 HF + `rewards_boundary` |
+| Boundary Stage-II | routing **FAIL** | search≡1 · Δ_boundary≈0 @~42 |
+| Routing Exploration | **smoke PASS** | gate=`NATURAL_EXPLORATION_OK` → Mixed-action GRPO |
 
 **Final ckpts (local, not in git):**
 
@@ -30,7 +31,7 @@ outputs/rl/04_table_search_boundary/
 outputs/rl/06_ckpt_grpo_boundary/
 ```
 
-Audits under `results/01_*` … `results/15_*`.
+Audits under `results/01_*` … `results/16_*`.
 
 ---
 
@@ -84,11 +85,26 @@ GEN: [../results/10_eval_grpo_evidence_val200/](../results/10_eval_grpo_evidence
 - λ diagram: `results/13_audit_uniform_cost_lambda_diagram`
 - Capability @50: `results/14_audit_capability_cost_step50`
 - Boundary stop summary: `results/15_summary_boundary_grpo_stopped.md`
+- Routing Exploration smoke: `results/16_audit_routing_exploration/` (debug n=8×2)
+
+### Routing Exploration Audit (smoke 2026-08-10)
+
+Protocol: Evidence@400 · tools-enabled first-action · T∈{0.9,1.1,1.3} · n_rollouts=2 · max_samples=8 · seed=42.
+
+| T | P(internal\|NoSearch) | mixed_action_group_rate | note |
+|--:|----------------------:|------------------------:|------|
+| 0.9 | **0.50** | 0.125 | NoSearch still mixed |
+| 1.1 | 0.00 | 0.125 | noisy / small-n dip |
+| 1.3 | **0.50** | **0.375** | gate temperature |
+
+**Gate:** `NATURAL_EXPLORATION_OK` → next **Mixed-action GRPO** (not Dual-arm, not REINFORCE).  
+**Read:** policy still has spontaneous `internal` on NoSearch; Stage-II routing FAIL is more likely **group sampling / GRPO baseline** than root-action extinction.  
+**Caveat:** smoke only (8 Q × 2 rolls); confirm with fuller audit before locking train protocol.
 
 ## Immediate next
 
-1. Boundary routing diagnosis (`Δ_boundary`, `sr_no`↓ / `sr_need`↑)  
-2. Do not Uniform-λ micro-sweep; do not blind 400.
+1. Design **Mixed-action GRPO** (reuse launcher; ensure search+internal in group)  
+2. Do not Dual-arm yet; do not REINFORCE; do not Uniform-λ / blind 400.
 
 ## What is not claimed
 

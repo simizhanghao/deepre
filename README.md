@@ -4,7 +4,7 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 
 ## 状态
 
-当前主线：**Boundary-aware GRPO**（从 3C@400 HF 继续）。  
+当前主线：**Mixed-action GRPO**（Routing Exploration smoke → `NATURAL_EXPLORATION_OK`）。  
 结果板：[docs/RESULTS_BOARD.md](docs/RESULTS_BOARD.md) · 待办：[docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
 
 | 阶段 | 状态 | 产物 |
@@ -15,7 +15,10 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 | Evidence GEN | **PASS** | `results/10_eval_grpo_evidence_val200/` |
 | Offline cost λ | **DONE** | λ_s=**0.40** · `data/rl/calib_cost_lambda_512` |
 | Uniform cost | **FAIL** | `results/12_audit_uniform_cost_fail/` |
-| Boundary GRPO | **active** | `outputs/rl/06_ckpt_grpo_boundary` · `src/rl/rewards_boundary.py` |
+| Boundary table | **PASS** | `outputs/rl/04_table_search_boundary` |
+| Boundary GRPO | routing **FAIL** | `outputs/rl/06_ckpt_grpo_boundary` · `src/rl/rewards_boundary.py` |
+| Routing Exploration | **smoke PASS** | `results/16_audit_routing_exploration/` → Mixed-action |
+| Mixed-action GRPO | **NOW** | reuse boundary launcher + group counterfactuals |
 
 ### Evidence 一句话结果（train_smoke_128）
 

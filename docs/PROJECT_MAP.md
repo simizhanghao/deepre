@@ -1,12 +1,13 @@
 # Project Map — Evidence-Cost-Aware Deep Research Agent
 
-> 状态：Evidence CLOSED @400；当前 Boundary GRPO。见 [NEXT_STEPS.md](NEXT_STEPS.md) · [ROADMAP.md](ROADMAP.md)
+> 状态：Routing Exploration smoke → **Mixed-action GRPO**。见 [NEXT_STEPS.md](NEXT_STEPS.md) · [ROADMAP.md](ROADMAP.md)
 
 ## 路线
 
 ```text
-SFT-v1 → Answer-only → Evidence → Boundary/Cost → Full-Corpus → Phase4
-                                                      ↘ Multimodal (later)
+SFT-v1 → Answer-only → Evidence → Uniform Cost → Boundary
+  → Routing Exploration (NATURAL_EXPLORATION_OK) → Mixed-action GRPO → …
+                                                      ↘ Dual-arm / REINFORCE only if gated
 ```
 
 ## Pipeline
@@ -30,7 +31,7 @@ Question → agent loop → Candidate-BM25 tool → reward (evidence/boundary)
 | `src/sft/` | coldstart builders |
 | `src/eval/` | metrics · protocol · trace |
 | `scripts/` | train / eval / boundary entrypoints |
-| `results/` | numbered audits `01_`…`15_` |
+| `results/` | numbered audits `01_`…`16_` |
 | `outputs/` | `00_sft_v1_merged` · `rl/01_`…`06_` |
 | `logs/` | numbered train/eval logs |
 | `docs/` | ROADMAP · RESULTS_BOARD · NEXT_STEPS · PROJECT_MAP |
@@ -45,6 +46,7 @@ Question → agent loop → Candidate-BM25 tool → reward (evidence/boundary)
 | `scripts/run_grpo_boundary.sh` | Boundary GRPO |
 | `scripts/tmux_grpo_boundary.sh` | detach-safe Boundary launch |
 | `scripts/build_search_boundary_table.py` | boundary table bootstrap |
+| `scripts/audit_routing_exploration.py` | Routing Exploration Audit (no train) |
 | `scripts/run_eval_val200_gen.sh` | val-200 GEN compare |
 | `scripts/launch_grpo_main.py` | veRL entry + metrics patch |
 
