@@ -114,12 +114,45 @@ Train metrics agree: `agent/search_rate=1`, `agent/internal_rate=0`, `boundary/d
 
 **Gate:** `TRAINING_PARITY_EXPLORATION_FAIL`  
 **Read:** real worker path has **no** spontaneous `internal` / mixed groups — HF smoke overstated exploration. Do **not** Mixed-action GRPO yet.  
-**Next:** `dual_arm_or_fix_rollout_mismatch` (forced search/internal arms or fix train↔HF loop mismatch).
+**Next:** Routing Worker Mismatch Audit (Path C/B/A → hard verdict), not Dual-arm train yet.
+
+### Routing Worker Mismatch — Path C interim (2026-08-10)
+
+Protocol: Evidence@400 · full `EcaSearchAgentLoop` · 8×A100 · STEPS=1 · lr=0 · **20 Q × 4** (11 NoSearch + 9 NeedSearch, padded for GPU divisor) · T=0.9 · top_p=0.95 · dump `worker_mismatch/dump_pathC.jsonl`.
+
+| metric | value |
+|--------|------:|
+| dump lines | **80** |
+| `route_first=search` | **80/80** |
+| `route_first=internal` | **0** |
+| train `search_rate` / `internal_rate` | **1.0 / 0.0** |
+| `sr_NoSearch` / `sr_NeedSearch` | **1.0 / 1.0** (n=44 / 36) |
+| `delta_boundary` | **0.0** |
+| `search_count` | **1.0** (all traj) |
+| `finish_rate` / format | **1.0 / 1.0** |
+| **`response_length` / `clip_ratio`** | **2048 / 1.0** ← LENGTH_CONTRACT FAIL |
+| step wall | ~88.7 s |
+
+Forensic: `stop_token_ids=[29]` only (`>`), **last-token collision** → `STOP_HANDLING_RISK` (not causal for root choice). Canonical prompt ends at `<|im_start|>assistant\n`.
+
+**Status:** stacked issues — root all-search **and** multi-turn length pathology.  
+**HF Root Score:** `BACKEND_MISMATCH_LIKELY` — NoSearch median `p̃_internal≈0.65`.  
+**Path B-current (2026-08-10):** first-gen-only · `stop=[29]` · `max_new=128` → **80/80 search**;  
+`response_length≈26.4` / `clip≈0.0125` / `stop_reason=stop` → **first-gen length OK**.  
+
+**Sampler-align (2026-08-10):** `top_p` **falsified**. HF@.95 NoSearch `p_internal≈0.284`.  
+
+**Greedy-TIM + Path B forensic (2026-08-10):**  
+- HF greedy 20/20 search; Path B tok0 agree 100%  
+- Forensic `sampling_params`: `T=0.9, top_p=0.95, top_k=-1, logprobs=true`（配置正确）  
+- **SGLang `logp(tok0)≈−0.003` (p≈0.997)** vs HF ≈−0.39 (p≈0.68) → **route-token TIM**  
+Verdict: `SGLANG_ROUTE_TOKEN_LOGIT_TIM`. Not top_p; not collapse; fix/calibrate sampler logits before RL.
 
 ## Immediate next
 
-1. Design **dual-arm / forced counterfactual rollout** (or diagnose HF↔SGLang protocol gap)  
-2. Do **not** Mixed-action GRPO yet; do not REINFORCE; do not Uniform-λ / blind 400.
+1. Formal TIM δ_t on route tok0 (+ optional debug env)  
+2. Do **not** Branching / Mixed-action / top_p=1-as-fix  
+3. Multi-turn LENGTH_CONTRACT deferred
 
 ## What is not claimed
 

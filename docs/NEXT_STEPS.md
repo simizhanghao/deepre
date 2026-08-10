@@ -2,29 +2,28 @@
 
 > [ROADMAP.md](ROADMAP.md) · [RESULTS_BOARD.md](RESULTS_BOARD.md)
 
-## Done
+## Done (Routing Sampler Alignment Audit — locked findings)
 
-- [x] Evidence GRPO CLOSED @400 · GEN PASS (dev-200)
-- [x] Offline cost λ → λ_s=0.40
-- [x] Uniform cost FAIL → no stable Pareto → trigger Boundary
-- [x] Capability-cost window-1 @50 CLOSED (routing FAIL; HOLD 400)
-- [x] Artifact cleanup: numbered `results/` / `outputs/rl/` / English reward modules
-- [x] Boundary Stage-II smoke routing FAIL (`Δ_boundary≈0`)
-- [x] Routing Exploration HF smoke → `NATURAL_EXPLORATION_OK`
-- [x] Training-parity SGLang 32×4 @ T=0.9/1.3 → `TRAINING_PARITY_EXPLORATION_FAIL`
+Under `results/16_audit_routing_exploration/worker_mismatch/`:
 
-## NOW — Dual-arm / fix rollout mismatch (not Mixed-action)
+| Step | Gate / result |
+|------|----------------|
+| Path C full Eca | 80/80 search; multi-turn length=2048 deferred |
+| Path B-current | 80/80 search; first-gen len≈26; stop OK |
+| HF Root Score | `p̃_internal≈0.65` → not π≈0 |
+| sampler-align | **top_p falsified**; HF@.95 NoSearch internal≈**28%** |
+| greedy-tim | HF greedy 20/20 search; tok0 agree PathB **100%** |
+| Path B forensic | sampling_params OK (`T=0.9,top_p=0.95,top_k=-1`); **SGLang logp(tok0)≈−0.003 (p≈0.997)** vs HF ≈−0.39 (p≈0.68) |
 
-Real `EcaSearchAgentLoop` (veRL+SGLang) shows **p_internal=0**, **mixed=0** on both T=0.9 and T=1.3.  
-HF smoke exploration does **not** transfer to the training worker.
+**Hard verdict:** `SGLANG_ROUTE_TOKEN_LOGIT_TIM`  
+Mode/argmax 对齐，但 **route tok0 概率质量在 SGLang 上塌缩到 search**；HF 仍有 ~30%+ internal。  
+不是 nucleus、不是缺 T、不是 Branching 场景。
 
-1. Prefer **dual-arm / forced search↔internal** counterfactuals in the real agent loop  
-   OR diagnose HF `react_loop` vs `EcaSearchAgentLoop` protocol gap  
-2. Acceptance later: tools-enabled eval `Δ_boundary`↑, `sr_no`↓, `sr_need` high  
-3. Mixed-action GRPO only if parity gate flips to OK (or dual-arm proves groups)  
-4. REINFORCE only after mixed groups exist + preference OK + GRPO still Δ≈0
+## NOW
 
-Do **not**: Mixed-action GRPO first · blind 400 · Uniform λ · CIGPO/CIPO · new `phase*` names.
+1. TIM δ_t formalize on tok0 (HF vs SGLang logprobs) + optional VeXact/debug env  
+2. Do **not** Mixed-action / Branching / top_p=1-as-fix / REINFORCE until TIM root-cause fixed or calibrated  
+3. Trajectory budget (Path C 2048) still deferred
 
 ## Later
 
@@ -32,7 +31,4 @@ Full-Corpus · Phase4 · multimodal
 
 ## Naming
 
-`hotpotqa_200` = **dev-200** (selection).  
-Train pool: `data/rl/train_smoke_128`.  
-SFT: `outputs/00_sft_v1_merged`.  
-Parity dumps: `results/16_audit_routing_exploration/parity_sglang_32x4/` (gitignored).
+`hotpotqa_200` = **dev-200**. Train: `data/rl/train_smoke_128`.
