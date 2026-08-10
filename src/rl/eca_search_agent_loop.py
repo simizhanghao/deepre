@@ -12,8 +12,12 @@ Registered via configs/rl/eca_agent_loop.yaml as agent_name=eca_search_agent.
 
 from __future__ import annotations
 
+import fcntl
+import json
 import logging
+import os
 import re
+from pathlib import Path
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -97,6 +101,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
         assistant_turns = 0
         user_turns = 0
         finished = False
+        route_first = "none"  # search | internal | both | answer | none
         # Propagate weight-version tags from generate → TransferQueue metrics.
         # Missing these makes trainer_base._compute_metrics crash (None → int).
         min_global_steps: int | None = None
@@ -163,6 +168,16 @@ class EcaSearchAgentLoop(AgentLoopBase):
                 has_answer = bool(_ANSWER_RE.search(text))
                 search_hits = list(_SEARCH_RE.finditer(text))
                 has_internal = bool(_INTERNAL_RE.search(text))
+
+                if route_first == "none":
+                    if search_hits and has_internal:
+                        route_first = "both"
+                    elif search_hits:
+                        route_first = "search"
+                    elif has_internal:
+                        route_first = "internal"
+                    elif has_answer:
+                        route_first = "answer"
 
                 if has_answer:
                     finished = True
@@ -268,6 +283,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
         if max_global_steps is None:
             max_global_steps = min_global_steps
         # Flatten agent counters for GRPO TensorBoard (see grpo_metrics.py).
+        metrics["route_first"] = route_first
         extra_fields = {
             "turn_scores": [],
             "tool_rewards": [],
@@ -281,8 +297,25 @@ class EcaSearchAgentLoop(AgentLoopBase):
             "observation_tokens": int(metrics.get("observation_tokens") or 0),
             "max_search_turns": int(self.max_search_turns),
             "used_internal": int(metrics.get("used_internal") or 0),
+            "route_first": route_first,
             "metrics": metrics,
         }
+        _parity_dump_row(
+            {
+                "sample_id": create_kwargs["sample_id"],
+                "route_first": route_first,
+                "action": (
+                    "search"
+                    if route_first == "search"
+                    else ("internal" if route_first == "internal" else "other")
+                ),
+                "search_count": int(metrics.get("search_count") or 0),
+                "used_internal": int(metrics.get("used_internal") or 0),
+                "finish": int(finished or metrics.get("finish") or 0),
+                "max_search_turns": int(self.max_search_turns),
+                "max_assistant_turns": int(self.max_assistant_turns),
+            }
+        )
 
         return AgentLoopOutput(
             prompt_ids=prompt_ids_out,
@@ -294,6 +327,23 @@ class EcaSearchAgentLoop(AgentLoopBase):
             metrics=metrics,
             extra_fields=extra_fields,
         )
+
+
+def _parity_dump_row(row: dict[str, Any]) -> None:
+    """Append one trajectory row when ECA_PARITY_DUMP is set (rollout-only audit)."""
+    path = (os.environ.get("ECA_PARITY_DUMP") or "").strip()
+    if not path:
+        return
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(row, ensure_ascii=False) + "\n"
+    with out.open("a", encoding="utf-8") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            f.write(line)
+            f.flush()
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 # Re-export for convenience inside the container.

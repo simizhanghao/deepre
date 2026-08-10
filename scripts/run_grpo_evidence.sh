@@ -6,7 +6,7 @@ set -euo pipefail
 REPO=${REPO:-/workspace/deepresearch}
 VERL_ROOT=${VERL_ROOT:-/workspace/verl}
 export PYTHONPATH="${REPO}:${VERL_ROOT}:${PYTHONPATH:-}"
-export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0,1,2,3}
+export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}
 export ECA_EVIDENCE_WEIGHT=${ECA_EVIDENCE_WEIGHT:-0.5}
 
 TRAIN_FILE=${TRAIN_FILE:-$REPO/data/rl/train_smoke_128/train.parquet}
@@ -95,7 +95,7 @@ python "$REPO/scripts/launch_grpo_main.py" \
   reward.custom_reward_function.path="$REWARD_PATH" \
   reward.custom_reward_function.name=compute_score \
   trainer.nnodes=1 \
-  trainer.n_gpus_per_node=4 \
+  trainer.n_gpus_per_node=8 \
   trainer.total_epochs="$TOTAL_EPOCHS" \
   trainer.total_training_steps="$STEPS" \
   trainer.val_before_train="$VAL_BEFORE_TRAIN" \

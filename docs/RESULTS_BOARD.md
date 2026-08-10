@@ -19,7 +19,8 @@
 | Uniform λ diagram | **CLOSED** | No stable Pareto → trigger Boundary |
 | Capability cost @50 | **CLOSED** | SOFT_PASS stability / FAIL routing |
 | Boundary Stage-II | routing **FAIL** | search≡1 · Δ_boundary≈0 @~42 |
-| Routing Exploration | **smoke PASS** | gate=`NATURAL_EXPLORATION_OK` → Mixed-action GRPO |
+| Routing Exploration HF smoke | **PASS** | gate=`NATURAL_EXPLORATION_OK` (HF react_loop) |
+| Training-parity SGLang 32×4 | **FAIL** | gate=`TRAINING_PARITY_EXPLORATION_FAIL` → dual-arm / fix rollout |
 
 **Final ckpts (local, not in git):**
 
@@ -85,11 +86,12 @@ GEN: [../results/10_eval_grpo_evidence_val200/](../results/10_eval_grpo_evidence
 - λ diagram: `results/13_audit_uniform_cost_lambda_diagram`
 - Capability @50: `results/14_audit_capability_cost_step50`
 - Boundary stop summary: `results/15_summary_boundary_grpo_stopped.md`
-- Routing Exploration smoke: `results/16_audit_routing_exploration/` (debug n=8×2)
+- Routing Exploration HF smoke: `results/16_audit_routing_exploration/` (debug n=8×2)
+- Training-parity SGLang: `results/16_audit_routing_exploration/parity_sglang_32x4/` (32×4, gitignored dumps)
 
-### Routing Exploration Audit (smoke 2026-08-10)
+### Routing Exploration Audit (HF smoke 2026-08-10)
 
-Protocol: Evidence@400 · tools-enabled first-action · T∈{0.9,1.1,1.3} · n_rollouts=2 · max_samples=8 · seed=42.
+Protocol: Evidence@400 · tools-enabled first-action · T∈{0.9,1.1,1.3} · n_rollouts=2 · max_samples=8 · seed=42 · **HF `react_loop`**.
 
 | T | P(internal\|NoSearch) | mixed_action_group_rate | note |
 |--:|----------------------:|------------------------:|------|
@@ -97,14 +99,27 @@ Protocol: Evidence@400 · tools-enabled first-action · T∈{0.9,1.1,1.3} · n_r
 | 1.1 | 0.00 | 0.125 | noisy / small-n dip |
 | 1.3 | **0.50** | **0.375** | gate temperature |
 
-**Gate:** `NATURAL_EXPLORATION_OK` → next **Mixed-action GRPO** (not Dual-arm, not REINFORCE).  
-**Read:** policy still has spontaneous `internal` on NoSearch; Stage-II routing FAIL is more likely **group sampling / GRPO baseline** than root-action extinction.  
-**Caveat:** smoke only (8 Q × 2 rolls); confirm with fuller audit before locking train protocol.
+**Gate:** `NATURAL_EXPLORATION_OK` (HF only).
+
+### Training-parity Routing Exploration (SGLang 32×4, 2026-08-10)
+
+Protocol: Evidence@400 · `EcaSearchAgentLoop` · veRL+SGLang · 8×A100 · STEPS=1 · lr=0 · n=4 · 32 Q stratified · T∈{0.9,1.3} · `GPU_MEM_UTIL=0.55`.
+
+| T | n dump | P(internal\|NoSearch) | P(search\|*) | mixed_action_group_rate |
+|--:|-------:|----------------------:|-------------:|------------------------:|
+| 0.9 | 128 | **0.0** | **1.0** | **0.0** |
+| 1.3 | 128 | **0.0** | **1.0** | **0.0** |
+
+Train metrics agree: `agent/search_rate=1`, `agent/internal_rate=0`, `boundary/delta_boundary=0`.
+
+**Gate:** `TRAINING_PARITY_EXPLORATION_FAIL`  
+**Read:** real worker path has **no** spontaneous `internal` / mixed groups — HF smoke overstated exploration. Do **not** Mixed-action GRPO yet.  
+**Next:** `dual_arm_or_fix_rollout_mismatch` (forced search/internal arms or fix train↔HF loop mismatch).
 
 ## Immediate next
 
-1. Design **Mixed-action GRPO** (reuse launcher; ensure search+internal in group)  
-2. Do not Dual-arm yet; do not REINFORCE; do not Uniform-λ / blind 400.
+1. Design **dual-arm / forced counterfactual rollout** (or diagnose HF↔SGLang protocol gap)  
+2. Do **not** Mixed-action GRPO yet; do not REINFORCE; do not Uniform-λ / blind 400.
 
 ## What is not claimed
 

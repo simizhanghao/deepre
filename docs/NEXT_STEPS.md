@@ -10,20 +10,21 @@
 - [x] Capability-cost window-1 @50 CLOSED (routing FAIL; HOLD 400)
 - [x] Artifact cleanup: numbered `results/` / `outputs/rl/` / English reward modules
 - [x] Boundary Stage-II smoke routing FAIL (`Δ_boundary≈0`)
-- [x] Routing Exploration Audit **smoke** → `NATURAL_EXPLORATION_OK`  
-      (`results/16_audit_routing_exploration/`, T=1.3: P(internal|NoSearch)=0.50, mixed=0.375)
+- [x] Routing Exploration HF smoke → `NATURAL_EXPLORATION_OK`
+- [x] Training-parity SGLang 32×4 @ T=0.9/1.3 → `TRAINING_PARITY_EXPLORATION_FAIL`
 
-## NOW — Mixed-action GRPO (design → tiny train)
+## NOW — Dual-arm / fix rollout mismatch (not Mixed-action)
 
-Exploration is **not** saturated: NoSearch still yields internal at T=0.9/1.3.  
-Next makes GRPO groups contain search↔internal counterfactuals (still Evidence@400 init + `rewards_boundary`).
+Real `EcaSearchAgentLoop` (veRL+SGLang) shows **p_internal=0**, **mixed=0** on both T=0.9 and T=1.3.  
+HF smoke exploration does **not** transfer to the training worker.
 
-1. Prefer extending `scripts/run_grpo_boundary.sh` / rollout path — **no new reward file**  
-2. Acceptance on **tools-enabled** eval: `Δ_boundary`↑, `sr_no`↓, `sr_need` stays high  
-3. Optional: enlarge Routing Exploration beyond smoke (32×4) before locking train hyperparams  
-4. REINFORCE only if mixed-action groups exist + preference OK + GRPO still Δ≈0
+1. Prefer **dual-arm / forced search↔internal** counterfactuals in the real agent loop  
+   OR diagnose HF `react_loop` vs `EcaSearchAgentLoop` protocol gap  
+2. Acceptance later: tools-enabled eval `Δ_boundary`↑, `sr_no`↓, `sr_need` high  
+3. Mixed-action GRPO only if parity gate flips to OK (or dual-arm proves groups)  
+4. REINFORCE only after mixed groups exist + preference OK + GRPO still Δ≈0
 
-Do **not**: Dual-arm first · blind 400 · Uniform λ · CIGPO/CIPO · new `phase*` names.
+Do **not**: Mixed-action GRPO first · blind 400 · Uniform λ · CIGPO/CIPO · new `phase*` names.
 
 ## Later
 
@@ -33,4 +34,5 @@ Full-Corpus · Phase4 · multimodal
 
 `hotpotqa_200` = **dev-200** (selection).  
 Train pool: `data/rl/train_smoke_128`.  
-SFT: `outputs/00_sft_v1_merged`.
+SFT: `outputs/00_sft_v1_merged`.  
+Parity dumps: `results/16_audit_routing_exploration/parity_sglang_32x4/` (gitignored).

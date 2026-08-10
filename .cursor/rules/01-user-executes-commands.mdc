@@ -1,5 +1,5 @@
 ---
-description: 命令执行归属规则 —— shell 命令由 agent 给出、用户亲自执行。常驻。
+description: 命令执行归属 —— 用户执行；agent 必须以验收命令格式给出。常驻。
 globs:
 alwaysApply: true
 ---
@@ -7,42 +7,44 @@ alwaysApply: true
 # Command Execution Ownership
 
 The USER runs all shell/terminal commands. The agent proposes commands; it does
-NOT execute them.
+**NOT** execute them (no Shell tool for clone/install/train/eval/etc.).
+
+## Mandatory skill
+
+Before any reply that includes a runnable command, **Read** and follow:
+
+`.cursor/skills/acceptance-commands/SKILL.md`
 
 ## Hard Rules
 
-1. **Agent must NOT run the Shell tool** to execute commands
-   (git clone, pip/conda install, downloads, training, inference, long jobs,
-   pdftoppm, etc.). Instead, output the exact copy-pasteable command(s).
-
-2. **Every command comes from the agent.** Provide:
-   - the exact command (copy-pasteable, correct paths, no placeholders unless flagged)
-   - a one-line purpose
-   - working directory if it matters
-   - what output/result to paste back
-
-3. **One step at a time.** For multi-step operations, give commands in order and
-   wait for the user to run them and report results before the next step.
-
-4. **After the user pastes output**, the agent interprets it and proposes the
-   next command — never assumes success without seeing the result.
+1. Agent must NOT run the Shell tool for user-facing commands.
+2. Every command block uses the **验收命令** format from that skill (not the old
+   `用途/目录/命令` template as primary).
+3. One step (or one tight batch) at a time; wait for paste-back.
+4. After paste-back: interpret; never assume success without output.
 
 ## What the agent MAY still do directly
 
-- Read-only inspection via Read / Grep / Glob tools (not shell)
+- Read-only inspection via Read / Grep / Glob (not shell)
 - Authorized file edits via Write / StrReplace (per task-scoped-execution)
 
 ## What the agent MUST hand to the user
 
-- Anything using the shell: clone, install, mkdir, mv, rm, curl/wget, python,
-  torchrun, git, docker, etc.
+Anything using the shell: clone, install, mkdir, mv, rm, curl/wget, python,
+torchrun, git, docker, ray, pytest, cleanup, nvidia-smi, etc.
 
-## Format Template
+## Format (see skill for full rules)
 
-```
-用途: <一句话>
-目录: <cwd，如相关>
-命令:
-<command>
-执行后请把输出贴回。
+```markdown
+验收命令（请你执行）— <短标题>
+
+\`\`\`bash
+cd <绝对路径>
+<commands>
+\`\`\`
+
+执行后把终端输出贴回。
+
+期望：
+- <可检查条件>
 ```

@@ -4,7 +4,7 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 
 ## 状态
 
-当前主线：**Mixed-action GRPO**（Routing Exploration smoke → `NATURAL_EXPLORATION_OK`）。  
+当前主线：**Dual-arm / fix rollout mismatch**（SGLang parity → `TRAINING_PARITY_EXPLORATION_FAIL`）。  
 结果板：[docs/RESULTS_BOARD.md](docs/RESULTS_BOARD.md) · 待办：[docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)
 
 | 阶段 | 状态 | 产物 |
@@ -17,8 +17,9 @@ Evidence-Cost-Aware Deep Research Agent：HotpotQA 上的 Search-R1 风格 Agent
 | Uniform cost | **FAIL** | `results/12_audit_uniform_cost_fail/` |
 | Boundary table | **PASS** | `outputs/rl/04_table_search_boundary` |
 | Boundary GRPO | routing **FAIL** | `outputs/rl/06_ckpt_grpo_boundary` · `src/rl/rewards_boundary.py` |
-| Routing Exploration | **smoke PASS** | `results/16_audit_routing_exploration/` → Mixed-action |
-| Mixed-action GRPO | **NOW** | reuse boundary launcher + group counterfactuals |
+| Routing Exploration HF | smoke **PASS** | `results/16_audit_routing_exploration/` |
+| Training-parity SGLang | **FAIL** | `parity_sglang_32x4/` · gate FAIL → dual-arm |
+| Dual-arm / fix mismatch | **NOW** | real worker counterfactuals |
 
 ### Evidence 一句话结果（train_smoke_128）
 

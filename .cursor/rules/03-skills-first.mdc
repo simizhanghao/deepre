@@ -10,9 +10,12 @@ alwaysApply: true
 1. **Read** (via Read tool) at least:
    - `.cursor/skills/task-scoped-execution/SKILL.md`
    - `.cursor/skills/artifact-naming-and-cleanup/SKILL.md`
-2. **Load any other** project skill that matches the request (repo-orientation, experiment-smoke-test, rl-reward-grpo, etc.).
-3. **Restate** the task-scoped 5-point contract when the turn involves work (not pure chitchat).
-4. Only then proceed with the answer or edits.
+2. **If the reply will include any shell/bash/docker/train/eval/cleanup command**,
+   also **Read** `.cursor/skills/acceptance-commands/SKILL.md` and format
+   commands only as `验收命令（请你执行）`.
+3. **Load any other** project skill that matches the request (repo-orientation, experiment-smoke-test, rl-reward-grpo, etc.).
+4. **Restate** the task-scoped 5-point contract when the turn involves work (not pure chitchat).
+5. Only then proceed with the answer or edits.
 
 Do not skip skill reads because of prior conversation memory. Re-read when starting a new turn that changes files or runs jobs.
 

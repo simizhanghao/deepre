@@ -65,34 +65,27 @@ long-running job **finishes, fails, or is stopped**, the agent MUST end the
 turn with:
 
 1. One-line status (pass/fail + where outputs landed)
-2. **Immediate** cleanup prompt + copy-paste commands (user runs them)
+2. **Immediate** cleanup as an `验收命令（请你执行）` block (see
+   `acceptance-commands` skill) — user runs; agent does not Shell-kill
 
 ### Default cleanup block (adapt ports/session names)
 
+Present with title `验收命令（请你执行）— 清理 Ray/GPU 残留`, then:
+
 ```bash
-# 1) Who holds GPUs?
+cd /data1/hcc/deepresearch
 nvidia-smi
-
-# 2) Stop tmux train session if still up (example names)
-tmux ls 2>/dev/null
-# tmux kill-session -t eca-grpo-3d2b
-# tmux kill-session -t eca-grpo-3c
-
-# 3) Inside eca-verl: Ray / SGLang leftovers
+tmux ls 2>/dev/null || true
 docker exec eca-verl bash -lc 'ray stop --force 2>/dev/null; pkill -9 -f sglang.launch_server 2>/dev/null; pkill -9 -f launch_grpo_main.py 2>/dev/null; exit 0'
-
-# 4) Host: stray python train/eval / retriever
 pkill -f 'scripts/run_grpo_|scripts/launch_grpo_main|scripts/run_agent_rollout|build_search_boundary_table' 2>/dev/null || true
-# Retriever on :8001 (only if no longer needed)
-# pkill -f 'start_candidate_retrieval_server.py' 2>/dev/null || true
-
-# 5) Confirm GPU free
 nvidia-smi
 ```
 
+期望示例：`nvidia-smi` 无残留训练/SGLang 进程（或仅保留仍需要的 retriever）。
+
 ### Rules for the cleanup prompt
 
-- Always show the block after train/eval; do not bury it.
+- Always show the 验收命令 block after train/eval; do not bury it.
 - Customize session name / ports from the job just run.
 - Do **not** auto-run destructive kills unless the user asked and rules allow shell; prefer pasteable commands (this repo: user executes commands).
 - If a job is still supposed to run, say so and **skip** kill commands; only offer `nvidia-smi` / `tmux ls` status.
@@ -100,6 +93,7 @@ nvidia-smi
 ## Interaction with Other Skills
 
 - `task-scoped-execution`: still one task + stop for confirm.
+- `acceptance-commands`: all shell blocks (including cleanup) use 验收命令 format.
 - `experiment-smoke-test`: smoke runs also get cleanup prompts after finish.
 - Prefer this naming over older `outputs/smoke_*` guidance when paths conflict;
   put smokes under `results/smoke_*` or `outputs/rl/` with a clear `NN_` / `smoke_` prefix agreed in-task.

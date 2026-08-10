@@ -77,7 +77,7 @@ reward:
 
 trainer:
   nnodes: 1
-  n_gpus_per_node: 4
+  n_gpus_per_node: 8
   total_epochs: 1
   total_training_steps: 5
   save_freq: 5

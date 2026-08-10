@@ -18,8 +18,10 @@ Before answering the user or calling other tools for work:
 
 1. Re-read this file with the Read tool (do not rely on memory alone).
 2. Re-read `.cursor/skills/artifact-naming-and-cleanup/SKILL.md`.
-3. Re-read any other matching project skill for the request.
-4. Then apply the 5-point contract below.
+3. If this turn will give the user any shell command: also Read
+   `.cursor/skills/acceptance-commands/SKILL.md` and use only that format.
+4. Re-read any other matching project skill for the request.
+5. Then apply the 5-point contract below.
 
 ## Contract for Every Task (5 Points)
 
