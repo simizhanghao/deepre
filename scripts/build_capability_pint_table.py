@@ -10,8 +10,8 @@ Sampling: T=0.9, n=4, per-rollout reproducible seeds.
 Usage:
   CUDA_VISIBLE_DEVICES=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
     python scripts/build_capability_pint_table.py \
-      --model-path outputs/sft_qwen25_3b_coldstart_v1_merged \
-      --train-parquet data/rl/grpo_smoke_128/train.parquet \
+      --model-path outputs/00_sft_v1_merged \
+      --train-parquet data/rl/train_smoke_128/train.parquet \
       --n 4 --temperature 0.9
 """
 
@@ -32,7 +32,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
 from src.eval.metrics import exact_match  # noqa: E402
-from src.rl.rewards_3c import extract_answer  # noqa: E402
+from src.rl.rewards_evidence import extract_answer  # noqa: E402
 # Same agent identity / answer protocol, but tools unavailable.
 # Do NOT paste the full AGENT_SYSTEM_PROMPT verbatim — it advertises <search>
 # and SFT-v1 then almost always emits search (collapsing p_int→0).
@@ -53,7 +53,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--train-parquet",
         type=str,
-        default=str(REPO / "data/rl/grpo_smoke_128/train.parquet"),
+        default=str(REPO / "data/rl/train_smoke_128/train.parquet"),
     )
     p.add_argument("--n", type=int, default=4, help="tool-free rollouts per question")
     p.add_argument("--temperature", type=float, default=0.9)
@@ -65,7 +65,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--symlink-latest",
         type=str,
-        default=str(REPO / "outputs/rl/capability/p_int_latest.json"),
+        default=str(REPO / "outputs/rl/05_table_capability_pint/p_int_latest.json"),
     )
     p.add_argument(
         "--prompt-mode",
@@ -248,7 +248,7 @@ def main() -> None:
 
     stamp = time.strftime("%Y%m%d_%H%M%S")
     out = Path(args.out) if args.out else (
-        REPO / "outputs/rl/capability" / f"p_int_agent_notool_{stamp}.json"
+        REPO / "outputs/rl/05_table_capability_pint" / f"p_int_table_{stamp}.json"
     )
     out.parent.mkdir(parents=True, exist_ok=True)
     payload = {

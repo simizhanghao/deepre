@@ -3,7 +3,7 @@
 Usage (deepresearch env, after 2D3-A merge):
     CUDA_VISIBLE_DEVICES=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
       python scripts/smoke_merged_model.py \
-      --model-path outputs/sft_qwen25_3b_coldstart_v0_merged
+      --model-path outputs/00_sft_v1_merged
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
         default=str(
             Path(__file__).resolve().parents[1]
             / "outputs"
-            / "sft_qwen25_3b_coldstart_v0_merged"
+            / "00_sft_v1_merged"
         ),
     )
     p.add_argument("--max-new-tokens", type=int, default=32)

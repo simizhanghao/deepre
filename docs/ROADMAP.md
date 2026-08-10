@@ -25,29 +25,16 @@ Causal story:
 ## A. Text ECA mainline
 
 ```text
-NOW → 3C-GEN only
+NOW → Boundary Stage-II
 │
-├── ✅ 3B CLOSED @100
-├── ✅ 3C CLOSED @400
+├── ✅ Answer-only CLOSED @100
+├── ✅ Evidence CLOSED @400 + GEN PASS
 │
-├── ⬜ 3C-GEN                    ← ONLY active work item
-│     FSDP → HF merge
-│     frozen val-200 Agent (Candidate-BM25, max_search=2)
-│     SFT-v1 | 3B@100 | 3C@400
-│     Gates below → decide small-pool 3D vs enlarge train first
-│
-├── ✅ 3D0   offline λ on calib-512 → λ_s=0.40 (strict 0.50)
-│     NOTE: 0.05–0.30 cannot stop Evid farming on I
-│
-├── ❌ 3D1 Uniform Cost λ=0.40  FAIL @~250
-│     search→0 after step5; KL→~0.58; no Pareto
-│
-├── ✅ 3D1b online λ phase diagram   CLOSED
-│     no stable Pareto (0.05 always-search; ≥0.10 collapse)
-│     → formally triggers 3D2
-│
-├── ✓ 3D2-v0 Capability-only Cost  @50 CLOSED (routing FAIL)
-├── ◐ 3D2b Search-Boundary Stage-II  from 3C@400 (NEXT)
+├── ✅ Offline λ on calib-512 → λ_s=0.40
+├── ❌ Uniform Cost λ=0.40 FAIL @~250
+├── ✅ Uniform λ diagram CLOSED → trigger Boundary
+├── ✓ Capability-only Cost @50 CLOSED (routing FAIL)
+├── ◐ Boundary Stage-II from Evidence@400 (NEXT)
 │     no Uniform extinction; Δ_route FAIL / late search≈1
 │     HOLD segmented@400 until routing diagnosis
 │     R = R_A + λ_e(1−p_int)R_E + λ_f R_F − λ_s p_int 1[N_s>0]

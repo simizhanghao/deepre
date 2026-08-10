@@ -7,10 +7,10 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-SESSION="${SESSION:-phase2d3c}"
-MERGED="${MERGED:-outputs/sft_qwen25_3b_coldstart_v0_merged}"
-TAG="${TAG:-phase2d3c}"
-LOGDIR="${LOGDIR:-logs/protocol_${TAG}}"
+SESSION="${SESSION:-protocol_sft_v1}"
+MERGED="${MERGED:-outputs/00_sft_v1_merged}"
+TAG="${TAG:-sft_v1}"
+LOGDIR="${LOGDIR:-logs/07_protocol_${TAG}}"
 mkdir -p "$LOGDIR"
 
 if ! command -v tmux >/dev/null 2>&1; then

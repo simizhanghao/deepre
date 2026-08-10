@@ -14,17 +14,17 @@ export ECA_SEARCH_COST_WEIGHT=${ECA_SEARCH_COST_WEIGHT:-0.30}
 export ECA_BOUNDARY_STRICT=${ECA_BOUNDARY_STRICT:-1}
 export ECA_BOUNDARY_DEFAULT=${ECA_BOUNDARY_DEFAULT:-Undetermined}
 
-ECA_BOUNDARY_TABLE=${ECA_BOUNDARY_TABLE:-$REPO/outputs/rl/boundary/boundary_latest.json}
+ECA_BOUNDARY_TABLE=${ECA_BOUNDARY_TABLE:-$REPO/outputs/rl/04_table_search_boundary/boundary_latest.json}
 export ECA_BOUNDARY_TABLE
 
-TRAIN_FILE=${TRAIN_FILE:-$REPO/data/rl/grpo_smoke_128/train.parquet}
-VAL_FILE=${VAL_FILE:-$REPO/data/rl/grpo_smoke_128/val.parquet}
+TRAIN_FILE=${TRAIN_FILE:-$REPO/data/rl/train_smoke_128/train.parquet}
+VAL_FILE=${VAL_FILE:-$REPO/data/rl/train_smoke_128/val.parquet}
 # Stage II: init from 3C@400 HF merge
-MODEL_PATH=${MODEL_PATH:-$REPO/outputs/rl/hf_merged/grpo_sftv1_evidence_3c_step400}
+MODEL_PATH=${MODEL_PATH:-$REPO/outputs/rl/03_hf_evidence_step400}
 TOOL_CFG=$REPO/configs/rl/candidate_bm25_tool.yaml
 AGENT_CFG=$REPO/configs/rl/eca_agent_loop.yaml
-REWARD_PATH=$REPO/src/rl/rewards_3d2b.py
-OUT_DIR=${OUT_DIR:-$REPO/outputs/rl/grpo_3c400_boundary_3d2b}
+REWARD_PATH=$REPO/src/rl/rewards_boundary.py
+OUT_DIR=${OUT_DIR:-$REPO/outputs/rl/06_ckpt_grpo_boundary}
 STEPS=${STEPS:-50}
 TOTAL_EPOCHS=${TOTAL_EPOCHS:-$STEPS}
 BATCH=${BATCH:-16}
@@ -34,7 +34,7 @@ MICRO_BATCH=${MICRO_BATCH:-2}
 VAL_BEFORE_TRAIN=${VAL_BEFORE_TRAIN:-False}
 SAVE_FREQ=${SAVE_FREQ:-50}
 RESUME_MODE=${RESUME_MODE:-disable}
-EXPERIMENT_NAME=${EXPERIMENT_NAME:-grpo_3c400_boundary_3d2b}
+EXPERIMENT_NAME=${EXPERIMENT_NAME:-grpo_boundary}
 export TENSORBOARD_DIR=${TENSORBOARD_DIR:-$REPO/outputs/rl/tensorboard/${EXPERIMENT_NAME}}
 mkdir -p "$TENSORBOARD_DIR" "$OUT_DIR"
 

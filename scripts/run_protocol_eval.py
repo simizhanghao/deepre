@@ -9,9 +9,9 @@ Usage (deepresearch env):
   CUDA_VISIBLE_DEVICES=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
     python scripts/run_protocol_eval.py \
     --mode evidence_oracle \
-    --model-path outputs/sft_qwen25_3b_coldstart_v0_merged \
+    --model-path outputs/00_sft_v1_merged \
     --eval-file data/eval/hotpotqa_200.jsonl --max-samples 200 \
-    --run-tag phase2d3c
+    --run-tag sft_v1
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ from src.sft.prototype_builder import (  # noqa: E402
     oracle_documents,
 )
 
-DEFAULT_MODEL = str(REPO_ROOT / "outputs" / "sft_qwen25_3b_coldstart_v0_merged")
+DEFAULT_MODEL = str(REPO_ROOT / "outputs" / "00_sft_v1_merged")
 MODES = ("evidence_oracle", "evidence_candidate", "routing")
 
 
@@ -49,27 +49,19 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--retrieval-cache",
         type=str,
-        default=(
-            "results/retrieval_candidate_bm25_n200_20260807_154802/"
-            "retrieval_results.jsonl"
-        ),
+        default="",
+        help="Optional BM25 cache jsonl; empty = retrieve on the fly / unused.",
     )
     p.add_argument(
         "--base-direct-metrics",
         type=str,
-        default=(
-            "results/baseline_direct_n200_20260807_154900_phase1_final_n200/"
-            "metrics.json"
-        ),
-        help="For routing conditional rates (Base Direct correctness).",
+        default="results/02_eval_sft_v1_direct_n200/metrics.json",
+        help="For routing conditional rates (Direct correctness).",
     )
     p.add_argument(
         "--base-oracle-metrics",
         type=str,
-        default=(
-            "results/baseline_oracle_n200_20260807_154912_phase1_final_n200/"
-            "metrics.json"
-        ),
+        default="results/03_eval_sft_v1_oracle_n200/metrics.json",
         help="For routing: Direct❌ Oracle✅ subset.",
     )
     p.add_argument("--output-dir", type=str, default=str(REPO_ROOT / "results"))

@@ -43,7 +43,7 @@ _SEARCH_RE = re.compile(r"<search>(.*?)</search>", re.DOTALL | re.IGNORECASE)
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Export coldstart to ShareGPT for LF.")
-    p.add_argument("--input", type=str, default="data/sft/coldstart_v0.jsonl")
+    p.add_argument("--input", type=str, default="data/sft/coldstart_v1.jsonl")
     p.add_argument("--output-dir", type=str, default="data/sft/llamafactory")
     p.add_argument(
         "--prefix",

@@ -2,8 +2,8 @@
 # Merge veRL FSDP actor shards → HuggingFace dir (inside eca-verl).
 # Usage:
 #   bash scripts/export_verl_fsdp_to_hf.sh \
-#     outputs/rl/grpo_sftv1_smoke/global_step_100 \
-#     outputs/rl/hf_merged/grpo_sftv1_smoke_step100
+#     outputs/rl/01_ckpt_grpo_evidence_fsdp/global_step_400 \
+#     outputs/rl/03_hf_evidence_step400
 set -euo pipefail
 
 REPO=${REPO:-/data1/hcc/deepresearch}

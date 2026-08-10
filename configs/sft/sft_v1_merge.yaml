@@ -1,0 +1,14 @@
+### Merge LoRA SFT-v1 into a full HF checkpoint
+### Note: DO NOT use quantized model or quantization_bit when merging.
+
+### model
+model_name_or_path: /data1/hcc/.hf_home/Qwen2.5-3B-Instruct
+adapter_name_or_path: /data1/hcc/deepresearch/outputs/sft_v1_lora
+template: qwen
+trust_remote_code: true
+
+### export
+export_dir: /data1/hcc/deepresearch/outputs/00_sft_v1_merged
+export_size: 5
+export_device: cpu
+export_legacy_format: false

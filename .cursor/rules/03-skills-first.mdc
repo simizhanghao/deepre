@@ -1,0 +1,19 @@
+---
+description: 每次回答用户前必须先 Read 并遵循项目 skills（硬性）
+alwaysApply: true
+---
+
+# Skills First (Hard)
+
+**Every user message:** before answering or acting, the agent MUST:
+
+1. **Read** (via Read tool) at least:
+   - `.cursor/skills/task-scoped-execution/SKILL.md`
+   - `.cursor/skills/artifact-naming-and-cleanup/SKILL.md`
+2. **Load any other** project skill that matches the request (repo-orientation, experiment-smoke-test, rl-reward-grpo, etc.).
+3. **Restate** the task-scoped 5-point contract when the turn involves work (not pure chitchat).
+4. Only then proceed with the answer or edits.
+
+Do not skip skill reads because of prior conversation memory. Re-read when starting a new turn that changes files or runs jobs.
+
+Personal copies under `~/.cursor/skills/` are mirrors; **project** `.cursor/skills/` is the source of truth inside this repo.

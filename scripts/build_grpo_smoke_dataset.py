@@ -104,7 +104,7 @@ def main() -> None:
     ap.add_argument(
         "--out-dir",
         type=Path,
-        default=REPO / "data/rl/grpo_smoke_128",
+        default=REPO / "data/rl/train_smoke_128",
     )
     args = ap.parse_args()
 

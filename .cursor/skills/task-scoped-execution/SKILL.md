@@ -12,6 +12,15 @@ description: >-
 The user controls the roadmap. The agent executes ONE small, verifiable task at
 a time and never plans or advances phases on its own.
 
+## Skills First (Hard — every reply)
+
+Before answering the user or calling other tools for work:
+
+1. Re-read this file with the Read tool (do not rely on memory alone).
+2. Re-read `.cursor/skills/artifact-naming-and-cleanup/SKILL.md`.
+3. Re-read any other matching project skill for the request.
+4. Then apply the 5-point contract below.
+
 ## Contract for Every Task (5 Points)
 
 Before doing anything, restate and confirm:
@@ -68,6 +77,8 @@ Gate: do not enter RL until baseline, retrieval, eval, and trace are verified.
 - results / findings
 - how it meets the acceptance criteria
 - proposed next step — **as a suggestion only, awaiting user approval**
+- if this task ran train/eval/long jobs: also follow
+  `artifact-naming-and-cleanup` (cleanup commands in the same turn)
 
 ## Done Criteria
 

@@ -1,42 +1,40 @@
 # Results Board — Evidence-Cost-Aware Deep Research Agent
 
-> Updated **2026-08-09**. Smoke / val-200 / GRPO smoke128 unless noted.  
+> Updated **2026-08-10**. Smoke / val-200 / GRPO `train_smoke_128` unless noted.  
 > Model family: **Qwen2.5-3B-Instruct** → SFT-v1 → GRPO (veRL + SGLang, 4×A100).  
 > Plan freeze: [ROADMAP.md](ROADMAP.md) · [NEXT_STEPS.md](NEXT_STEPS.md)
 
 ## Executive summary
 
-| Phase | Status | One-line outcome |
+| Stage | Status | One-line outcome |
 |-------|--------|------------------|
 | 0–1 | done | HotpotQA contracts + Candidate-BM25 baselines |
-| 2 (SFT) | **CLOSED** | Freeze **SFT-v1** as RL init |
-| 3A | **CLOSED** | Search-agent rollout smoke OK |
-| 3B | **CLOSED @100** | Pipeline OK; **no-search shortcut** |
-| **3C** | **CLOSED @400** | Evidence restores search; answer+evid ↑; search→1 |
-| **3C-GEN** | **PASS** | **dev-200** Agent EM 3C **0.54** > SFT 0.475 > 3B 0.19; search 1.0 vs 0.09 ([PHASE3C_GEN](PHASE3C_GEN.md)) |
-| **3D0** | **DONE** | calib-512 offline → **λ_s=0.40** (0.20/0.30 cannot stop Evid farming) ([PHASE3D0](PHASE3D0.md)) |
-| **3D1** | **FAIL @250** | λ=0.40 → search=0 after step5, KL~0.58; not a tradeoff ([PHASE3D1](PHASE3D1.md)) |
-| 3D1b | **CLOSED** | No Uniform Pareto; phase transition → trigger 3D2 ([PHASE3D1B](PHASE3D1B.md)) |
-| 3D2-v0 w1@50 | **CLOSED** | SOFT_PASS stability / FAIL routing; hold 400 ([PHASE3D2](PHASE3D2.md)) |
-| 3D2b bootstrap | **DONE** | Need/No/Und = 67/28/33 @3C400; dual-probe δ=2 ([PHASE3D2B](PHASE3D2B.md)) |
-| 3D2b Stage-II @50 | **RUNNING** | Boundary-aware refine from 3C@400 ([PHASE3D2B](PHASE3D2B.md)) |
-| 3E / CIPO | later | Full-Corpus; CIPO if evidence-use/gold audit fails |
-| P4 | later | matched-step + GRPO vs REINFORCE |
-| 5M multimodal | **deferred** | After text ECA |
+| SFT-v1 | **CLOSED** | Freeze as RL init |
+| Rollout smoke | **CLOSED** | Search-agent loop OK |
+| Answer-only GRPO | **CLOSED @100** | Pipeline OK; **no-search shortcut** |
+| Evidence GRPO | **CLOSED @400** | Evidence restores search; answer+evid ↑; search→1 |
+| Evidence GEN | **PASS** | val-200 Agent EM Evidence **0.54** > SFT 0.475 > Answer-only 0.19 |
+| Offline cost λ | **DONE** | calib-512 → **λ_s=0.40** |
+| Uniform cost | **FAIL @250** | λ=0.40 → search=0; not a tradeoff |
+| Uniform λ diagram | **CLOSED** | No stable Pareto → trigger Boundary |
+| Capability cost @50 | **CLOSED** | SOFT_PASS stability / FAIL routing |
+| Boundary Stage-II | **active** | From Evidence@400 HF + `rewards_boundary` |
 
 **Final ckpts (local, not in git):**
 
 ```text
-outputs/sft_qwen25_3b_coldstart_v1_merged
-outputs/rl/grpo_sftv1_smoke/global_step_100          # 3B
-outputs/rl/grpo_sftv1_evidence_3c/global_step_400    # 3C
+outputs/00_sft_v1_merged
+outputs/rl/02_hf_answer_only_step100
+outputs/rl/03_hf_evidence_step400
+outputs/rl/04_table_search_boundary/
+outputs/rl/06_ckpt_grpo_boundary/
 ```
+
+Audits under `results/01_*` … `results/15_*`.
 
 ---
 
-## Phase 2 — SFT freeze (val-200)
-
-Details: [PHASE2_CLOSED.md](PHASE2_CLOSED.md) · [PHASE2E4](PHASE2E4_SFTV1_BASELINES.md)
+## SFT-v1 freeze (val-200)
 
 | Setting | Base | SFT-v0 | **SFT-v1** |
 |---------|-----:|-------:|----------:|
@@ -49,92 +47,51 @@ Details: [PHASE2_CLOSED.md](PHASE2_CLOSED.md) · [PHASE2E4](PHASE2E4_SFTV1_BASEL
 
 ---
 
-## Phase 3A — Rollout smoke
+## Answer-only GRPO @100
 
-| Run | finish | search_count | notes |
-|-----|-------:|-------------:|-------|
-| n=8 | 1.0 | 1.0 | obs mask OK |
-| n=32 | 0.969 | — | closed → 3B |
-
----
-
-## Phase 3B — Answer-only GRPO @100
-
-Details: [PHASE3B2.md](PHASE3B2.md) · [audit](../results/phase3b2_grpo_sftv1_baseline_step100_20260809/)  
+Audit: [../results/08_audit_grpo_answer_only_step100/](../results/08_audit_grpo_answer_only_step100/)  
 Reward: \(R=EM+0.1\times\mathrm{format}\)
 
-| Window | score (approx) | answer | search | zero_std | notes |
-|--------|---------------:|-------:|-------:|---------:|-------|
-| early | ~0.23 | — | — | — | pipeline up |
-| 61–100 | ~0.29 | ~0.205 | **0** | **0.77** | **pathology** |
+| Window | score (approx) | answer | search | zero_std |
+|--------|---------------:|-------:|-------:|---------:|
+| 61–100 | ~0.29 | ~0.205 | **0** | **0.77** |
 
-**Close reason:** format/finish≈1 but policy learns **never search** + high group zero-std.
+**Close reason:** learns **never search** + high group zero-std.
 
 ---
 
-## Phase 3C — Evidence GRPO @400
+## Evidence GRPO @400
 
-Details: [PHASE3C.md](PHASE3C.md) · [audit](../results/phase3c_grpo_sftv1_evidence_step400_20260809/)  
+Audit: [../results/09_audit_grpo_evidence_step400/](../results/09_audit_grpo_evidence_step400/)  
 Reward: \(R=EM+0.5\times\mathrm{EvidF1}+0.1\times\mathrm{format}\)  
-Init: **SFT-v1** (not 3B ckpt). Stopped at 400 by request after disk-full resume from 300.
+Init: **SFT-v1**. Stopped at 400.
 
-| Window | answer | evidence | search_rate | zero_std | finish | kl |
-|--------|-------:|---------:|------------:|---------:|-------:|---:|
-| 1–50 | 0.098 | 0.272 | 0.408 | 0.193 | 0.970 | 0.003 |
-| 51–100 | 0.203 | 0.498 | 0.950 | 0.220 | 0.971 | 0.016 |
-| 101–200 | 0.482 | 0.558 | 1.000 | 0.351 | 0.998 | 0.013 |
-| 201–300 | 0.572 | 0.590 | 1.000 | 0.479 | 0.999 | 0.016 |
-| 301–350 | 0.602 | 0.595 | 0.999 | 0.430 | 0.999 | 0.020 |
-| **351–399** | **0.614** | **0.617** | **0.999** | **0.582** | **0.999** | **0.015** |
+| Window | answer | evidence | search_rate | zero_std |
+|--------|-------:|---------:|------------:|---------:|
+| 1–50 | 0.098 | 0.272 | 0.408 | 0.193 |
+| 351–399 | **0.614** | **0.617** | **0.999** | **0.582** |
 
-### Head-to-head (same infra)
+GEN: [../results/10_eval_grpo_evidence_val200/](../results/10_eval_grpo_evidence_val200/) (`gen_sft` / `gen_3b` / `gen_3c`).
 
-| Metric | 3B@61–100 | 3C@61–100 | 3C@351–399 |
-|--------|----------:|----------:|-----------:|
-| answer | 0.205 | ~0.22 | **0.614** |
-| evidence | ~0 | **~0.51** | **0.617** |
-| search | 0 | **~0.98** | **~1.0** |
-| zero_std | 0.77 | **~0.24** | 0.58 |
-
-**Close reason:** Evidence objective succeeds; late **search≡1** + rising zero_std → **3D Cost**, not longer 3C.
-
-### Ops notes
-
-- Disk full @~324; resume from `global_step_300`; `SAVE_FREQ=50`.  
-- TB: `outputs/rl/tensorboard/grpo_sftv1_evidence_3c` (port 6007).  
-- `grad_norm` spikes = GRPO noise (OK); entropy≠loss; `agent/*` = behavior monitors.
+**Close reason:** late **search≡1** → Boundary / Cost, not longer Evidence train.
 
 ---
 
-## Ablation tree (locked)
+## Cost / Boundary
 
-```text
-SFT-v1
- ├── 3B Answer+Format           CLOSED @100
- ├── 3C Answer+Evidence+Format  CLOSED @400
- └── 3D Answer+Evidence−Cost(+Dup)  NEXT (fresh from SFT-v1)
-
-Multimodal (Phase 5M): separate branch after text mainline — see ROADMAP.md
-```
+- Offline λ: `results/11_sweep_offline_cost_lambda` · data `data/rl/calib_cost_lambda_512`
+- Uniform FAIL: `results/12_audit_uniform_cost_fail`
+- λ diagram: `results/13_audit_uniform_cost_lambda_diagram`
+- Capability @50: `results/14_audit_capability_cost_step50`
+- Boundary stop summary: `results/15_summary_boundary_grpo_stopped.md`
 
 ## Immediate next
 
-1. **3D2 routing diagnosis** @ckpt50 (refresh \(p_{int}\), stratified search) before 400  
-2. Do not Uniform-λ micro-sweep. Do not blind segmented@400.
-
-## Causal chain (current)
-
-```text
-3B  Answer-only → search=.09  Answer=.19   (no-search)
-3C  +Evidence   → search=1.00 Answer=.54   (always-search, GEN PASS)
-3D0 offline     → λ_s=0.40 flips I ranking on synthetic pairs
-3D1 Uniform@0.40→ search=0 after step5, KL↑  (FAIL)
-3D1b online λ   → no stable Pareto (CLOSED) → trigger 3D2
-3D2 w1@50       → no extinction; search→.98; Δ_route≈0 (routing FAIL; hold 400)
-```
+1. Boundary routing diagnosis (`Δ_boundary`, `sr_no`↓ / `sr_need`↑)  
+2. Do not Uniform-λ micro-sweep; do not blind 400.
 
 ## What is not claimed
 
-- smoke128 train-window ≠ leaderboard; **dev-200 is a development set** (not final untouched test).  
-- Not production cost-optimal yet (3D1 not run).  
-- Not open-web / multimodal (L3 / 5M deferred).
+- `train_smoke_128` train-window ≠ leaderboard; **dev-200 is a development set**.  
+- Not production cost-optimal yet.  
+- Not open-web / multimodal.

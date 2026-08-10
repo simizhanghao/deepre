@@ -2,7 +2,7 @@
 
 Example:
   CUDA_VISIBLE_DEVICES=4 python scripts/run_agent_rollout_smoke.py \
-    --model-path outputs/sft_qwen25_3b_coldstart_v1_merged \
+    --model-path outputs/00_sft_v1_merged \
     --eval-file data/eval/hotpotqa_200.jsonl \
     --max-samples 8 --top-k 5 --max-search-turns 2 \
     --run-tag phase3a_n8
@@ -24,7 +24,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from src.agents.react_loop import RolloutConfig, run_search_agent_rollout  # noqa: E402
 from src.sft.prototype_builder import load_jsonl  # noqa: E402
 
-DEFAULT_MODEL = str(REPO_ROOT / "outputs" / "sft_qwen25_3b_coldstart_v1_merged")
+DEFAULT_MODEL = str(REPO_ROOT / "outputs" / "00_sft_v1_merged")
 
 
 def parse_args() -> argparse.Namespace:

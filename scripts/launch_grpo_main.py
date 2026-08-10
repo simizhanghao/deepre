@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Same-process entry: apply Phase-3B metrics monkeypatch, then veRL main_ppo.
+"""Same-process entry: apply GRPO metrics monkeypatch, then veRL main_ppo.
 
 Hydra CLI overrides are forwarded unchanged:
   python scripts/launch_grpo_main.py algorithm.adv_estimator=grpo ...
@@ -38,12 +38,10 @@ def main() -> None:
     finally:
         sys.argv = saved
 
-    # File-patch TaskRunnerV1.run (Ray actor) + driver apply. Driver-only
-    # monkeypatch never reached _compute_metrics in prior 3B2 runs.
-    metrics_mod = _load("patch_verl_phase3b_metrics", scripts / "patch_verl_phase3b_metrics.py")
+    metrics_mod = _load("patch_verl_grpo_metrics", scripts / "patch_verl_grpo_metrics.py")
     file_status = metrics_mod.file_patch_task_runner()
     apply_status = metrics_mod.apply()
-    print(f"[launch] phase3b metrics: file={file_status} apply={apply_status}", flush=True)
+    print(f"[launch] grpo metrics: file={file_status} apply={apply_status}", flush=True)
 
     # Mimic `python -m verl.trainer.main_ppo ...`
     sys.argv = ["verl.trainer.main_ppo", *hydra_args]

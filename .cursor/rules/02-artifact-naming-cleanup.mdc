@@ -1,0 +1,18 @@
+---
+description: 强制编号英文命名 + 训练/执行结束后立刻给出清进程命令
+alwaysApply: true
+---
+
+# Artifact Naming + Post-Run Cleanup (Hard)
+
+Follow project skill `.cursor/skills/artifact-naming-and-cleanup/SKILL.md` on every turn.
+
+## Must
+
+1. **New artifacts** under `outputs/`, `results/`, `logs/`, `data/`, `configs/`, `scripts/`, `src/rl/` use numbered English names (`NN_descriptive`, `rewards_<role>.py`). No new `phase*` / `*_v0_*` primary names.
+2. After **any** train / eval / tmux / docker / Ray / SGLang / long script finishes or fails: in the **same reply**, give the user copy-paste cleanup commands (`nvidia-smi`, `tmux kill-session`, `ray stop`, `pkill` for leftover train/retriever). Do not wait for them to ask.
+3. Never edit `external/`.
+
+## User executes commands
+
+Propose exact bash blocks; do not assume kills succeeded without user paste-back.

@@ -2,7 +2,7 @@
 # Host-side Phase 3D2b Boundary-Aware launcher (Stage-II from 3C@400).
 #
 # Example:
-#   ECA_BOUNDARY_TABLE=/workspace/deepresearch/outputs/rl/boundary/boundary_latest.json \
+#   ECA_BOUNDARY_TABLE=/workspace/deepresearch/outputs/rl/04_table_search_boundary/boundary_latest.json \
 #   STEPS=50 bash scripts/tmux_grpo_boundary.sh
 set -euo pipefail
 
@@ -19,15 +19,15 @@ SESSION=${SESSION:-eca-grpo-3d2b}
 CONTAINER=${CONTAINER:-eca-verl}
 STEPS=${STEPS:-50}
 SAVE_FREQ=${SAVE_FREQ:-50}
-OUT_DIR=${OUT_DIR:-/workspace/deepresearch/outputs/rl/grpo_3c400_boundary_3d2b}
-EXPERIMENT_NAME=${EXPERIMENT_NAME:-grpo_3c400_boundary_3d2b}
+OUT_DIR=${OUT_DIR:-/workspace/deepresearch/outputs/rl/06_ckpt_grpo_boundary}
+EXPERIMENT_NAME=${EXPERIMENT_NAME:-grpo_boundary}
 RESUME_MODE=${RESUME_MODE:-disable}
-MODEL_PATH=${MODEL_PATH:-/workspace/deepresearch/outputs/rl/hf_merged/grpo_sftv1_evidence_3c_step400}
+MODEL_PATH=${MODEL_PATH:-/workspace/deepresearch/outputs/rl/03_hf_evidence_step400}
 ECA_EVIDENCE_WEIGHT=${ECA_EVIDENCE_WEIGHT:-0.5}
 ECA_SEARCH_COST_WEIGHT=${ECA_SEARCH_COST_WEIGHT:-0.30}
 ECA_BOUNDARY_STRICT=${ECA_BOUNDARY_STRICT:-1}
 ECA_BOUNDARY_DEFAULT=${ECA_BOUNDARY_DEFAULT:-Undetermined}
-ECA_BOUNDARY_TABLE=${ECA_BOUNDARY_TABLE:-/workspace/deepresearch/outputs/rl/boundary/boundary_latest.json}
+ECA_BOUNDARY_TABLE=${ECA_BOUNDARY_TABLE:-/workspace/deepresearch/outputs/rl/04_table_search_boundary/boundary_latest.json}
 BATCH=${BATCH:-16}
 N=${N:-4}
 GPU_MEM_UTIL=${GPU_MEM_UTIL:-0.60}
@@ -35,7 +35,7 @@ MICRO_BATCH=${MICRO_BATCH:-2}
 TB_PORT=${TB_PORT:-6010}
 HOST_TB_DIR=${HOST_TB_DIR:-$REPO/outputs/rl/tensorboard/$EXPERIMENT_NAME}
 STAMP=$(date +%Y%m%d_%H%M%S)
-LOG_NAME=${LOG_NAME:-grpo_${EXPERIMENT_NAME}_to${STEPS}_${STAMP}.log}
+LOG_NAME=${LOG_NAME:-06_grpo_boundary_train_to${STEPS}_${STAMP}.log}
 LOG=${LOG:-$REPO/logs/$LOG_NAME}
 CONTAINER_LOG=/workspace/deepresearch/logs/$LOG_NAME
 
@@ -43,7 +43,7 @@ HOST_BND=${ECA_BOUNDARY_TABLE/\/workspace\/deepresearch/$REPO}
 if [[ ! -f "$HOST_BND" && ! -L "$HOST_BND" ]]; then
   echo "Missing boundary table: $HOST_BND"
   echo "Build: CUDA_VISIBLE_DEVICES=4 python scripts/build_search_boundary_table.py \\"
-  echo "  --model-path outputs/rl/hf_merged/grpo_sftv1_evidence_3c_step400"
+  echo "  --model-path outputs/rl/03_hf_evidence_step400"
   exit 1
 fi
 PY=${PYTHON:-}
@@ -56,9 +56,9 @@ if [[ -z "$PY" ]]; then
 fi
 "$PY" "$REPO/scripts/audit_boundary_table.py" \
   --table "$HOST_BND" \
-  --train-parquet "$REPO/data/rl/grpo_smoke_128/train.parquet" \
+  --train-parquet "$REPO/data/rl/train_smoke_128/train.parquet" \
   --require-full-coverage \
-  --out "$REPO/outputs/rl/grpo_3c400_boundary_3d2b/boundary_audit_pretrain_host.json"
+  --out "$REPO/outputs/rl/06_ckpt_grpo_boundary/boundary_audit_pretrain_host.json"
 
 command -v tmux >/dev/null || { echo "tmux not found"; exit 1; }
 docker start "$CONTAINER" >/dev/null
@@ -70,14 +70,14 @@ fi
 
 docker exec "$CONTAINER" bash -lc \
   "mkdir -p /workspace/deepresearch/outputs/rl/tensorboard/${EXPERIMENT_NAME} \
-            /workspace/deepresearch/outputs/rl/grpo_3c400_boundary_3d2b \
-            /workspace/deepresearch/outputs/rl/boundary \
+            /workspace/deepresearch/outputs/rl/06_ckpt_grpo_boundary \
+            /workspace/deepresearch/outputs/rl/04_table_search_boundary \
             /workspace/deepresearch/logs && chmod -R a+rwX /workspace/deepresearch/outputs/rl /workspace/deepresearch/logs" || true
 mkdir -p "$(dirname "$LOG")" "$HOST_TB_DIR" 2>/dev/null || true
 
 if ! curl -sf http://127.0.0.1:8001/health >/dev/null; then
   echo "Starting Candidate-BM25 on :8001 ..."
-  nohup bash -lc "cd $REPO; (conda activate deepresearch 2>/dev/null || true); python scripts/start_candidate_retrieval_server.py --index data/rl/grpo_smoke_128/contexts_index.jsonl --port 8001" \
+  nohup bash -lc "cd $REPO; (conda activate deepresearch 2>/dev/null || true); python scripts/start_candidate_retrieval_server.py --index data/rl/train_smoke_128/contexts_index.jsonl --port 8001" \
     >"$REPO/logs/retriever_8001.log" 2>&1 &
   sleep 3
 fi
@@ -92,7 +92,7 @@ if [[ "${RAY_STOP_FIRST:-1}" == "1" ]]; then
 fi
 
 : >"$LOG"
-ln -sfn "$LOG" "$REPO/logs/grpo_3d2b_latest.log"
+ln -sfn "$LOG" "$REPO/logs/06_grpo_boundary_latest.log"
 docker exec -d "$CONTAINER" bash -lc "\
   export PYTHONPATH=/workspace/deepresearch:/workspace/verl; \
   export TENSORBOARD_DIR=/workspace/deepresearch/outputs/rl/tensorboard/${EXPERIMENT_NAME}; \

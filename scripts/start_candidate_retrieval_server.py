@@ -14,7 +14,7 @@ def main() -> None:
     ap.add_argument(
         "--index",
         type=Path,
-        default=REPO / "data/rl/grpo_smoke_128/contexts_index.jsonl",
+        default=REPO / "data/rl/train_smoke_128/contexts_index.jsonl",
     )
     ap.add_argument("--host", default="0.0.0.0")
     ap.add_argument("--port", type=int, default=8001)

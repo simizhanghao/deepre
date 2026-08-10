@@ -13,9 +13,9 @@ Labels (δ=2 default, n=4):
 Usage:
   CUDA_VISIBLE_DEVICES=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
     python scripts/build_search_boundary_table.py \
-      --model-path outputs/rl/hf_merged/grpo_sftv1_evidence_3c_step400 \
-      --train-parquet data/rl/grpo_smoke_128/train.parquet \
-      --contexts-index data/rl/grpo_smoke_128/contexts_index.jsonl \
+      --model-path outputs/rl/03_hf_evidence_step400 \
+      --train-parquet data/rl/train_smoke_128/train.parquet \
+      --contexts-index data/rl/train_smoke_128/contexts_index.jsonl \
       --n 4 --delta 2 --temperature 0.9
 """
 
@@ -37,7 +37,7 @@ sys.path.insert(0, str(REPO))
 
 from src.agents.react_loop import RolloutConfig, run_search_agent_rollout  # noqa: E402
 from src.eval.metrics import exact_match  # noqa: E402
-from src.rl.rewards_3c import extract_answer  # noqa: E402
+from src.rl.rewards_evidence import extract_answer  # noqa: E402
 from src.sft.prototype_builder import AGENT_SYSTEM_PROMPT  # noqa: E402
 
 # Same as 3D2-v0 capability probe — do NOT advertise <search>.
@@ -58,12 +58,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--train-parquet",
         type=str,
-        default=str(REPO / "data/rl/grpo_smoke_128/train.parquet"),
+        default=str(REPO / "data/rl/train_smoke_128/train.parquet"),
     )
     p.add_argument(
         "--contexts-index",
         type=str,
-        default=str(REPO / "data/rl/grpo_smoke_128/contexts_index.jsonl"),
+        default=str(REPO / "data/rl/train_smoke_128/contexts_index.jsonl"),
     )
     p.add_argument("--n", type=int, default=4, help="rollouts per arm")
     p.add_argument("--delta", type=int, default=2, help="NoSearch threshold on n_d")
@@ -79,7 +79,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--symlink-latest",
         type=str,
-        default=str(REPO / "outputs/rl/boundary/boundary_latest.json"),
+        default=str(REPO / "outputs/rl/04_table_search_boundary/boundary_latest.json"),
     )
     p.add_argument(
         "--skip-enabled",
@@ -407,7 +407,7 @@ def main() -> None:
 
     stamp = time.strftime("%Y%m%d_%H%M%S")
     out = Path(args.out) if args.out else (
-        REPO / "outputs/rl/boundary" / f"boundary_3c400_{stamp}.json"
+        REPO / "outputs/rl/04_table_search_boundary" / f"boundary_table_{stamp}.json"
     )
     out.parent.mkdir(parents=True, exist_ok=True)
 

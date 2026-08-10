@@ -267,7 +267,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
             min_global_steps = 0
         if max_global_steps is None:
             max_global_steps = min_global_steps
-        # Flatten agent counters for Phase-3B2 TensorBoard (see phase3b_metrics.py).
+        # Flatten agent counters for GRPO TensorBoard (see grpo_metrics.py).
         extra_fields = {
             "turn_scores": [],
             "tool_rewards": [],

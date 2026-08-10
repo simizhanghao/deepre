@@ -4,27 +4,27 @@
 
 ## Done
 
-- [x] 3C CLOSED @400 · **3C-GEN PASS** (dev-200)
-- [x] **3D0** → λ_s=0.40 offline ([PHASE3D0.md](PHASE3D0.md))
-- [x] **3D1 λ=0.40 FAIL** — search extinction ([PHASE3D1.md](PHASE3D1.md))
-- [x] **3D1b CLOSED** — no stable Uniform Pareto → trigger 3D2 ([PHASE3D1B.md](PHASE3D1B.md))
-- [x] **3D2-v0 window-1 @50 DONE** — SOFT_PASS stability / **FAIL routing**; **HOLD 400** ([PHASE3D2.md](PHASE3D2.md))
-- [x] Papers: SAAS / Search-R1-algo / CIGPO / CIPO → `papers/`
+- [x] Evidence GRPO CLOSED @400 · GEN PASS (dev-200)
+- [x] Offline cost λ → λ_s=0.40
+- [x] Uniform cost FAIL → no stable Pareto → trigger Boundary
+- [x] Capability-cost window-1 @50 CLOSED (routing FAIL; HOLD 400)
+- [x] Artifact cleanup: numbered `results/` / `outputs/rl/` / English reward modules
 
-## NOW — 3D2b Search-Boundary-Aware Stage-II ⬜
+## NOW — Boundary-aware Stage-II
 
-1. Close 3D2-v0 (no continue→400)  
-2. Bootstrap boundary table @ **3C@400 HF**: 4×disabled + 4×enabled, δ=2  
-3. Stage-II GRPO from 3C@400 + `rewards_3d2b` · **50 steps**  
-4. Gate on \(\Delta_{\mathrm{boundary}}\), NoSearch↓ / NeedSearch↑ search rates  
+1. Boundary table @ **Evidence@400 HF** (`outputs/rl/04_table_search_boundary`)  
+2. Stage-II GRPO from Evidence@400 + `src/rl/rewards_boundary.py`  
+3. Gate on \(\Delta_{\mathrm{boundary}}\), NoSearch↓ / NeedSearch↑ search rates  
+4. Entry: `scripts/run_grpo_boundary.sh` / `scripts/tmux_grpo_boundary.sh`
 
-Do **not**: blind 400 · Uniform λ 微扫 · CIGPO/CIPO · REINFORCE (unless boundary OK but mixed-action groups still rare).  
-Docs: [PHASE3D2B.md](PHASE3D2B.md)
+Do **not**: blind 400 · Uniform λ 微扫 · CIGPO/CIPO · REINFORCE (unless boundary OK but mixed-action groups still rare).
 
 ## Later
 
-3E Full-Corpus · Phase4 · 5M multimodal
+Full-Corpus · Phase4 · multimodal
 
 ## Naming
 
-`hotpotqa_200` = **dev-200** (selection).
+`hotpotqa_200` = **dev-200** (selection).  
+Train pool: `data/rl/train_smoke_128`.  
+SFT: `outputs/00_sft_v1_merged`.

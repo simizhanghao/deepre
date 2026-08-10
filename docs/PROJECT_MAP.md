@@ -1,75 +1,55 @@
 # Project Map — Evidence-Cost-Aware Deep Research Agent
 
-> 状态：**3C CLOSED @400**；下一执行项见 [NEXT_STEPS.md](NEXT_STEPS.md)；全路线见 [ROADMAP.md](ROADMAP.md)
+> 状态：Evidence CLOSED @400；当前 Boundary GRPO。见 [NEXT_STEPS.md](NEXT_STEPS.md) · [ROADMAP.md](ROADMAP.md)
 
 ## 路线
 
 ```text
-Search-R1 (3B) → Evidence (3C) → Cost (3D) → Full-Corpus (3E) → Phase4
-                                                      ↘ Phase5M Multimodal (later)
+SFT-v1 → Answer-only → Evidence → Boundary/Cost → Full-Corpus → Phase4
+                                                      ↘ Multimodal (later)
 ```
 
-Do **not** put multimodal inside 3D. Open-web = L3 after text ECA.
-## Pipeline Overview
+## Pipeline
 
 ```text
-Question → Planner/Reasoner → src/tools (retriever) → src/env (search_env)
-        → Evidence Extractor → Answer → src/rewards/* → src/eval → results/{run}/
+Question → agent loop → Candidate-BM25 tool → reward (evidence/boundary)
+        → eval / results/{run}/
 ```
 
-## Directory Layout (方案 A)
+## Directory Layout
 
-| Path | Status | Purpose |
-|------|--------|---------|
-| `.cursor/rules/` | ✅ | 常驻 guardrails |
-| `.cursor/skills/` | ✅ | 10 个 skill（6 个待对齐新路线） |
-| `configs/` | ✅ 空 | sft / grpo / eval yaml |
-| `data/raw/` | ✅ 空 | 原始下载数据（只读） |
-| `data/processed/` | ✅ 空 | 统一格式 JSONL |
-| `data/sft/` | ✅ 空 | SFT 轨迹数据 |
-| `data/eval/` | ✅ 空 | 评测数据 |
-| `src/tools/` | ✅ 空 | retriever, bm25, dense_retriever, reranker |
-| `src/env/` | ✅ 空 | search_env |
-| `src/agents/` | ✅ 空 | direct, rag, react, evidence agent |
-| `src/rewards/` | ✅ 空 | answer, evidence, citation, format, cost |
-| `src/eval/` | ✅ 空 | metrics, failure_analysis, trace_viewer |
-| `src/train/` | ✅ 空 | sft_train, grpo_train, data_collator |
-| `scripts/` | ✅ 空 | 运行入口脚本 |
-| `results/` | ✅ 空 | 所有实验产物（gitignore） |
-| `docs/` | ✅ | PROJECT_MAP, NEXT_STEPS, RUN_LOG, reading-notes |
-| `papers/` | ✅ | 10 份精读资料 |
-| `outputs/` | ⚠️ legacy | 旧布局遗留，待移除，勿写新产物 |
+| Path | Purpose |
+|------|---------|
+| `configs/sft/` | `sft_v1_lora.yaml` · `sft_v1_merge.yaml` · `dataset_info_sft_v1.json` |
+| `configs/rl/` | `grpo_smoke128.yaml` · tool / agent_loop |
+| `data/sft/` | `coldstart_v1.jsonl` + llamafactory ShareGPT |
+| `data/rl/train_smoke_128/` | GRPO parquet + BM25 index |
+| `data/rl/calib_cost_lambda_512/` | offline λ calib |
+| `data/eval/` | hotpotqa id lists |
+| `src/rl/` | `rewards_evidence.py` · `rewards_boundary.py` · agent loop · tools |
+| `src/sft/` | coldstart builders |
+| `src/eval/` | metrics · protocol · trace |
+| `scripts/` | train / eval / boundary entrypoints |
+| `results/` | numbered audits `01_`…`15_` |
+| `outputs/` | `00_sft_v1_merged` · `rl/01_`…`06_` |
+| `logs/` | numbered train/eval logs |
+| `docs/` | ROADMAP · RESULTS_BOARD · NEXT_STEPS · PROJECT_MAP |
+| `external/` | **read-only** third-party refs |
+| `papers/` | reading notes |
+
+## Key scripts
+
+| Script | Role |
+|--------|------|
+| `scripts/run_grpo_evidence.sh` | Evidence GRPO |
+| `scripts/run_grpo_boundary.sh` | Boundary GRPO |
+| `scripts/tmux_grpo_boundary.sh` | detach-safe Boundary launch |
+| `scripts/build_search_boundary_table.py` | boundary table bootstrap |
+| `scripts/run_eval_val200_gen.sh` | val-200 GEN compare |
+| `scripts/launch_grpo_main.py` | veRL entry + metrics patch |
 
 ## Data Flow
 
-1. **Input:** HotpotQA, 2Wiki（先） → `data/raw/`
-2. **Process:** validate + filter → `data/processed/*.jsonl`
-3. **SFT:** trajectory（含 evidence/internal）→ `data/sft/` → `src/train/sft_train.py` → `results/sft_*/`
-4. **RL:** question + gold_answer → rollout → reward → `results/rl_*/`
-5. **Eval:** all methods → `results/{run}/` + trace.jsonl
-
-## Known Missing Pieces
-
-- [ ] trace schema（Task 1，下一步地基）
-- [ ] 全部 src/ 代码模块
-- [ ] FlashRAG baseline 接入
-- [ ] Search-R1 最小 GRPO 闭环
-- [ ] evidence / cost / routing reward
-- [ ] 单元测试与 smoke 脚本
-
-## Skills Reference
-
-| Skill | 状态 |
-|-------|------|
-| `task-scoped-execution` | ✅ 保留（执行纪律） |
-| `experiment-smoke-test` | ✅ 保留 |
-| `theory-paper-reading` | ✅ 保留（论文已读） |
-| `repo-orientation` | ⚠️ 待对齐 src/ |
-| `search-tool-protocol` | ⚠️ 待加 evidence/internal |
-| `sft-coldstart-training` | ⚠️ 待对齐新轨迹格式 |
-| `rl-reward-grpo` | ⚠️ 待加多 reward |
-| `eval-ablation` | ⚠️ 待加 evidence/cost 指标 |
-| `report-readme-writing` | ⚠️ 待改主线 |
-| `data-contract-validation` | ⚠️ 待对齐 trace schema |
-| （新增）`trace-schema-and-failure-analysis` | ⬜ 计划新增 |
-| （新增）`evidence-cost-aware-design` | ⬜ 计划新增 |
+1. HotpotQA → `data/sft/coldstart_v1.jsonl` → SFT → `outputs/00_sft_v1_merged`
+2. `train_smoke_128` → Evidence / Boundary GRPO → `outputs/rl/03_*` / `06_*`
+3. Eval → `results/10_eval_grpo_evidence_val200/`

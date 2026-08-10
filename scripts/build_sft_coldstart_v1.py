@@ -52,7 +52,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--teacher-cache", type=str, default=None)
     p.add_argument("--frozen-val-ids", type=str, default=str(DEFAULT_FROZEN))
     p.add_argument("--output-jsonl", type=str, default="data/sft/coldstart_v1.jsonl")
-    p.add_argument("--audit-dir", type=str, default="results/phase2e2_coldstart_v1")
+    p.add_argument("--audit-dir", type=str, default="results/01_build_sft_v1_mix")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--n-internal", type=int, default=DEFAULT_TARGETS_V1["internal"])
     p.add_argument(

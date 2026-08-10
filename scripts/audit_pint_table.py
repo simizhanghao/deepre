@@ -60,7 +60,7 @@ def main() -> None:
     ap.add_argument(
         "--train-parquet",
         type=str,
-        default=str(REPO / "data/rl/grpo_smoke_128/train.parquet"),
+        default=str(REPO / "data/rl/train_smoke_128/train.parquet"),
     )
     ap.add_argument(
         "--direct-labels",
