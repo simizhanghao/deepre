@@ -9,6 +9,10 @@ description: >-
 
 # Theory & Paper Reading Skill
 
+## Token Discipline (Hard)
+
+Keep every applicable rule and the same output quality, but load only the task-relevant sections/files, avoid rereading unchanged context within the same task, and never continuously poll or watch experiments; use one bounded status check only when evidence is needed.
+
 ## When to Use
 
 - User says: "读论文", "讲清楚 X", "这层理论对应什么代码"
