@@ -172,6 +172,11 @@ fused-LCE logprobs match VeOmni exactly (`20/20`, maximum absolute difference
 Verdict: `EXACT_ROLLOUT_GATE_A_PASS`. See
 `results/17_rollout_alignment/calibration/VEXACT_GATE_A1_REPORT.md`.
 
+Backend diagnosis is closed. Active line: **Exact-Rollout ECA Closure** —
+A2 AgentLoop wiring, A3/Gate B trajectory contract, A4 exact 32×4 support,
+then the causal Boundary@50 rerun. Boundary@50 carries a frozen 2-Q alignment
+sentinel at steps 0/10/25/50.
+
 ## Immediate next
 
 Artifacts: `results/17_rollout_alignment/{environment,calibration,parity_32x4,trajectory_budget}/`  
@@ -180,7 +185,12 @@ Artifacts: `results/17_rollout_alignment/{environment,calibration,parity_32x4,tr
 1. ✅ **Env A0** — official-pinned `eca-verl-vexact`; original `eca-verl` untouched
 2. ✅ **A1-S** — 2-Q exact-contract smoke (`max |δ|=0`)
 3. ✅ **A1-20 / Gate A1-Exact** — exact contract + stochastic support PASS
-4. **NOW: A2–A3 / Gate B** → **A4 no-train 32×4** → Boundary@50
+4. ✅ **A2 AgentLoop→VeXact** — 4/4 rollouts; identity sentinels PASS;
+   routes `1 internal / 3 search`; max sampled route probability `0.73096`
+5. ✅ **A3 / Gate B** — finish `16/16`, clip/missing/reserve violations `0`
+6. ✅ **A4 no-train 32×4** — finish `128/128`,
+   `P(internal|NoSearch)=0.31818`, mixed-group rate `0.59375`
+7. **NOW: causal Boundary@50** with the exact 2-Q sentinel at steps 0/10/25/50
 
 ## What is not claimed
 

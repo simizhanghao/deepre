@@ -1,11 +1,11 @@
 {
   "purpose": "vexact_a2_agent_loop_smoke_prepare",
-  "git_commit": "f7f39c1",
+  "git_commit": "76e804d",
   "n_questions": 2,
-  "n_rollouts": 1,
+  "n_rollouts": 2,
   "selected_ids": [
-    "hotpotqa_distractor_train_5abda45e55429965af743d94",
-    "hotpotqa_distractor_train_5a72899f5542992359bc30da"
+    "hotpotqa_distractor_train_5aba9c425542994dbf019977",
+    "hotpotqa_distractor_train_5abbff635542993f40c73c3e"
   ],
   "boundary_hist": {
     "NeedSearch": 1,

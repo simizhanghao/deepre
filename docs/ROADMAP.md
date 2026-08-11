@@ -47,11 +47,14 @@ NOW → Rollout Alignment Recovery
 │     gate = SGLANG_ROUTE_TOKEN_LOGIT_TIM
 │     HF@.95 NoSearch internal≈0.28; SGLang tok0 p(search)≈0.997
 │
-├── ◐ Rollout Alignment Recovery (A1 PASS; NOW A2) → `results/17_rollout_alignment/`
+├── ✅ Exact-Rollout ECA Closure (A1+A2+Gate B+A4 PASS) → `results/17_rollout_alignment/`
 │     freeze eca-verl · fresh eca-verl-vexact (official VeXact pins; not clone eca-verl)
 │     ✅ Env A0 → ✅ 2-Q smoke → ✅ frozen-20 Gate A1-Exact (max |δ|=0)
 │     old HF = continuity reference; VeOmni/FSDP actor = authoritative reference
-│     Gate A1 → A2 loop → A3 budget → Gate B → A4 no-train 32×4 → Boundary@50
+│     ✅ Gate A1 → ✅ A2 loop → ✅ A3/Gate B → ✅ A4 32×4 → NOW Boundary@50
+│     Boundary@50 sentinel: exact 2-Q at steps 0/10/25/50
+│     PASS → Candidate ECA-v1 → one Boundary refresh → short @50 → Full Corpus
+│     FAIL branches only by signature: REINFORCE | SAPO | Root Branch/BPO
 │     VeXact hold after 2 effective working days → auto HFExact (same exact gate)
 │     abstract RolloutBackend only after Gate A1 PASS
 │     reward/table frozen until Exact backend proven

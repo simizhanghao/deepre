@@ -1,0 +1,20 @@
+{
+  "gate": "GATE_B_PASS",
+  "n_questions": 8,
+  "n_rollouts": 2,
+  "finish_rate": 1.0,
+  "clip_ratio": 0.0,
+  "final_answer_missing_rate": 0.0,
+  "final_answer_reserve_violations": 0,
+  "max_assistant_turn_tokens": 256,
+  "max_observation_turn_tokens": 384,
+  "complete_close_sequence_rate": 0.9411764705882353,
+  "continued_capped_turns": 2,
+  "unresolved_unclosed_turns": 0,
+  "routes": {
+    "internal": 1,
+    "search": 15
+  },
+  "p_internal_NoSearch": 0.16666666666666666,
+  "mixed_action_group_rate": 0.125
+}

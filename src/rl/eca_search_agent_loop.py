@@ -74,6 +74,64 @@ def _rollout_backend() -> str:
     return (os.environ.get("ECA_ROLLOUT_BACKEND") or "sglang").strip().lower()
 
 
+def _positive_env_int(name: str, default: int) -> int:
+    raw = (os.environ.get(name) or "").strip()
+    try:
+        value = int(raw) if raw else default
+    except ValueError:
+        value = default
+    return value if value > 0 else default
+
+
+def _truncate_at_complete_sequence(
+    token_ids: list[int],
+    sequences: dict[str, list[int]],
+    max_tokens: int,
+    tokenizer: Any | None = None,
+) -> tuple[list[int], str | None, bool]:
+    """Keep through the earliest complete closing tag, bounded by max_tokens.
+
+    Exact token matching remains the cheap/default path.  With a tokenizer,
+    also inspect decoded prefixes because BPE tokenization of ``</tag>`` can
+    differ when the tag follows a newline or ordinary text.
+    """
+    best_end: int | None = None
+    best_tag: str | None = None
+    for tag, sequence in sequences.items():
+        if not sequence:
+            continue
+        width = len(sequence)
+        for start in range(0, len(token_ids) - width + 1):
+            if token_ids[start : start + width] == sequence:
+                end = start + width
+                if best_end is None or end < best_end:
+                    best_end, best_tag = end, tag
+                break
+    if tokenizer is not None:
+        limit = min(len(token_ids), max_tokens)
+        bounded_text = tokenizer.decode(token_ids[:limit], skip_special_tokens=True)
+        decoded_candidates: list[tuple[int, int, str]] = []
+        for tag in sequences:
+            char_pos = bounded_text.find(tag)
+            if char_pos < 0:
+                continue
+            lo, hi = 1, limit
+            while lo < hi:
+                mid = (lo + hi) // 2
+                prefix_text = tokenizer.decode(token_ids[:mid], skip_special_tokens=True)
+                if tag in prefix_text:
+                    hi = mid
+                else:
+                    lo = mid + 1
+            decoded_candidates.append((lo, char_pos, tag))
+        if decoded_candidates:
+            best_end, _, best_tag = min(decoded_candidates)
+
+    keep = min(len(token_ids), max_tokens, best_end if best_end is not None else len(token_ids))
+    matched = best_tag if best_end is not None and best_end <= max_tokens else None
+    return token_ids[:keep], matched, keep < len(token_ids)
+
+
 def _token_output_meta(output: Any) -> dict[str, Any]:
     """Best-effort finish_reason / meta from TokenOutput (engine-dependent)."""
     meta: dict[str, Any] = {}
@@ -161,6 +219,8 @@ class EcaSearchAgentLoop(AgentLoopBase):
         self.max_search_turns = 2
         self.prompt_length = self.rollout_config.prompt_length
         self.response_length = self.rollout_config.response_length
+        self.max_assistant_turn_tokens = _positive_env_int("ECA_MAX_ASSISTANT_TURN_TOKENS", 256)
+        self.final_answer_reserve = _positive_env_int("ECA_FINAL_ANSWER_RESERVE", 256)
 
     @rollout_trace_op
     async def run(self, sampling_params: dict[str, Any], **kwargs) -> AgentLoopOutput:
@@ -189,6 +249,8 @@ class EcaSearchAgentLoop(AgentLoopBase):
             "observation_tokens": 0,
             "finish": 0,
             "used_internal": 0,
+            "final_answer_missing": 1,
+            "final_answer_reserve_violations": 0,
         }
         request_id = uuid4().hex
 
@@ -200,6 +262,56 @@ class EcaSearchAgentLoop(AgentLoopBase):
             json.dumps(canonical_prompt_ids).encode("utf-8")
         ).hexdigest()
         stop_tok_report = _stop_tokenization_report(self.tokenizer) if _audit_enabled() else {}
+        stop_sequences = {
+            tag: list(self.tokenizer.encode(tag, add_special_tokens=False)) for tag in _STOP_STRINGS
+        }
+
+        async def build_observation_ids(body: str, suffix: str, token_cap: int) -> list[int]:
+            """Format one observation turn while enforcing an exact token cap."""
+
+            async def render(rendered_body: str) -> list[int]:
+                content = f"<observation>\n{rendered_body}\n</observation>\n{suffix}"
+                ids = list(
+                    await self.apply_chat_template(
+                        [{"role": "user", "content": content}],
+                        tools=None,
+                        remove_system_prompt=True,
+                    )
+                )
+                return list(self.turn_separator or []) + ids
+
+            full_ids = await render(body)
+            if len(full_ids) <= token_cap:
+                return full_ids
+
+            body_ids = list(self.tokenizer.encode(body, add_special_tokens=False))
+            keep = max(0, len(body_ids) - (len(full_ids) - token_cap) - 8)
+            while keep >= 0:
+                if self.tool_response_truncate_side == "left":
+                    kept = body_ids[-keep:] if keep else []
+                    marker_left, marker_right = "(truncated)...", ""
+                elif self.tool_response_truncate_side == "right":
+                    kept = body_ids[:keep]
+                    marker_left, marker_right = "", "...(truncated)"
+                else:
+                    left = keep // 2
+                    right = keep - left
+                    kept = []
+                    marker_left, marker_right = "", ""
+                if self.tool_response_truncate_side == "middle":
+                    rendered = (
+                        self.tokenizer.decode(body_ids[:left], skip_special_tokens=False)
+                        + "...(truncated)..."
+                        + self.tokenizer.decode(body_ids[-right:] if right else [], skip_special_tokens=False)
+                    )
+                else:
+                    rendered = self.tokenizer.decode(kept, skip_special_tokens=False)
+                    rendered = marker_left + rendered + marker_right
+                ids = await render(rendered)
+                if len(ids) <= token_cap:
+                    return ids
+                keep -= max(1, len(ids) - token_cap)
+            return []
 
         response_mask: list[int] = []
         response_logprobs: list[float] = []
@@ -226,7 +338,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
             sp.pop("stop", None)
             stop_ids: list[int] = []
             stop_mode = _audit_stop_mode()
-            if stop_mode != "none":
+            if stop_mode == "current":
                 for s in _STOP_STRINGS:
                     ids = self.tokenizer.encode(s, add_special_tokens=False)
                     if ids:
@@ -235,14 +347,21 @@ class EcaSearchAgentLoop(AgentLoopBase):
                 if stop_ids:
                     existing = list(sp.get("stop_token_ids") or [])
                     sp["stop_token_ids"] = sorted(set(existing + stop_ids))
-            else:
+            elif stop_mode in ("none", "sequence"):
                 sp.pop("stop_token_ids", None)
+            else:
+                raise ValueError(f"unknown ECA_AUDIT_STOP_MODE={stop_mode!r}")
 
             audit_cap = _audit_max_new_tokens()
             if audit_cap is not None:
                 sp["max_new_tokens"] = int(audit_cap)
 
             turn_gen_lens: list[int] = []
+            turn_gen_raw_lens: list[int] = []
+            turn_close_tags: list[str | None] = []
+            turn_was_truncated: list[bool] = []
+            turn_continued: list[bool] = []
+            observation_turn_lens: list[int] = []
             first_gen_meta: dict[str, Any] = {}
 
             while (
@@ -289,14 +408,29 @@ class EcaSearchAgentLoop(AgentLoopBase):
                         else max(max_global_steps, int(max_g))
                     )
 
-                gen_ids = list(output.token_ids or [])
-                if not gen_ids:
+                raw_gen_ids = list(output.token_ids or [])
+                if not raw_gen_ids:
                     break
 
-                # Cap to remaining response budget.
+                # A2 preserves raw first-generate output. Formal multi-turn uses
+                # complete closing-sequence truncation plus a per-turn token cap.
                 remain = self.response_length - len(response_mask)
-                gen_ids = gen_ids[:remain]
+                if _audit_enabled() and _audit_first_generate_only() and assistant_turns == 0:
+                    gen_ids = raw_gen_ids[:remain]
+                    matched_close = None
+                    was_truncated = len(gen_ids) < len(raw_gen_ids)
+                else:
+                    gen_ids, matched_close, was_truncated = _truncate_at_complete_sequence(
+                        raw_gen_ids,
+                        stop_sequences,
+                        min(remain, self.max_assistant_turn_tokens),
+                        tokenizer=self.tokenizer,
+                    )
+                turn_gen_raw_lens.append(len(raw_gen_ids))
                 turn_gen_lens.append(len(gen_ids))
+                turn_close_tags.append(matched_close)
+                turn_was_truncated.append(was_truncated)
+                turn_continued.append(False)
                 if assistant_turns == 0:
                     first_gen_ids = list(gen_ids)
                     first_gen_text = self.tokenizer.decode(gen_ids, skip_special_tokens=True)
@@ -365,6 +499,11 @@ class EcaSearchAgentLoop(AgentLoopBase):
                                 if output.log_probs
                                 else None
                             ),
+                            "rollout_log_probs_first": (
+                                list(output.log_probs[: len(first_gen_ids)])
+                                if output.log_probs
+                                else None
+                            ),
                             "parsed_despite_bypass": True,
                         }
                     )
@@ -395,6 +534,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
                 if has_answer:
                     finished = True
                     metrics["finish"] = 1
+                    metrics["final_answer_missing"] = 0
                     break
 
                 if search_hits:
@@ -411,41 +551,21 @@ class EcaSearchAgentLoop(AgentLoopBase):
                     )
                     metrics["search_count"] = int(metrics["search_count"]) + 1
                     obs_body = (tool_resp.text or "[no documents retrieved]").strip()
-                    if len(obs_body) > self.max_tool_response_length:
-                        side = self.tool_response_truncate_side
-                        n = self.max_tool_response_length
-                        if side == "left":
-                            obs_body = "(truncated)..." + obs_body[-n:]
-                        elif side == "right":
-                            obs_body = obs_body[:n] + "...(truncated)"
-                        else:
-                            half = n // 2
-                            obs_body = obs_body[:half] + "...(truncated)..." + obs_body[-half:]
-
-                    cont = (
-                        f"<observation>\n{obs_body}\n</observation>\n"
+                    suffix = (
                         "Continue. Prefer <evidence> then <think> then <answer>. "
                         f"You may <search> again only if necessary "
                         f"(searches used: {metrics['search_count']}/{self.max_search_turns})."
                     )
-                    obs_messages = [{"role": "user", "content": cont}]
-                    # Tokenize observation user turn; mask=0 (env tokens).
-                    obs_ids = await self.apply_chat_template(
-                        obs_messages, tools=None, remove_system_prompt=True
+                    room_before_reserve = (
+                        self.response_length - len(response_mask) - self.final_answer_reserve
                     )
-                    if self.turn_separator:
-                        obs_ids = list(self.turn_separator) + list(obs_ids)
-                    if len(response_mask) + len(obs_ids) >= self.response_length:
-                        # Keep truncated env tokens if any room left.
-                        room = self.response_length - len(response_mask)
-                        if room <= 0:
-                            break
-                        obs_ids = obs_ids[:room]
-                        prompt_ids = prompt_ids + obs_ids
-                        response_mask.extend([0] * len(obs_ids))
-                        if response_logprobs:
-                            response_logprobs.extend([0.0] * len(obs_ids))
-                        metrics["observation_tokens"] += len(obs_ids)
+                    obs_cap = min(self.max_tool_response_length, room_before_reserve)
+                    if obs_cap <= 0:
+                        metrics["final_answer_reserve_violations"] += 1
+                        break
+                    obs_ids = await build_observation_ids(obs_body, suffix, obs_cap)
+                    if not obs_ids:
+                        metrics["final_answer_reserve_violations"] += 1
                         break
 
                     prompt_ids = prompt_ids + obs_ids
@@ -453,6 +573,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
                     if response_logprobs:
                         response_logprobs.extend([0.0] * len(obs_ids))
                     metrics["observation_tokens"] += len(obs_ids)
+                    observation_turn_lens.append(len(obs_ids))
                     user_turns += 1
                     metrics["last_tool_metrics"] = tool_metrics
                     continue
@@ -471,13 +592,47 @@ class EcaSearchAgentLoop(AgentLoopBase):
                     )
                     if self.turn_separator:
                         nudge_ids = list(self.turn_separator) + list(nudge_ids)
-                    if len(response_mask) + len(nudge_ids) >= self.response_length:
+                    room_before_reserve = (
+                        self.response_length - len(response_mask) - self.final_answer_reserve
+                    )
+                    if len(nudge_ids) > room_before_reserve:
+                        metrics["final_answer_reserve_violations"] += 1
                         break
                     prompt_ids = prompt_ids + nudge_ids
                     response_mask.extend([0] * len(nudge_ids))
                     if response_logprobs:
                         response_logprobs.extend([0.0] * len(nudge_ids))
                     user_turns += 1
+                    continue
+
+                if was_truncated and len(gen_ids) >= min(remain, self.max_assistant_turn_tokens):
+                    # Preserve the per-turn cap without discarding an otherwise
+                    # valid long answer.  Give the model another bounded turn to
+                    # finish and emit a complete closing tag.
+                    nudge = (
+                        "Continue exactly where the previous response stopped. "
+                        "Finish briefly and emit the required complete closing tag; "
+                        "do not repeat earlier text."
+                    )
+                    nudge_ids = await self.apply_chat_template(
+                        [{"role": "user", "content": nudge}],
+                        tools=None,
+                        remove_system_prompt=True,
+                    )
+                    if self.turn_separator:
+                        nudge_ids = list(self.turn_separator) + list(nudge_ids)
+                    room_before_reserve = (
+                        self.response_length - len(response_mask) - self.final_answer_reserve
+                    )
+                    if len(nudge_ids) > room_before_reserve:
+                        metrics["final_answer_reserve_violations"] += 1
+                        break
+                    prompt_ids = prompt_ids + list(nudge_ids)
+                    response_mask.extend([0] * len(nudge_ids))
+                    if response_logprobs:
+                        response_logprobs.extend([0.0] * len(nudge_ids))
+                    user_turns += 1
+                    turn_continued[-1] = True
                     continue
 
                 # No closed action — terminate.
@@ -497,6 +652,12 @@ class EcaSearchAgentLoop(AgentLoopBase):
             max_global_steps = min_global_steps
         # Flatten agent counters for GRPO TensorBoard (see grpo_metrics.py).
         metrics["route_first"] = route_first
+        metrics["response_tokens"] = len(response_mask)
+        metrics["assistant_tokens"] = int(sum(response_mask))
+        metrics["hit_response_cap"] = int(len(response_mask) >= self.response_length)
+        metrics["max_assistant_turn_tokens"] = max(turn_gen_lens, default=0)
+        metrics["max_observation_turn_tokens"] = max(observation_turn_lens, default=0)
+        metrics["final_answer_reserve"] = self.final_answer_reserve
         extra_fields = {
             "turn_scores": [],
             "tool_rewards": [],
@@ -511,6 +672,10 @@ class EcaSearchAgentLoop(AgentLoopBase):
             "max_search_turns": int(self.max_search_turns),
             "used_internal": int(metrics.get("used_internal") or 0),
             "route_first": route_first,
+            "response_tokens": int(metrics["response_tokens"]),
+            "hit_response_cap": int(metrics["hit_response_cap"]),
+            "final_answer_missing": int(metrics["final_answer_missing"]),
+            "final_answer_reserve_violations": int(metrics["final_answer_reserve_violations"]),
             "metrics": metrics,
         }
         _parity_dump_row(
@@ -525,6 +690,12 @@ class EcaSearchAgentLoop(AgentLoopBase):
                 "search_count": int(metrics.get("search_count") or 0),
                 "used_internal": int(metrics.get("used_internal") or 0),
                 "finish": int(finished or metrics.get("finish") or 0),
+                "response_tokens": int(metrics["response_tokens"]),
+                "hit_response_cap": int(metrics["hit_response_cap"]),
+                "final_answer_missing": int(metrics["final_answer_missing"]),
+                "final_answer_reserve_violations": int(metrics["final_answer_reserve_violations"]),
+                "max_assistant_turn_tokens": int(metrics["max_assistant_turn_tokens"]),
+                "max_observation_turn_tokens": int(metrics["max_observation_turn_tokens"]),
                 "max_search_turns": int(self.max_search_turns),
                 "max_assistant_turns": int(self.max_assistant_turns),
             }
@@ -548,6 +719,11 @@ class EcaSearchAgentLoop(AgentLoopBase):
                     "first_generate_text_prefix": first_gen_text[:64],
                     "first_generate_len": len(first_gen_ids),
                     "turn_gen_lens": turn_gen_lens,
+                    "turn_gen_raw_lens": turn_gen_raw_lens,
+                    "turn_close_tags": turn_close_tags,
+                    "turn_was_truncated": turn_was_truncated,
+                    "turn_continued": turn_continued,
+                    "observation_turn_lens": observation_turn_lens,
                     "response_mask_len": len(response_mask),
                     "assistant_turns": int(assistant_turns),
                     "user_turns": int(user_turns),
@@ -565,6 +741,11 @@ class EcaSearchAgentLoop(AgentLoopBase):
                     "search_count": int(metrics.get("search_count") or 0),
                     "used_internal": int(metrics.get("used_internal") or 0),
                     "finish": int(finished or metrics.get("finish") or 0),
+                    "hit_response_cap": int(metrics["hit_response_cap"]),
+                    "final_answer_missing": int(metrics["final_answer_missing"]),
+                    "final_answer_reserve_violations": int(metrics["final_answer_reserve_violations"]),
+                    "max_assistant_turn_tokens": int(metrics["max_assistant_turn_tokens"]),
+                    "max_observation_turn_tokens": int(metrics["max_observation_turn_tokens"]),
                 }
             )
 

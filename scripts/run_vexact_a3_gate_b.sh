@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A2: minimal EcaSearchAgentLoop -> VeXact integration smoke (lr=0, no formal training).
+# A3/Gate B: real multi-turn EcaSearchAgentLoop -> VeXact, validation only.
 set -euo pipefail
 
 repo=/data1/hcc/deepresearch
@@ -10,6 +10,7 @@ output_dir=
 max_samples=
 debug=0
 validate_only=0
+stage=a3
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -19,6 +20,7 @@ while [[ $# -gt 0 ]]; do
     --max-samples) max_samples=$2; shift 2 ;;
     --debug) debug=1; shift ;;
     --validate-only) validate_only=1; shift ;;
+    --stage) stage=$2; shift 2 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -27,62 +29,62 @@ done
   echo "required: --config --seed --output-dir --max-samples --debug" >&2
   exit 2
 }
-[[ "$debug" -eq 1 && "$max_samples" -eq 2 ]] || {
-  echo "A2 smoke is locked to --debug --max-samples 2" >&2
+if [[ "$stage" == a3 ]]; then
+  [[ "$debug" -eq 1 && "$max_samples" -eq 8 ]] || {
+    echo "A3 Gate B smoke is locked to --debug --max-samples 8" >&2
+    exit 2
+  }
+  n_rollouts=2
+  experiment_name=vexact_a3_gate_b
+elif [[ "$stage" == a4 ]]; then
+  [[ "$debug" -eq 0 && "$max_samples" -eq 32 ]] || {
+    echo "A4 parity is locked to --max-samples 32 without --debug" >&2
+    exit 2
+  }
+  n_rollouts=4
+  experiment_name=vexact_a4_parity_32x4
+else
+  echo "unknown --stage: $stage" >&2
   exit 2
-}
+fi
 
 config_abs=$repo/${config#./}
 output_abs=$repo/${output_dir#./}
-train_file=$output_abs/train_parity_smoke2.parquet
-dump_file=$output_abs/a2_first_generate.jsonl
-parity_file=$output_abs/a2_trajectories.jsonl
+if [[ "$stage" == a3 ]]; then
+  train_file=$output_abs/train_gate_b_smoke8.parquet
+  dump_file=$output_abs/a3_multi_turn.jsonl
+  parity_file=$output_abs/a3_trajectories.jsonl
+  summary_file=$output_abs/gate_b_summary.json
+else
+  train_file=$repo/results/16_audit_routing_exploration/parity_sglang_32x4/train_parity_32.parquet
+  dump_file=$output_abs/a4_multi_turn.jsonl
+  parity_file=$output_abs/a4_trajectories.jsonl
+  summary_file=$output_abs/a4_parity_summary.json
+fi
 run_log=$output_abs/run.log
 
 test -f "$config_abs"
 test -f "$train_file"
 test -d "$repo/outputs/rl/03_hf_evidence_step400"
 test -x "$vexact_repo/.venv/bin/python"
-"$vexact_repo/.venv/bin/python" - \
-  "$repo/results/17_rollout_alignment/calibration/sample_ids_exact2.json" \
-  "$repo/outputs/rl/03_hf_evidence_step400" <<'PY'
-import hashlib
-import json
-import sys
-from pathlib import Path
-
-manifest = json.load(open(sys.argv[1], encoding="utf-8"))
-model_path = Path(sys.argv[2])
-
-def sha256(path):
-    digest = hashlib.sha256()
-    with open(path, "rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-checkpoint = manifest["checkpoint"]
-assert sha256(model_path / "config.json") == checkpoint["config_sha256"]
-assert sha256(model_path / "tokenizer.json") == checkpoint["tokenizer_sha256"]
-assert sha256(model_path / "model.safetensors.index.json") == checkpoint["safetensors_index_sha256"]
-print("A2_CHECKPOINT_SENTINEL_PASS")
-PY
 curl -sf http://127.0.0.1:8001/health >/dev/null || {
   echo "Candidate-BM25 server is not healthy on :8001" >&2
   exit 3
 }
 mkdir -p "$output_abs"
 if [[ "$validate_only" -eq 0 ]]; then
-  rm -f "$dump_file" "$parity_file"
+  rm -f "$dump_file" "$parity_file" "$summary_file"
 fi
 
 export PYTHONPATH=$repo${PYTHONPATH:+:$PYTHONPATH}
 export VERL_USE_EXTERNAL_MODULES=vexact.integrations.verl.register
 export ECA_ROLLOUT_BACKEND=vexact
 export ECA_ROUTING_MISMATCH_AUDIT=1
-export ECA_AUDIT_FIRST_GENERATE_ONLY=1
-export ECA_AUDIT_PATH=A2
-export ECA_AUDIT_STOP_MODE=none
+export ECA_AUDIT_FIRST_GENERATE_ONLY=0
+export ECA_AUDIT_PATH=${stage^^}
+export ECA_AUDIT_STOP_MODE=sequence
+export ECA_MAX_ASSISTANT_TURN_TOKENS=256
+export ECA_FINAL_ANSWER_RESERVE=256
 export ECA_ROUTING_MISMATCH_DUMP=$dump_file
 export ECA_PARITY_DUMP=$parity_file
 export ECA_BOUNDARY_TABLE=$repo/outputs/rl/04_table_search_boundary/boundary_latest.json
@@ -101,6 +103,7 @@ runner=("$vexact_repo/.venv/bin/python" -m verl.trainer.main_ppo)
 if [[ "$validate_only" -eq 1 ]]; then
   runner=("$vexact_repo/.venv/bin/python" "$repo/scripts/validate_verl_config.py")
 fi
+
 set +e
 env -u LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES=4,5,6,7 \
   "${runner[@]}" \
@@ -111,7 +114,7 @@ env -u LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES=4,5,6,7 \
   data.val_files="$train_file" \
   data.train_batch_size="$max_samples" \
   data.max_prompt_length=1024 \
-  data.max_response_length=128 \
+  data.max_response_length=2048 \
   data.filter_overlong_prompts=True \
   data.truncation=error \
   data.return_raw_chat=True \
@@ -124,7 +127,7 @@ env -u LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES=4,5,6,7 \
   actor_rollout_ref.model.enable_gradient_checkpointing=True \
   +actor_rollout_ref.model.override_config.attn_implementation=triton-invariant \
   actor_rollout_ref.actor.optim.lr=0 \
-  actor_rollout_ref.actor.ppo_mini_batch_size=2 \
+  actor_rollout_ref.actor.ppo_mini_batch_size=8 \
   actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1 \
   actor_rollout_ref.actor.use_kl_loss=False \
   actor_rollout_ref.actor.entropy_coeff=0 \
@@ -136,24 +139,24 @@ env -u LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES=4,5,6,7 \
   actor_rollout_ref.rollout.name=vexact \
   actor_rollout_ref.rollout.mode=async \
   actor_rollout_ref.rollout.seed="$seed" \
-  actor_rollout_ref.rollout.n=2 \
+  actor_rollout_ref.rollout.n="$n_rollouts" \
   actor_rollout_ref.rollout.temperature=0.9 \
   actor_rollout_ref.rollout.top_p=0.95 \
   actor_rollout_ref.rollout.top_k=-1 \
-  actor_rollout_ref.rollout.val_kwargs.n=2 \
+  actor_rollout_ref.rollout.val_kwargs.n="$n_rollouts" \
   actor_rollout_ref.rollout.val_kwargs.temperature=0.9 \
   actor_rollout_ref.rollout.val_kwargs.top_p=0.95 \
   actor_rollout_ref.rollout.val_kwargs.top_k=-1 \
   actor_rollout_ref.rollout.val_kwargs.do_sample=True \
   actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
   actor_rollout_ref.rollout.pipeline_model_parallel_size=1 \
-  actor_rollout_ref.rollout.max_num_seqs=8 \
-  actor_rollout_ref.rollout.max_num_batched_tokens=2048 \
+  actor_rollout_ref.rollout.max_num_seqs=32 \
+  actor_rollout_ref.rollout.max_num_batched_tokens=4096 \
   actor_rollout_ref.rollout.enforce_eager=True \
   actor_rollout_ref.rollout.free_cache_engine=True \
   actor_rollout_ref.rollout.calculate_log_probs=True \
   actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=1 \
-  ++actor_rollout_ref.rollout.engine_kwargs.vexact.max_cache_blocks=64 \
+  ++actor_rollout_ref.rollout.engine_kwargs.vexact.max_cache_blocks=256 \
   ++actor_rollout_ref.rollout.engine_kwargs.vexact.attn_impl=triton-invariant \
   actor_rollout_ref.rollout.multi_turn.enable=True \
   actor_rollout_ref.rollout.multi_turn.max_assistant_turns=6 \
@@ -175,13 +178,13 @@ env -u LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES=4,5,6,7 \
   trainer.resume_mode=disable \
   trainer.logger='["console"]' \
   trainer.project_name=eca_rollout_alignment \
-  trainer.experiment_name=vexact_a2_agent_loop_smoke \
+  trainer.experiment_name="$experiment_name" \
   trainer.default_local_dir="$output_abs/ckpt_scratch" \
   2>&1 | tee "$run_log"
 run_rc=${PIPESTATUS[0]}
 set -e
 
-echo "a2_run_rc=$run_rc"
+echo "${stage}_run_rc=$run_rc"
 [[ "$run_rc" -eq 0 ]]
 if [[ "$validate_only" -eq 1 ]]; then
   exit 0
@@ -190,50 +193,96 @@ test -s "$dump_file"
 
 "$vexact_repo/.venv/bin/python" - \
   "$dump_file" \
-  "$repo/results/17_rollout_alignment/calibration/sample_ids_exact2.json" \
-  "$repo/outputs/rl/03_hf_evidence_step400" <<'PY'
-import hashlib
+  "$repo/outputs/rl/04_table_search_boundary/boundary_latest.json" \
+  "$summary_file" \
+  "$stage" \
+  "$max_samples" \
+  "$n_rollouts" <<'PY'
 import json
-import math
 import sys
+from collections import Counter, defaultdict
 from pathlib import Path
 
 rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
-manifest = json.load(open(sys.argv[2], encoding="utf-8"))
-model_path = Path(sys.argv[3])
-expected = {row["sample_id"]: row for row in manifest["samples"]}
-
-def sha256(path):
-    digest = hashlib.sha256()
-    with open(path, "rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-checkpoint = manifest["checkpoint"]
-assert sha256(model_path / "config.json") == checkpoint["config_sha256"]
-assert sha256(model_path / "tokenizer.json") == checkpoint["tokenizer_sha256"]
-assert sha256(model_path / "model.safetensors.index.json") == checkpoint["safetensors_index_sha256"]
-assert len(rows) == 4, f"expected 4 first-generate rows, got {len(rows)}"
-assert set(row["sample_id"] for row in rows) == set(expected)
-assert all(row["backend"] == "vexact_eca_search_agent_loop" for row in rows)
-assert all(row["first_generate_len"] > 0 for row in rows)
-assert all(
-    row["canonical_prompt_sha256"] == expected[row["sample_id"]]["canonical_prompt_sha256"]
-    for row in rows
+table = json.load(open(sys.argv[2], encoding="utf-8"))
+table = table.get("boundary", table)
+stage = sys.argv[4]
+n_questions = int(sys.argv[5])
+n_rollouts = int(sys.argv[6])
+assert len(rows) == n_questions * n_rollouts, (
+    f"expected {n_questions * n_rollouts} trajectories, got {len(rows)}"
 )
-assert all(row["first_generate_token_ids"][0] in (27, 4159) for row in rows)
-route_logps = [row["rollout_log_probs_first"][0] for row in rows]
-assert all(value is not None and math.isfinite(value) for value in route_logps)
-assert max(route_logps) <= -0.05, f"route collapse sentinel tripped: {route_logps}"
-print(json.dumps({
-    "gate": "A2_AGENT_LOOP_SMOKE_PASS",
-    "n_rows": len(rows),
-    "backends": sorted({row["backend"] for row in rows}),
-    "checkpoint_hashes_match": True,
-    "canonical_prompt_hashes_match": True,
-    "max_sampled_route_probability": max(math.exp(value) for value in route_logps),
-    "routes": {route: sum(row["route_first"] == route for row in rows)
-               for route in sorted({row["route_first"] for row in rows})},
-}, indent=2))
+
+def boundary(sample_id):
+    value = table[sample_id]
+    if isinstance(value, dict):
+        return value.get("boundary") or value.get("label")
+    return value
+
+finish_rate = sum(row["finish"] for row in rows) / len(rows)
+clip_ratio = sum(row["hit_response_cap"] for row in rows) / len(rows)
+missing_rate = sum(row["final_answer_missing"] for row in rows) / len(rows)
+reserve_violations = sum(row["final_answer_reserve_violations"] for row in rows)
+max_assistant = max(row["max_assistant_turn_tokens"] for row in rows)
+max_observation = max(row["max_observation_turn_tokens"] for row in rows)
+all_closes = [tag for row in rows for tag in row["turn_close_tags"]]
+continued_turns = sum(sum(row.get("turn_continued", [])) for row in rows)
+unresolved_unclosed_turns = 0
+for row in rows:
+    tags = row["turn_close_tags"]
+    continued = row.get("turn_continued", [False] * len(tags))
+    assert len(tags) == len(continued), "turn close/continuation audit length mismatch"
+    for tag, was_continued in zip(tags, continued):
+        if tag is None and not was_continued:
+            unresolved_unclosed_turns += 1
+        elif tag is not None and tag not in ("</search>", "</internal>", "</answer>"):
+            unresolved_unclosed_turns += 1
+routes = Counter(row["route_first"] for row in rows)
+nosearch = [row for row in rows if boundary(row["sample_id"]) == "NoSearch"]
+p_internal_nosearch = sum(row["route_first"] == "internal" for row in nosearch) / len(nosearch)
+groups = defaultdict(set)
+for row in rows:
+    groups[row["sample_id"]].add(row["route_first"])
+mixed_rate = sum({"search", "internal"} <= actions for actions in groups.values()) / len(groups)
+
+trajectory_pass = (
+    finish_rate >= 0.95
+    and clip_ratio < 0.05
+    and missing_rate == 0
+    and reserve_violations == 0
+    and max_assistant <= 256
+    and max_observation <= 384
+    and unresolved_unclosed_turns == 0
+)
+gate_pass = trajectory_pass and (
+    (p_internal_nosearch > 0) if stage == "a3"
+    else (p_internal_nosearch > 0.10 and mixed_rate > 0)
+)
+summary = {
+    "gate": (
+        ("GATE_B_PASS" if gate_pass else "GATE_B_FAIL")
+        if stage == "a3"
+        else ("A4_EXACT_PARITY_PASS" if gate_pass else "A4_EXACT_PARITY_FAIL")
+    ),
+    "stage": stage,
+    "n_questions": n_questions,
+    "n_rollouts": n_rollouts,
+    "finish_rate": finish_rate,
+    "clip_ratio": clip_ratio,
+    "final_answer_missing_rate": missing_rate,
+    "final_answer_reserve_violations": reserve_violations,
+    "max_assistant_turn_tokens": max_assistant,
+    "max_observation_turn_tokens": max_observation,
+    "complete_close_sequence_rate": (
+        sum(tag is not None for tag in all_closes) / len(all_closes) if all_closes else 0.0
+    ),
+    "continued_capped_turns": continued_turns,
+    "unresolved_unclosed_turns": unresolved_unclosed_turns,
+    "routes": dict(routes),
+    "p_internal_NoSearch": p_internal_nosearch,
+    "mixed_action_group_rate": mixed_rate,
+}
+Path(sys.argv[3]).write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+print(json.dumps(summary, indent=2))
+assert gate_pass, summary
 PY

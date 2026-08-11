@@ -1,0 +1,21 @@
+{
+  "gate": "A4_EXACT_PARITY_PASS",
+  "stage": "a4",
+  "n_questions": 32,
+  "n_rollouts": 4,
+  "finish_rate": 1.0,
+  "clip_ratio": 0.0,
+  "final_answer_missing_rate": 0.0,
+  "final_answer_reserve_violations": 0,
+  "max_assistant_turn_tokens": 256,
+  "max_observation_turn_tokens": 384,
+  "complete_close_sequence_rate": 0.927536231884058,
+  "continued_capped_turns": 20,
+  "unresolved_unclosed_turns": 0,
+  "routes": {
+    "internal": 29,
+    "search": 99
+  },
+  "p_internal_NoSearch": 0.3181818181818182,
+  "mixed_action_group_rate": 0.59375
+}

@@ -10,3 +10,13 @@ One line per smoke run: time, component, exit code, output directory and exact c
 - 2026-08-11T19:52:38+08:00 | vexact_gateA1_fused_lce | rc=0 | requests/tokens=20/20, max_abs=0, success=True
 - 2026-08-11T19:53:00+08:00 | vexact_gateA1_summary | gate=PASS | verdict=EXACT_ROLLOUT_GATE_A_PASS
 - 2026-08-11 | vexact_a2_agent_loop_smoke_attempt1 | rc=1 before model load | config validation: train_batch_size=2 < ppo_mini_batch_size=4; launcher corrected to mini_batch_size=2, rerun pending
+- 2026-08-11 | vexact_a2_agent_loop_smoke_attempt2 | rc=1 before model load | rollout log_prob micro-batch unset; corrected to per_gpu=1
+- 2026-08-11 | vexact_a2_config_validate | rc=0, CPU only | checkpoint sentinel PASS; real veRL validate_config PASS; GPU retry pending
+- 2026-08-11 | vexact_a2_agent_loop_smoke_attempt3 | rc=1 after actor model load, before rollout | VeOmni cosine scheduler divides by zero at lr=0; converted A2 to forward-only val-only job
+- 2026-08-11 | vexact_a2_agent_loop_smoke | rc=0 | 4/4 real AgentLoop→VeXact rollouts; identity sentinels PASS; routes internal=1/search=3; max route p=0.73096; A2 PASS
+- 2026-08-11 | vexact_a3_gate_b_preflight | rc=0, CPU only | complete-sequence unit contract PASS; real veRL validate_config PASS; 8×2 GPU Gate B pending
+- 2026-08-11 | vexact_a3_gate_b_attempt1 | rollout rc=0, gate rc=1 | budgets PASS; route support PASS; finish=13/16; three answer turns reached the 256-token per-turn cap; decoded-tag/token-sequence audit also exposed context-dependent Qwen closing-tag tokenization; Gate B remains closed pending bounded continuation retry
+- 2026-08-11 | vexact_a3_gate_b_retry1 | rollout rc=0; initial summary rc=1 due evaluator bug | finish=16/16; clip=0; answer-missing=0; reserve violations=0; route support present; two capped turns were explicitly continued and then closed; evaluator corrected to reject only unclosed turns that were not continued
+- 2026-08-11 | vexact_a3_gate_b_retry1_recheck | rc=0, CPU artifact evaluation | Gate B PASS; unresolved unclosed turns=0; no GPU rerun required
+- 2026-08-11 | vexact_a4_preflight | rc=0, CPU only | frozen historical 32-row parquet and Boundary labels verified; real veRL validate_config PASS; 32×4 GPU calibration pending
+- 2026-08-11 | vexact_a4_parity_32x4 | rc=0 | 128/128 finished; clip/missing/reserve/unresolved-close=0; routes internal=29/search=99; P(internal|NoSearch)=0.31818; mixed-group=0.59375; A4_EXACT_PARITY_PASS
