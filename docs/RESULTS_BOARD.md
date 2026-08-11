@@ -150,6 +150,13 @@ Verdict: `SGLANG_ROUTE_TOKEN_LOGIT_TIM`.
 SGLang is **not** an acceptable RL rollout contract for ECA until replaced/calibrated.  
 Do **not** dig SGLang kernels further; do **not** Mixed-action / Branching / REINFORCE yet.
 
+**vLLM Gate A (2026-08-11): FAIL.** Frozen Evidence@400 exact-20 calibration:
+median / P95 HF-vLLM route-logprob delta `0.270759 / 0.476559`; all `320/320`
+natural samples chose `<search>`; `P(internal | NoSearch)=0`. This mismatch is
+already present in the greedy raw-logprob probe, so temperature is not causal.
+Verdict: `VLLM_ROUTE_TOKEN_GATE_A_FAIL` → continue VeXact, then HFExact fallback.
+See `results/17_rollout_alignment/calibration/VLLM_GATE_A_REPORT.md`.
+
 ## Immediate next
 
 Artifacts: `results/17_rollout_alignment/{environment,calibration,parity_32x4,trajectory_budget}/`  

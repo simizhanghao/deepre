@@ -1,0 +1,12 @@
+{
+  "vexact_path": "/data1/hcc/eca-verl-vexact",
+  "vexact_sha": "0e5fe7fd11811d9b8081f1948e62605daa8cbbbc",
+  "requires_python": ">=3.12,<3.13",
+  "uv_required_version": "==0.9.8",
+  "torch": "2.10.0+cu129",
+  "transformers_override": "5.9.0",
+  "verl_git": "https://github.com/verl-project/verl.git",
+  "verl_rev": "e9618406de5bad40041d7612554e465ec2003ec1",
+  "veomni_git": "https://github.com/ByteDance-Seed/VeOmni.git",
+  "veomni_rev": "9651e80750a7d204d69423d71063c2987b03bf08"
+}

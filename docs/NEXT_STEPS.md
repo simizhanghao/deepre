@@ -18,6 +18,19 @@ Under `results/16_audit_routing_exploration/worker_mismatch/` (**CLOSED**):
 Trainer/HF vs SGLang rollout are **not the same behavior policy** on the route token.  
 Further SGLang kernel forensics / Mixed-action / Branching / REINFORCE / top_p=1-as-fix: **STOP**.
 
+### vLLM replacement check (2026-08-11)
+
+The same frozen-20 route-root calibration also **failed on vLLM**:
+
+- median / P95 HF-vLLM search-token logprob delta: `0.270759 / 0.476559`
+  (Gate A limits: `0.02 / 0.05`)
+- 320/320 natural samples selected `<search>`
+- `P(internal | NoSearch)=0`; mixed-action group rate `0`
+
+Verdict: `VLLM_ROUTE_TOKEN_GATE_A_FAIL`. Temperature is not causal because the
+greedy raw-logprob probe already disagrees. Do not use vLLM for formal GRPO;
+continue to VeXact, then HFExact on the locked two-working-day fallback.
+
 ---
 
 ## NOW — Rollout Alignment Recovery (`results/17_rollout_alignment/`)
