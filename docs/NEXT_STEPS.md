@@ -45,8 +45,33 @@ VeOmni↔VeXact full logits and fused-LCE logprobs are both exact (`max |δ|=0`)
 natural sampling has `P(internal | NoSearch)=0.29545` and mixed-group rate
 `1.0`. A1 is closed. **A2 is also PASS**: the real AgentLoop→VeXact path
 returned 4/4 rollouts with exact prompt/checkpoint sentinels and route support.
-**A3/Gate B and A4 exact 32×4: PASS. NOW: causal Boundary@50.** See
+**A3/Gate B and A4 exact 32×4: PASS. Boundary GRPO step 10 direction gate:
+REVIEW/STOP. NOW: Phase 19 Optimizer Attribution.** See
 `results/17_rollout_alignment/calibration/VEXACT_GATE_A1_REPORT.md`.
+
+Boundary@50 is implemented as the staged 10/25/50 Exact-VeXact run documented
+in `docs/BOUNDARY_EXACT_ROLLOUT_PLAN.md`. GRPO step 10 increased frozen-20 route
+margins for both classes (`NoSearch 0.864->1.943`, `NeedSearch 1.472->2.750`),
+so GRPO@25 is locked. The historical JSONL lacks exact tensors, so Phase 19
+first performs a matched Evidence@400 Fixed-Policy Attribution Capture
+(2-batch smoke, then gated 10-batch/640 full capture). It is forward-only:
+rollout → reward → actor logprob → dump, with no backward/optimizer/scheduler/
+checkpoint. The resulting exact tensors feed official veRL GRPO, GRPO-no-std,
+RF++ and RF++-baseline estimators. Phase 19 then performs an optimizer-attribution
+audit; RF++ baseline@10 is allowed only if its offline conditional-gradient
+gate passes.
+
+Phase 19 capture is now `CAPTURE_PASS` (640/640; 160 groups; 25 mixed
+NoSearch groups). GRPO's conditional signs are correct but its competition
+ratio is `1.894`, explaining the observed global search drift. RF++ baseline
+passes with `G_NS=-131.17`, `G_Need=+48.30`, and `C=.427`; plain RF++ fails.
+The near-equality of GRPO-no-std and RF++-baseline competition ratios identifies
+prompt-local std normalization as the primary suspect. The `12.642×` exact
+policy-token length gap is the registered second risk. The next candidate is
+one matched RF++-baseline@10 run with `token-mean` unchanged. It requires an
+official estimator parity check, then frozen-20 `M_NS<.864` and
+`M_Need>=1.272`; only PASS may continue to 25/50. See
+`docs/FIXED_POLICY_ATTRIBUTION_REPORT.md`.
 
 The backend-diagnosis line is now **closed**. The active program is
 **Exact-Rollout ECA Closure**: advance gate-by-gate through

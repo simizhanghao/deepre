@@ -672,6 +672,17 @@ class EcaSearchAgentLoop(AgentLoopBase):
             "max_search_turns": int(self.max_search_turns),
             "used_internal": int(metrics.get("used_internal") or 0),
             "route_first": route_first,
+            # Exact fixed-policy attribution needs the untouched root prompt
+            # and the first assistant segment.  Keep these in TransferQueue so
+            # the post-reward trainer hook can persist them with estimator
+            # tensors in the same row order.
+            "canonical_prompt_ids": canonical_prompt_ids,
+            "canonical_prompt_sha256": canonical_prompt_sha256,
+            "root_prompt_len": root_prompt_len,
+            "first_generate_token_ids": first_gen_ids,
+            "first_generate_len": len(first_gen_ids),
+            "route_token_start": 0,
+            "route_token_end": len(first_gen_ids),
             "response_tokens": int(metrics["response_tokens"]),
             "hit_response_cap": int(metrics["hit_response_cap"]),
             "final_answer_missing": int(metrics["final_answer_missing"]),

@@ -52,6 +52,12 @@ NOW → Rollout Alignment Recovery
 │     ✅ Env A0 → ✅ 2-Q smoke → ✅ frozen-20 Gate A1-Exact (max |δ|=0)
 │     old HF = continuity reference; VeOmni/FSDP actor = authoritative reference
 │     ✅ Gate A1 → ✅ A2 loop → ✅ A3/Gate B → ✅ A4 32×4 → NOW Boundary@50
+│     Boundary GRPO step10: REVIEW/STOP (global search bias; exact stack PASS)
+│     ✅ Phase19 fixed-policy 640 + four-estimator attribution
+│     NOW RF++ baseline@10, only estimator changes; token-mean frozen
+│     gate M_NS<.864 and M_Need>=1.272 → PASS continues 25→50
+│     FAIL search→length-neutral; FAIL internal→GRPO-no-std
+│     only a passing optimizer branch may proceed → step25 → step50
 │     Boundary@50 sentinel: exact 2-Q at steps 0/10/25/50
 │     PASS → Candidate ECA-v1 → one Boundary refresh → short @50 → Full Corpus
 │     FAIL branches only by signature: REINFORCE | SAPO | Root Branch/BPO

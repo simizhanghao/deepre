@@ -1,0 +1,28 @@
+{
+  "purpose": "fixed_policy_attribution_capture",
+  "model": "Evidence@400",
+  "checkpoint_config_sha256": "629ad9ecd8c6b8b63db78d4cb276e5a7f0f2ec65a23526c2416ae9c48f06a58b",
+  "temperature": 0.9,
+  "top_p": 0.95,
+  "n_rollouts": 4,
+  "forward_only": true,
+  "backward": false,
+  "optimizer_step": false,
+  "scheduler_step": false,
+  "checkpoint_written": false,
+  "step_files": [
+    "step_001.npz",
+    "step_002.npz",
+    "step_003.npz",
+    "step_004.npz",
+    "step_005.npz",
+    "step_006.npz",
+    "step_007.npz",
+    "step_008.npz",
+    "step_009.npz",
+    "step_010.npz"
+  ],
+  "root_logits_dir": "/data1/hcc/deepresearch/results/19_optimizer_attribution/full/root_logits",
+  "raw_npz": "/data1/hcc/deepresearch/results/19_optimizer_attribution/full/raw/attribution_capture.npz",
+  "raw_npz_sha256": "c9ae74ef28e62943985f880b27d0f130e886ed687a2bbab2182aeebfc8b45e54"
+}

@@ -7,12 +7,16 @@ Idempotent. Safe to run every launch before main_ppo.
 from __future__ import annotations
 
 import importlib
+import importlib.util
+import json
+import os
 import shutil
 import sys
 from pathlib import Path
 
-REPO = Path("/workspace/deepresearch")
-MAIN_PPO = Path("/workspace/verl/verl/trainer/main_ppo.py")
+REPO = Path(os.environ.get("ECA_REPO_ROOT", Path(__file__).resolve().parents[1])).resolve()
+_main_spec = importlib.util.find_spec("verl.trainer.main_ppo")
+MAIN_PPO = Path(_main_spec.origin).resolve() if _main_spec and _main_spec.origin else Path()
 
 MARKER_BEGIN = "# === GRPO_METRICS_HOOK_BEGIN ==="
 MARKER_END = "# === GRPO_METRICS_HOOK_END ==="
@@ -78,6 +82,46 @@ def apply() -> str:
 
     mod = importlib.import_module("verl.trainer.ppo.v1.trainer_base")
     cls = mod.PPOTrainer
+
+    capture_dir = os.environ.get("ECA_ATTRIBUTION_CAPTURE_DIR", "").strip()
+    forward_only = os.environ.get("ECA_FORWARD_ONLY_CAPTURE", "").strip() == "1"
+    if capture_dir and not forward_only:
+        raise RuntimeError("ECA_ATTRIBUTION_CAPTURE_DIR requires ECA_FORWARD_ONLY_CAPTURE=1")
+
+    if forward_only and not getattr(cls._update_actor, "_eca_forward_only", False):
+        def _forward_only_update_actor(self, batch, metrics):  # noqa: ANN001
+            metrics["attribution/actor_update_skipped"] = 1.0
+            return batch
+
+        _forward_only_update_actor._eca_forward_only = True  # type: ignore[attr-defined]
+        cls._update_actor = _forward_only_update_actor
+        print(
+            "[attribution] FORWARD_ONLY: actor backward/optimizer/scheduler are disabled",
+            flush=True,
+        )
+
+    if not getattr(cls._init_dataloader, "_eca_horizon_patched", False):
+        orig_init_dataloader = cls._init_dataloader
+
+        def _init_dataloader(self):  # noqa: ANN001
+            orig_init_dataloader(self)
+            raw_horizon = os.environ.get("ECA_SCHEDULE_HORIZON", "").strip()
+            if raw_horizon:
+                horizon = int(raw_horizon)
+                if horizon < self.total_training_steps:
+                    raise ValueError("ECA_SCHEDULE_HORIZON cannot be below segment target")
+                updates = horizon * self.parameter_sync_step
+                self.config.actor_rollout_ref.actor.optim.total_training_steps = updates
+                if getattr(self, "use_critic", False):
+                    self.config.critic.optim.total_training_steps = updates
+                print(
+                    f"[grpo] fixed scheduler horizon={horizon} segment_target={self.total_training_steps}",
+                    flush=True,
+                )
+
+        _init_dataloader._eca_horizon_patched = True  # type: ignore[attr-defined]
+        cls._init_dataloader = _init_dataloader
+
     if getattr(cls._compute_metrics, "_grpo_metrics_patched", False):
         return "already_patched"
 
@@ -87,6 +131,7 @@ def apply() -> str:
         orig(self, batch, metrics, timing_raw, global_steps=global_steps, epoch=epoch)
         try:
             import numpy as np
+            import torch
             import transfer_queue as tq
 
             non_padding_mask = np.array([not tag.get("is_padding", False) for tag in batch.tags], dtype=bool)
@@ -121,7 +166,118 @@ def apply() -> str:
                 scores_np = [seq_scores[i] for i in range(len(seq_scores)) if non_padding_mask[i]]
 
             phase_m = _compute_batch(extras_np, uids=uids_np, sequence_scores=scores_np)
+
+            tensor_data = tq.kv_batch_get(
+                keys=batch.keys,
+                partition_id=batch.partition_id,
+                select_fields=["advantages", "old_log_probs", "rollout_log_probs", "response_mask"],
+            ).to_padded_tensor()
+            valid_rows = torch.as_tensor(non_padding_mask, dtype=torch.bool)
+            response_mask = tensor_data["response_mask"][valid_rows].bool()
+            advantages = tensor_data["advantages"][valid_rows]
+            old_lp = tensor_data["old_log_probs"][valid_rows]
+            rollout_lp = tensor_data["rollout_log_probs"][valid_rows]
+            valid_adv = advantages[response_mask].float()
+            valid_delta = (old_lp - rollout_lp)[response_mask].float()
+            if valid_adv.numel():
+                phase_m["grpo/advantage_std"] = float(valid_adv.std(unbiased=False))
+                phase_m["grpo/positive_adv_token_rate"] = float((valid_adv > 0).float().mean())
+            if valid_delta.numel():
+                ratios = torch.exp(valid_delta.clamp(min=-20, max=20))
+                for q in (0.01, 0.10, 0.50, 0.90, 0.99):
+                    phase_m[f"rollout_corr_diag/importance_ratio_p{int(q * 100):02d}"] = float(
+                        torch.quantile(ratios, q)
+                    )
+                max_abs = float(valid_delta.abs().max())
+                # This is a trajectory-level correction diagnostic, not an
+                # exact-backend parity test. In async multi-turn training the
+                # behavior and recomputed policy logprobs need not be identical.
+                phase_m["rollout_corr_diag/max_abs_logprob_delta"] = max_abs
             metrics.update(phase_m)
+
+            capture_root = os.environ.get("ECA_ATTRIBUTION_CAPTURE_DIR", "").strip()
+            if capture_root:
+                capture_path = Path(capture_root)
+                capture_path.mkdir(parents=True, exist_ok=True)
+                numeric = tq.kv_batch_get(
+                    keys=batch.keys,
+                    partition_id=batch.partition_id,
+                    select_fields=[
+                        "responses", "response_mask", "rm_scores",
+                        "old_log_probs", "rollout_log_probs", "advantages",
+                    ],
+                ).to_padded_tensor()
+                keep = torch.as_tensor(non_padding_mask, dtype=torch.bool)
+
+                def _cpu(name, dtype=None):
+                    value = numeric[name][keep].detach().cpu()
+                    if dtype is not None:
+                        value = value.to(dtype=dtype)
+                    return value.numpy()
+
+                reward_keys = (
+                    "total_reward", "answer_reward", "evidence_reward",
+                    "cost_reward", "format_reward",
+                )
+                component_rows = []
+                identity_rows = []
+                prompt_rows = []
+                for slot, (uid, extra) in enumerate(zip(uids_np, extras_np, strict=True)):
+                    info = extra.get("reward_extra_info") or {}
+                    component_rows.append([float(info.get(key, float("nan"))) for key in reward_keys])
+                    identity_rows.append({
+                        "batch_id": int(global_steps),
+                        "step_slot": int(slot),
+                        "uid": str(uid),
+                        "sample_id": str(extra.get("sample_id", "")),
+                        "boundary": str(info.get("boundary", "")),
+                        "route_first": str(extra.get("route_first", "none")),
+                        "route_token_start": int(extra.get("route_token_start", 0)),
+                        "route_token_end": int(extra.get("route_token_end", 0)),
+                        "search_count": int(extra.get("search_count", 0)),
+                        "response_span_len": int(extra.get("response_tokens", 0)),
+                        "prompt_hash": str(extra.get("canonical_prompt_sha256", "")),
+                    })
+                    prompt_rows.append({
+                        "sample_id": str(extra.get("sample_id", "")),
+                        "boundary": str(info.get("boundary", "")),
+                        "canonical_prompt_sha256": str(extra.get("canonical_prompt_sha256", "")),
+                        "canonical_prompt_ids": [int(x) for x in extra.get("canonical_prompt_ids", [])],
+                    })
+
+                step = int(global_steps)
+                tmp = capture_path / f"step_{step:03d}.npz.tmp"
+                final = capture_path / f"step_{step:03d}.npz"
+                with open(tmp, "wb") as handle:
+                    np.savez_compressed(
+                        handle,
+                        response_token_ids=_cpu("responses", torch.int32),
+                        response_mask=_cpu("response_mask", torch.uint8),
+                        token_level_rewards=_cpu("rm_scores", torch.float32),
+                        old_log_probs=_cpu("old_log_probs", torch.float32),
+                        rollout_log_probs=_cpu("rollout_log_probs", torch.float32),
+                        online_advantages=_cpu("advantages", torch.float32),
+                        reward_components=np.asarray(component_rows, dtype=np.float32),
+                        identity_json=np.asarray(
+                            [json.dumps(row, sort_keys=True) for row in identity_rows]
+                        ),
+                    )
+                os.replace(tmp, final)
+                manifest = capture_path / "prompt_manifest.jsonl"
+                with open(manifest, "a", encoding="utf-8") as handle:
+                    for row in prompt_rows:
+                        handle.write(json.dumps(row, sort_keys=True) + "\n")
+                print(
+                    f"[attribution] captured step={step} rows={len(identity_rows)} path={final}",
+                    flush=True,
+                )
+
+            metrics_path = os.environ.get("ECA_TRAIN_METRICS_JSONL", "").strip()
+            if metrics_path:
+                Path(metrics_path).parent.mkdir(parents=True, exist_ok=True)
+                row = {"step": int(global_steps), **{k: float(v) for k, v in metrics.items() if np.isscalar(v)}}
+                with open(metrics_path, "a", encoding="utf-8") as handle:
+                    handle.write(json.dumps(row, sort_keys=True) + "\n")
             if phase_m:
                 print(
                     f"[{log_tag}] step={global_steps} {summarize_console_line({**metrics, **phase_m})}",
@@ -133,7 +289,8 @@ def apply() -> str:
 
     _compute_metrics._grpo_metrics_patched = True  # type: ignore[attr-defined]
     cls._compute_metrics = _compute_metrics
-    return f"patched:{log_tag}"
+    suffix = ":forward_only" if forward_only else ""
+    return f"patched:{log_tag}{suffix}"
 
 
 def main() -> None:

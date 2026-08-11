@@ -23,6 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--max-samples", type=int, required=True)
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--route-probe-only", action="store_true")
     parser.add_argument("--model-path", default=str(REPO / "outputs/rl/03_hf_evidence_step400"))
     parser.add_argument(
         "--source-dump",
@@ -31,6 +32,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sample-manifest",
         default=str(REPO / "results/17_rollout_alignment/calibration/sample_ids_exact2.json"),
+    )
+    parser.add_argument(
+        "--capture-manifest",
+        help="JSONL prompt manifest emitted by Fixed-Policy Attribution Capture",
     )
     parser.add_argument("--attn-impl", default="triton-invariant")
     parser.add_argument("--n-rollouts", type=int, default=0)
@@ -50,7 +55,10 @@ def prompt_digest(token_ids: list[int]) -> str:
 
 def main() -> None:
     args = parse_args()
-    if args.debug:
+    if args.route_probe_only:
+        if args.debug or args.max_samples < 1 or args.n_rollouts != 0:
+            raise SystemExit("route probe requires >=1 sample, 0 rollouts, without --debug")
+    elif args.debug:
         if args.max_samples != 2 or args.n_rollouts != 0:
             raise SystemExit("exact smoke requires --max-samples 2 --n-rollouts 0")
     elif args.max_samples != 20 or args.n_rollouts != 16:
@@ -62,36 +70,60 @@ def main() -> None:
     model_path = Path(args.model_path).resolve()
     source_path = Path(args.source_dump).resolve()
     manifest_path = Path(args.sample_manifest).resolve()
+    capture_manifest = Path(args.capture_manifest).resolve() if args.capture_manifest else None
     output_dir = Path(args.output_dir).resolve()
     output_root = (
-        (REPO / "outputs").resolve()
-        if args.debug
-        else (REPO / "results/17_rollout_alignment/calibration").resolve()
+        (REPO / ("results/19_optimizer_attribution" if capture_manifest else "results/18_boundary_exact_rollout")).resolve()
+        if args.route_probe_only
+        else ((REPO / "outputs").resolve() if args.debug else (REPO / "results/17_rollout_alignment/calibration").resolve())
     )
     if output_dir != output_root and output_root not in output_dir.parents:
         raise SystemExit(f"output must be under {output_root}")
-    for path in (config_path, model_path, source_path, manifest_path):
+    required = (config_path, model_path, capture_manifest) if capture_manifest else (
+        config_path, model_path, source_path, manifest_path
+    )
+    for path in required:
         if not path.exists():
             raise SystemExit(f"missing required input: {path}")
 
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    wanted = {str(row["sample_id"]): row for row in manifest["samples"]}
-    source_by_id: dict[str, dict[str, Any]] = {}
-    for row in read_jsonl(source_path):
-        sample_id = str(row["sample_id"])
-        if sample_id in wanted and sample_id not in source_by_id:
-            source_by_id[sample_id] = row
-    if set(source_by_id) != set(wanted):
-        raise SystemExit(f"missing samples: {sorted(set(wanted) - set(source_by_id))}")
-
     selected: list[dict[str, Any]] = []
-    for item in manifest["samples"]:
-        source_row = source_by_id[item["sample_id"]]
-        prompt_ids = list(map(int, source_row["canonical_prompt_ids"]))
-        expected_digest = item.get("canonical_prompt_sha256", source_row["canonical_prompt_sha256"])
-        if prompt_digest(prompt_ids) != expected_digest:
-            raise SystemExit(f"prompt hash mismatch: {item['sample_id']}")
-        selected.append({**item, "canonical_prompt_sha256": expected_digest, "prompt_ids": prompt_ids})
+    if capture_manifest:
+        seen: set[str] = set()
+        for row in read_jsonl(capture_manifest):
+            sample_id = str(row["sample_id"])
+            if sample_id in seen:
+                continue
+            seen.add(sample_id)
+            prompt_ids = list(map(int, row["canonical_prompt_ids"]))
+            digest = str(row["canonical_prompt_sha256"])
+            if not prompt_ids or prompt_digest(prompt_ids) != digest:
+                raise SystemExit(f"capture prompt hash mismatch: {sample_id}")
+            selected.append(
+                {
+                    "sample_id": sample_id,
+                    "boundary": row["boundary"],
+                    "canonical_prompt_sha256": digest,
+                    "prompt_ids": prompt_ids,
+                }
+            )
+    else:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        wanted = {str(row["sample_id"]): row for row in manifest["samples"]}
+        source_by_id: dict[str, dict[str, Any]] = {}
+        for row in read_jsonl(source_path):
+            sample_id = str(row["sample_id"])
+            if sample_id in wanted and sample_id not in source_by_id:
+                source_by_id[sample_id] = row
+        if set(source_by_id) != set(wanted):
+            raise SystemExit(f"missing samples: {sorted(set(wanted) - set(source_by_id))}")
+        for item in manifest["samples"]:
+            source_row = source_by_id[item["sample_id"]]
+            prompt_ids = list(map(int, source_row["canonical_prompt_ids"]))
+            expected_digest = item.get("canonical_prompt_sha256", source_row["canonical_prompt_sha256"])
+            if prompt_digest(prompt_ids) != expected_digest:
+                raise SystemExit(f"prompt hash mismatch: {item['sample_id']}")
+            selected.append({**item, "canonical_prompt_sha256": expected_digest, "prompt_ids": prompt_ids})
+    selected = selected[: args.max_samples]
     if len(selected) != args.max_samples:
         raise SystemExit(f"wanted {args.max_samples} samples, found {len(selected)}")
 
@@ -250,7 +282,7 @@ def main() -> None:
         counts["search"] > 0 and counts["internal"] > 0 for counts in action_by_sample.values()
     )
     summary = {
-        "purpose": "vexact_exact2_full_logits_capture",
+        "purpose": "boundary_route_probe" if args.route_probe_only else "vexact_exact2_full_logits_capture",
         "gate": "CAPTURE_PASS",
         "model_path": str(model_path),
         "attn_impl": args.attn_impl,

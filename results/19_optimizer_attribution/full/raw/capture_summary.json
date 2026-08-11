@@ -1,0 +1,229 @@
+{
+  "purpose": "fixed_policy_attribution_capture",
+  "gate": "CAPTURE_PASS",
+  "n_trajectories": 640,
+  "n_groups": 160,
+  "n_rollouts": 4,
+  "integrity_errors": [],
+  "group_size_histogram": {
+    "4": 160
+  },
+  "route_counts": {
+    "internal": 150,
+    "search": 490
+  },
+  "boundary_counts": {
+    "NoSearch": 124,
+    "Undetermined": 168,
+    "NeedSearch": 348
+  },
+  "p_internal_NoSearch": 0.3709677419354839,
+  "mixed_NoSearch_groups": 25,
+  "policy_token_length_ratio_search_internal": 12.642427712567994,
+  "estimators": {
+    "grpo": {
+      "G_NS": -39.24357154987131,
+      "G_Need": 56.93036336821835,
+      "G_U": 17.414293036198895,
+      "gradient_competition_ratio": 1.8944416491230178,
+      "offline_gate": true,
+      "boundary_route": {
+        "NeedSearch/search": {
+          "n": 284,
+          "mean_reward": 0.334372341632843,
+          "mean_advantage": 0.20045902945931746,
+          "mean_policy_tokens": 265.59154929577466,
+          "root_gradient_mass": 10.923660337858198
+        },
+        "NeedSearch/internal": {
+          "n": 64,
+          "mean_reward": 0.10000000894069672,
+          "mean_advantage": -0.8895369293168187,
+          "mean_policy_tokens": 20.46875,
+          "root_gradient_mass": 46.00670303036016
+        },
+        "NoSearch/search": {
+          "n": 78,
+          "mean_reward": -0.20000000298023224,
+          "mean_advantage": -0.5031227049155113,
+          "mean_policy_tokens": 231.48717948717947,
+          "root_gradient_mass": -12.283993049837235
+        },
+        "NoSearch/internal": {
+          "n": 46,
+          "mean_reward": 0.9478259086608887,
+          "mean_advantage": 0.8531211251797883,
+          "mean_policy_tokens": 19.456521739130434,
+          "root_gradient_mass": -26.959578500034077
+        },
+        "Undetermined/search": {
+          "n": 128,
+          "mean_reward": 0.3057093620300293,
+          "mean_advantage": 0.13604918628698215,
+          "mean_policy_tokens": 235.65625,
+          "root_gradient_mass": 3.3348060374206794
+        },
+        "Undetermined/internal": {
+          "n": 40,
+          "mean_reward": 0.22499999403953552,
+          "mean_advantage": -0.43535731360316277,
+          "mean_policy_tokens": 19.725,
+          "root_gradient_mass": 14.079486998778215
+        }
+      }
+    },
+    "grpo_no_std": {
+      "G_NS": -25.50000063612508,
+      "G_Need": 9.52435030657108,
+      "G_U": 1.6065126078282432,
+      "gradient_competition_ratio": 0.43650441712656785,
+      "offline_gate": true,
+      "boundary_route": {
+        "NeedSearch/search": {
+          "n": 284,
+          "mean_reward": 0.334372341632843,
+          "mean_advantage": 0.0335364428571832,
+          "mean_policy_tokens": 265.59154929577466,
+          "root_gradient_mass": 1.8376032375858125
+        },
+        "NeedSearch/internal": {
+          "n": 64,
+          "mean_reward": 0.10000000894069672,
+          "mean_advantage": -0.14881797542329878,
+          "mean_policy_tokens": 20.46875,
+          "root_gradient_mass": 7.686747068985266
+        },
+        "NoSearch/search": {
+          "n": 78,
+          "mean_reward": -0.20000000298023224,
+          "mean_advantage": -0.3269230801707659,
+          "mean_policy_tokens": 231.48717948717947,
+          "root_gradient_mass": -7.954918790807807
+        },
+        "NoSearch/internal": {
+          "n": 46,
+          "mean_reward": 0.9478259086608887,
+          "mean_advantage": 0.5543478429317474,
+          "mean_policy_tokens": 19.456521739130434,
+          "root_gradient_mass": -17.545081845317274
+        },
+        "Undetermined/search": {
+          "n": 128,
+          "mean_reward": 0.3057093620300293,
+          "mean_advantage": 0.01255087839672342,
+          "mean_policy_tokens": 235.65625,
+          "root_gradient_mass": 0.16332158324640078
+        },
+        "Undetermined/internal": {
+          "n": 40,
+          "mean_reward": 0.22499999403953552,
+          "mean_advantage": -0.04016281682997942,
+          "mean_policy_tokens": 19.725,
+          "root_gradient_mass": 1.4431910245818425
+        }
+      }
+    },
+    "reinforce_plus_plus": {
+      "G_NS": 6.427106056489578,
+      "G_Need": 2.188982103803056,
+      "G_U": 3.292817465126774,
+      "gradient_competition_ratio": 0.8529187974724478,
+      "offline_gate": false,
+      "boundary_route": {
+        "NeedSearch/search": {
+          "n": 284,
+          "mean_reward": 0.334372341632843,
+          "mean_advantage": -0.7287494540214539,
+          "mean_policy_tokens": 265.59154929577466,
+          "root_gradient_mass": -35.98203261313701
+        },
+        "NeedSearch/internal": {
+          "n": 64,
+          "mean_reward": 0.10000000894069672,
+          "mean_advantage": -0.7287494540214539,
+          "mean_policy_tokens": 20.46875,
+          "root_gradient_mass": 38.171014716940064
+        },
+        "NoSearch/search": {
+          "n": 78,
+          "mean_reward": -0.20000000298023224,
+          "mean_advantage": -0.7287494540214539,
+          "mean_policy_tokens": 231.48717948717947,
+          "root_gradient_mass": -16.43374485992853
+        },
+        "NoSearch/internal": {
+          "n": 46,
+          "mean_reward": 0.9478259086608887,
+          "mean_advantage": -0.7287494540214539,
+          "mean_policy_tokens": 19.456521739130434,
+          "root_gradient_mass": 22.86085091641811
+        },
+        "Undetermined/search": {
+          "n": 128,
+          "mean_reward": 0.3057093620300293,
+          "mean_advantage": -0.7287494540214539,
+          "mean_policy_tokens": 235.65625,
+          "root_gradient_mass": -18.81487543996233
+        },
+        "Undetermined/internal": {
+          "n": 40,
+          "mean_reward": 0.22499999403953552,
+          "mean_advantage": -0.7287494540214539,
+          "mean_policy_tokens": 19.725,
+          "root_gradient_mass": 22.107692905089102
+        }
+      }
+    },
+    "reinforce_plus_plus_baseline": {
+      "G_NS": -131.16620466043918,
+      "G_Need": 48.29628945602954,
+      "G_U": 7.703741337318035,
+      "gradient_competition_ratio": 0.4269394768135517,
+      "offline_gate": true,
+      "boundary_route": {
+        "NeedSearch/search": {
+          "n": 284,
+          "mean_reward": 0.334372341632843,
+          "mean_advantage": 0.2815486735034681,
+          "mean_policy_tokens": 265.59154929577466,
+          "root_gradient_mass": 14.829371753543416
+        },
+        "NeedSearch/internal": {
+          "n": 64,
+          "mean_reward": 0.10000000894069672,
+          "mean_advantage": -0.6494829884031788,
+          "mean_policy_tokens": 20.46875,
+          "root_gradient_mass": 33.46691770248613
+        },
+        "NoSearch/search": {
+          "n": 78,
+          "mean_reward": -0.20000000298023224,
+          "mean_advantage": -1.558819272961372,
+          "mean_policy_tokens": 231.48717948717947,
+          "root_gradient_mass": -38.12687742964479
+        },
+        "NoSearch/internal": {
+          "n": 46,
+          "mean_reward": 0.9478259086608887,
+          "mean_advantage": 2.9406117149021314,
+          "mean_policy_tokens": 19.456521739130434,
+          "root_gradient_mass": -93.03932723079436
+        },
+        "Undetermined/search": {
+          "n": 128,
+          "mean_reward": 0.3057093620300293,
+          "mean_advantage": 0.17440444281965028,
+          "mean_policy_tokens": 235.65625,
+          "root_gradient_mass": 3.682217969196155
+        },
+        "Undetermined/internal": {
+          "n": 40,
+          "mean_reward": 0.22499999403953552,
+          "mean_advantage": -0.09473145511001349,
+          "mean_policy_tokens": 19.725,
+          "root_gradient_mass": 4.02152336812188
+        }
+      }
+    }
+  }
+}

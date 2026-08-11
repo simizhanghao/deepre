@@ -41,6 +41,7 @@ def compute_grpo_batch_metrics(
     answer, evidence, fmt, total = [], [], [], []
     ev_p, ev_r, ev_f1, ev_nonempty, ev_valid = [], [], [], [], []
     finish, search_counts, dup_counts, obs_tokens = [], [], [], []
+    final_missing, reserve_violations, assistant_caps, observation_caps = [], [], [], []
     max_hit, internal, search_route = [], [], []
     p_ints, eff_e_ws, eff_s_ws, search_inds = [], [], [], []
     boundaries: List[str] = []
@@ -77,6 +78,16 @@ def compute_grpo_batch_metrics(
 
         fin = extra.get("finish", am.get("finish", 0))
         finish.append(1.0 if _as_float(fin) >= 0.5 else 0.0)
+        final_missing.append(_as_float(extra.get("final_answer_missing", am.get("final_answer_missing", 0))))
+        reserve_violations.append(
+            _as_float(extra.get("final_answer_reserve_violations", am.get("final_answer_reserve_violations", 0)))
+        )
+        assistant_caps.append(
+            _as_float(am.get("max_assistant_turn_tokens", extra.get("max_assistant_turn_tokens", 0)))
+        )
+        observation_caps.append(
+            _as_float(am.get("max_observation_turn_tokens", extra.get("max_observation_turn_tokens", 0)))
+        )
 
         sc = _as_float(extra.get("search_count", am.get("search_count", 0)))
         search_counts.append(sc)
@@ -132,6 +143,10 @@ def compute_grpo_batch_metrics(
     if finish:
         out["agent/finish_rate"] = float(np.mean(finish))
         out["agent/format_valid_rate"] = float(np.mean(fmt)) if fmt else float(np.mean(finish))
+        out["agent/final_answer_missing_rate"] = float(np.mean(final_missing))
+        out["agent/final_answer_reserve_violations"] = float(np.sum(reserve_violations))
+        out["agent/max_assistant_turn_tokens"] = float(np.max(assistant_caps))
+        out["agent/max_observation_turn_tokens"] = float(np.max(observation_caps))
     _mean_std("agent/search_count", search_counts)
     _mean_std("search/count", search_counts)
     if max_hit:
@@ -191,6 +206,8 @@ def compute_grpo_batch_metrics(
         nos = by_lab.get("NoSearch") or []
         if need and nos:
             out["boundary/delta_boundary"] = float(np.mean(need) - np.mean(nos))
+            out["boundary/osr"] = float(np.mean(nos))
+            out["boundary/usr"] = float(1.0 - np.mean(need))
         n_b = float(len(boundaries))
         out["boundary/frac_NoSearch"] = float(len(nos) / n_b)
         out["boundary/frac_NeedSearch"] = float(len(need) / n_b)
@@ -218,6 +235,61 @@ def compute_grpo_batch_metrics(
             out["grpo/group_reward_std/mean"] = float(np.mean(group_stds))
             out["grpo/num_groups"] = float(len(group_stds))
 
+        # Same-question counterfactual signal.  Compute reward gaps only inside
+        # groups that actually sampled both root actions.
+        if len(search_route) == len(scores) and len(boundaries) == len(scores):
+            group_kinds: list[str] = []
+            group_labels: list[str] = []
+            ns_gaps: list[float] = []
+            need_gaps: list[float] = []
+            by_uid_idx: dict[Any, list[int]] = defaultdict(list)
+            for idx, uid in enumerate(uids):
+                by_uid_idx[uid].append(idx)
+            for indices in by_uid_idx.values():
+                actions = {
+                    "search" if search_route[i] else ("internal" if internal[i] else "other")
+                    for i in indices
+                }
+                label = boundaries[indices[0]]
+                if actions == {"search"}:
+                    kind = "all_search"
+                elif actions == {"internal"}:
+                    kind = "all_internal"
+                elif {"search", "internal"} <= actions:
+                    kind = "mixed"
+                else:
+                    kind = "other"
+                group_kinds.append(kind)
+                group_labels.append(label)
+                if kind != "mixed":
+                    continue
+                search_rewards = [float(scores[i]) for i in indices if search_route[i]]
+                internal_rewards = [float(scores[i]) for i in indices if internal[i]]
+                if label == "NoSearch":
+                    ns_gaps.append(float(np.mean(internal_rewards) - np.mean(search_rewards)))
+                elif label == "NeedSearch":
+                    need_gaps.append(float(np.mean(search_rewards) - np.mean(internal_rewards)))
+
+            if group_kinds:
+                out["mixed/group_rate"] = float(np.mean([k == "mixed" for k in group_kinds]))
+                out["mixed/all_search_group_rate"] = float(
+                    np.mean([k == "all_search" for k in group_kinds])
+                )
+                out["mixed/all_internal_group_rate"] = float(
+                    np.mean([k == "all_internal" for k in group_kinds])
+                )
+                for label in ("NoSearch", "NeedSearch"):
+                    kinds = [k for k, lab in zip(group_kinds, group_labels) if lab == label]
+                    if kinds:
+                        out[f"mixed/{label}_rate"] = float(np.mean([k == "mixed" for k in kinds]))
+                        out[f"mixed/{label}_groups"] = float(len(kinds))
+            if ns_gaps:
+                out["mixed/delta_reward_NoSearch_internal_minus_search"] = float(np.mean(ns_gaps))
+                out["mixed/NoSearch_gap_groups"] = float(len(ns_gaps))
+            if need_gaps:
+                out["mixed/delta_reward_NeedSearch_search_minus_internal"] = float(np.mean(need_gaps))
+                out["mixed/NeedSearch_gap_groups"] = float(len(need_gaps))
+
     out["grpo/num_trajectories"] = float(n)
     return out
 
@@ -240,6 +312,11 @@ def summarize_console_line(metrics: Mapping[str, float]) -> str:
         ("d_bnd", "boundary/delta_boundary"),
         ("sr_need", "boundary/search_rate_NeedSearch"),
         ("sr_no", "boundary/search_rate_NoSearch"),
+        ("mixed", "mixed/group_rate"),
+        ("dR_NS", "mixed/delta_reward_NoSearch_internal_minus_search"),
+        ("dR_need", "mixed/delta_reward_NeedSearch_search_minus_internal"),
+        ("OSR", "boundary/osr"),
+        ("USR", "boundary/usr"),
         ("kl", "actor/kl_loss"),
     ]
     return " | ".join(f"{lab}={metrics[k]:.4g}" for lab, k in labeled if k in metrics)

@@ -8,6 +8,7 @@ Hydra CLI overrides are forwarded unchanged:
 from __future__ import annotations
 
 import importlib.util
+import os
 import runpy
 import sys
 from pathlib import Path
@@ -29,14 +30,15 @@ def main() -> None:
     scripts = REPO / "scripts"
     hydra_args = list(sys.argv[1:])  # keep overrides; do not leak into patch CLIs
 
-    # File patch (idempotent) for sgl055 pause/continue API.
-    sgl = _load("patch_verl_sgl055_compat", scripts / "patch_verl_sgl055_compat.py")
-    saved = sys.argv
-    sys.argv = [str(scripts / "patch_verl_sgl055_compat.py")]
-    try:
-        sgl.main()
-    finally:
-        sys.argv = saved
+    # The compatibility patch is SGLang-only; VeXact must not mutate that stack.
+    if os.environ.get("ECA_ROLLOUT_BACKEND", "sglang").strip().lower() != "vexact":
+        sgl = _load("patch_verl_sgl055_compat", scripts / "patch_verl_sgl055_compat.py")
+        saved = sys.argv
+        sys.argv = [str(scripts / "patch_verl_sgl055_compat.py")]
+        try:
+            sgl.main()
+        finally:
+            sys.argv = saved
 
     metrics_mod = _load("patch_verl_grpo_metrics", scripts / "patch_verl_grpo_metrics.py")
     file_status = metrics_mod.file_patch_task_runner()
