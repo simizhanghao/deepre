@@ -69,6 +69,11 @@ def _audit_path_label() -> str:
     )
 
 
+def _rollout_backend() -> str:
+    """Backend label/compatibility switch set explicitly by launchers."""
+    return (os.environ.get("ECA_ROLLOUT_BACKEND") or "sglang").strip().lower()
+
+
 def _token_output_meta(output: Any) -> dict[str, Any]:
     """Best-effort finish_reason / meta from TokenOutput (engine-dependent)."""
     meta: dict[str, Any] = {}
@@ -215,6 +220,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
 
         try:
             sp = dict(sampling_params)
+            rollout_backend = _rollout_backend()
             # Prefer stop_token_ids. String `stop` crashes SGLang 0.5.5 under
             # veRL hybrid (skip_tokenizer_init → scheduler tokenizer is None).
             sp.pop("stop", None)
@@ -249,7 +255,11 @@ class EcaSearchAgentLoop(AgentLoopBase):
                 if remain_budget <= 0:
                     break
                 sp_turn = dict(sp)
-                if audit_cap is not None:
+                if rollout_backend == "vexact":
+                    # VeXact derives the remaining decode budget from the current
+                    # prompt length and rejects per-request max_new_tokens.
+                    sp_turn.pop("max_new_tokens", None)
+                elif audit_cap is not None:
                     sp_turn["max_new_tokens"] = min(int(audit_cap), int(remain_budget))
                 else:
                     # Do not request more tokens than remaining response slot.
@@ -315,7 +325,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
                     # Path B verdict uses first_generate_* primarily.
                     _mismatch_dump_row(
                         {
-                            "backend": "sglang_eca_search_agent_loop",
+                            "backend": f"{rollout_backend}_eca_search_agent_loop",
                             "audit_path": _audit_path_label(),
                             "first_generate_only": True,
                             "sample_id": create_kwargs["sample_id"],
@@ -522,7 +532,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
         if _audit_enabled() and not _audit_first_generate_only():
             _mismatch_dump_row(
                 {
-                    "backend": "sglang_eca_search_agent_loop",
+                    "backend": f"{rollout_backend}_eca_search_agent_loop",
                     "audit_path": _audit_path_label(),
                     "first_generate_only": False,
                     "sample_id": create_kwargs["sample_id"],

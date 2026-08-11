@@ -1,6 +1,7 @@
 # Roadmap — Evidence-Cost-Aware Deep Research Agent (v2)
 
-> Frozen **2026-08-11 (v2.1)**. Problem-driven tech only.  
+> Frozen **2026-08-11 (v2.2)**. Problem-driven tech only.
+
 > Board: [RESULTS_BOARD.md](RESULTS_BOARD.md) · Actions: [NEXT_STEPS.md](NEXT_STEPS.md)
 
 ## Principle
@@ -9,7 +10,7 @@
 Do NOT insert multimodal into Phase 3D.
 Do NOT add AutoSearch / CIPO / REINFORCE / Branching “because papers are new”.
 Tech enters only via pre-registered failure gates.
-SGLang is historical baseline after SGLANG_ROUTE_TOKEN_LOGIT_TIM —
+SGLang and vLLM are historical mismatch baselines —
 mainline RL requires trainer-aligned Exact Rollout (VeXact / HFExact).
 ```
 
@@ -22,6 +23,8 @@ Causal story:
 3D2 capability / Boundary → Stage-II routing FAIL (search≡1)
 Routing audit         → SGLANG_ROUTE_TOKEN_LOGIT_TIM
                       → trainer π ≠ SGLang μ on route token
+vLLM calibration      → VLLM_ROUTE_TOKEN_GATE_A_FAIL
+                      → 320/320 search; high-throughput mismatch scope widened
 NOW                   → Rollout Alignment Recovery (VeXact / HFExact)
 THEN                  → Boundary@50 on Exact Rollout (same reward)
 THEN                  → Candidate ECA PASS → Full-Corpus → Phase4
@@ -44,11 +47,13 @@ NOW → Rollout Alignment Recovery
 │     gate = SGLANG_ROUTE_TOKEN_LOGIT_TIM
 │     HF@.95 NoSearch internal≈0.28; SGLang tok0 p(search)≈0.997
 │
-├── ◐ Rollout Alignment Recovery (NEXT) → `results/17_rollout_alignment/`
+├── ◐ Rollout Alignment Recovery (A1 PASS; NOW A2) → `results/17_rollout_alignment/`
 │     freeze eca-verl · fresh eca-verl-vexact (official VeXact pins; not clone eca-verl)
-│     A0 env → A1 calib → Gate A → A2 loop → A3 budget → Gate B → A4 32×4 → Boundary@50
-│     VeXact hold after 2 effective working days → auto HFExact (same Gate A)
-│     abstract RolloutBackend only after Gate A PASS
+│     ✅ Env A0 → ✅ 2-Q smoke → ✅ frozen-20 Gate A1-Exact (max |δ|=0)
+│     old HF = continuity reference; VeOmni/FSDP actor = authoritative reference
+│     Gate A1 → A2 loop → A3 budget → Gate B → A4 no-train 32×4 → Boundary@50
+│     VeXact hold after 2 effective working days → auto HFExact (same exact gate)
+│     abstract RolloutBackend only after Gate A1 PASS
 │     reward/table frozen until Exact backend proven
 │
 ├── ⬜ Candidate ECA PASS → freeze

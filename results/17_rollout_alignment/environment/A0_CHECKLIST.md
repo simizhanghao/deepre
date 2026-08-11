@@ -17,6 +17,16 @@ results/17_rollout_alignment/
 - Install only via VeXact official: `uv sync` with its `pyproject.toml` pins.
 - Record VeXact `HEAD` + resolved pins here before any calibration.
 - A100: later examples need `INFER_FA_IMPL=triton-invariant` (not FA3/FA4 defaults).
+- Launch VeXact commands with `env -u LD_LIBRARY_PATH`; the host CUDA path
+  otherwise overrides the locked CUDA 12.9 wheel libraries.
+
+## Current status (2026-08-11)
+
+- [x] Official `uv sync --frozen --extra gpu --extra verl --extra veomni`
+- [x] Imports: torch `2.10.0+cu129`, Transformers `5.9.0`, VeXact, veRL, VeOmni
+- [x] GPU visibility: one A100-SXM4-80GB, compute capability `8.0`
+- [x] Evidence@400 minimal dense VeXact rollout smoke (`outputs/smoke_vexact_dense_20260811`, PASS)
+- [x] VeOmni actor-model ↔ VeXact 2-Q exact-contract smoke (full logits + fused LCE, zero difference)
 
 ## Day targets
 

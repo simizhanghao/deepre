@@ -1,0 +1,48 @@
+{
+  "purpose": "vexact_exact2_full_logits_capture",
+  "gate": "CAPTURE_PASS",
+  "model_path": "/data1/hcc/deepresearch/outputs/rl/03_hf_evidence_step400",
+  "attn_impl": "triton-invariant",
+  "dtype": "bfloat16",
+  "n_samples": 20,
+  "n_rollouts": 16,
+  "temperature": 0.9,
+  "top_p": 0.95,
+  "sampling_rng": "torch global CUDA RNG (no per-request seed)",
+  "run_seed": 42,
+  "request_ids": [
+    "hotpotqa_distractor_train_5a8c6a4d554299585d9e368e",
+    "hotpotqa_distractor_train_5a80e68855429938b6142240",
+    "hotpotqa_distractor_train_5ae008df55429925eb1afbee",
+    "hotpotqa_distractor_train_5aba9c425542994dbf019977",
+    "hotpotqa_distractor_train_5a77c17f5542992a6e59dfba",
+    "hotpotqa_distractor_train_5a7a237b5542996a35c170f0",
+    "hotpotqa_distractor_train_5ae789b25542994a481bbd7e",
+    "hotpotqa_distractor_train_5a72899f5542992359bc30da",
+    "hotpotqa_distractor_train_5a7bcc24554299294a54aae4",
+    "hotpotqa_distractor_train_5a7e377455429934daa2fbf5",
+    "hotpotqa_distractor_train_5a9034f155429933b8a20497",
+    "hotpotqa_distractor_train_5abda45e55429965af743d94",
+    "hotpotqa_distractor_train_5abbff635542993f40c73c3e",
+    "hotpotqa_distractor_train_5a732a5c55429901807daf9e",
+    "hotpotqa_distractor_train_5ab6983355429953192ad313",
+    "hotpotqa_distractor_train_5ac021d1554299012d1db5b4",
+    "hotpotqa_distractor_train_5a8d39e45542994ba4e3dc25",
+    "hotpotqa_distractor_train_5ae511b155429908b632650b",
+    "hotpotqa_distractor_train_5ae5f8ee5542996de7b71a93",
+    "hotpotqa_distractor_train_5a7e800a55429949594199e5"
+  ],
+  "natural_samples_path": "/data1/hcc/deepresearch/results/17_rollout_alignment/calibration/vexact_gateA1/rollout_capture/natural_samples.jsonl",
+  "by_boundary": {
+    "NoSearch": {
+      "internal": 52,
+      "search": 124
+    },
+    "NeedSearch": {
+      "search": 115,
+      "internal": 29
+    }
+  },
+  "p_internal_NoSearch": 0.29545454545454547,
+  "mixed_action_group_rate": 1.0
+}

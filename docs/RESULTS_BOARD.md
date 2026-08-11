@@ -157,15 +157,30 @@ already present in the greedy raw-logprob probe, so temperature is not causal.
 Verdict: `VLLM_ROUTE_TOKEN_GATE_A_FAIL` → continue VeXact, then HFExact fallback.
 See `results/17_rollout_alignment/calibration/VLLM_GATE_A_REPORT.md`.
 
+**Exact-contract correction (2026-08-11):** old HF remains a historical
+continuity reference, but the authoritative Gate A1 comparison is
+**VeOmni/FSDP actor forward ↔ VeXact rollout** under the same model definition,
+checkpoint, prompt IDs and BF16 stack. Run one NoSearch + one NeedSearch smoke
+before frozen-20. Exact agreement with all-search triggers HF↔VeOmni
+Model-Implementation Parity Audit; actor↔VeXact disagreement triggers
+`VEXACT_GATE_A_FAIL` and the two-working-day HFExact fallback.
+
+**VeXact Gate A1 (2026-08-11): PASS.** Frozen-20 full-vocabulary logits and
+fused-LCE logprobs match VeOmni exactly (`20/20`, maximum absolute difference
+`0.0`). VeXact natural sampling preserves route support:
+`P(internal | NoSearch)=0.29545`, mixed-action group rate `1.0`, other count `0`.
+Verdict: `EXACT_ROLLOUT_GATE_A_PASS`. See
+`results/17_rollout_alignment/calibration/VEXACT_GATE_A1_REPORT.md`.
+
 ## Immediate next
 
 Artifacts: `results/17_rollout_alignment/{environment,calibration,parity_32x4,trajectory_budget}/`  
 (Details locked in [NEXT_STEPS.md](NEXT_STEPS.md).)
 
-1. **A0** — fresh `eca-verl-vexact` from VeXact official pinned stack (do not clone `eca-verl`)  
-2. **A1 / Gate A** — Evidence@400 exact-20 route calibration (no budget edit yet)  
-3. On Gate A PASS: **A2–A3 / Gate B** → **A4** 32×4 → Boundary@50 (reward/table unchanged)  
-4. VeXact blocked after **2 effective working days** → auto `HFEXACT_FALLBACK` (same Gate A)
+1. ✅ **Env A0** — official-pinned `eca-verl-vexact`; original `eca-verl` untouched
+2. ✅ **A1-S** — 2-Q exact-contract smoke (`max |δ|=0`)
+3. ✅ **A1-20 / Gate A1-Exact** — exact contract + stochastic support PASS
+4. **NOW: A2–A3 / Gate B** → **A4 no-train 32×4** → Boundary@50
 
 ## What is not claimed
 

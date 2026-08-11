@@ -1,0 +1,22 @@
+{
+  "purpose": "vexact_a2_agent_loop_smoke_prepare",
+  "git_commit": "f7f39c1",
+  "n_questions": 2,
+  "n_rollouts": 1,
+  "selected_ids": [
+    "hotpotqa_distractor_train_5abda45e55429965af743d94",
+    "hotpotqa_distractor_train_5a72899f5542992359bc30da"
+  ],
+  "boundary_hist": {
+    "NeedSearch": 1,
+    "NoSearch": 1
+  },
+  "parquet": "/data1/hcc/deepresearch/results/17_rollout_alignment/trajectory_budget/a2_agent_loop_smoke/train_parity_smoke2.parquet",
+  "protocol": {
+    "agent_loop": "eca_search_agent",
+    "max_search_turns": 2,
+    "max_assistant_turns": 6,
+    "top_p": 0.95,
+    "backend": "vexact_verl"
+  }
+}

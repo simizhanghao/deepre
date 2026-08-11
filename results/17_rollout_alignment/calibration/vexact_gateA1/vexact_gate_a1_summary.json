@@ -1,0 +1,57 @@
+{
+  "purpose": "vexact_frozen20_gate_a1",
+  "gate": "PASS",
+  "config": "/data1/hcc/deepresearch/configs/rl/grpo_smoke128.yaml",
+  "seed": 42,
+  "n_questions": 20,
+  "n_rollouts": 16,
+  "authoritative_exact_contract": {
+    "reference": "VeOmni batch-invariant actor-model forward",
+    "candidate": "VeXact rollout",
+    "full_logits": {
+      "success": true,
+      "maximum_absolute_differences": [
+        0.0,
+        0.0
+      ],
+      "maximum_absolute_difference": 0.0,
+      "path": "/data1/hcc/deepresearch/results/17_rollout_alignment/calibration/vexact_gateA1/full_logits_console.log"
+    },
+    "fused_lce": {
+      "success": true,
+      "maximum_absolute_differences": [
+        0.0
+      ],
+      "maximum_absolute_difference": 0.0,
+      "path": "/data1/hcc/deepresearch/results/17_rollout_alignment/calibration/vexact_gateA1/fused_lce_console.log"
+    },
+    "pass": true
+  },
+  "natural_sampling": {
+    "temperature": 0.9,
+    "top_p": 0.95,
+    "by_boundary": {
+      "NoSearch": {
+        "internal": 52,
+        "search": 124
+      },
+      "NeedSearch": {
+        "search": 115,
+        "internal": 29
+      }
+    },
+    "p_internal_NoSearch": 0.29545454545454547,
+    "mixed_action_group_rate": 1.0,
+    "other_count": 0,
+    "pass": true
+  },
+  "old_hf_continuity_diagnostic": {
+    "median_abs_delta_search_tok0": 0.0006565898656845093,
+    "p95_abs_delta_search_tok0": 0.07479142621159554,
+    "median_abs_delta_internal_tok0": 0.0021268129348754883,
+    "p95_abs_delta_internal_tok0": 0.20135800838470477,
+    "is_authoritative_gate": false
+  },
+  "route_scores_path": "/data1/hcc/deepresearch/results/17_rollout_alignment/calibration/vexact_gateA1/vexact_gate_a1_route_scores.jsonl",
+  "natural_samples_path": "/data1/hcc/deepresearch/results/17_rollout_alignment/calibration/vexact_gateA1/rollout_capture/natural_samples.jsonl"
+}

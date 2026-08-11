@@ -31,16 +31,28 @@ Verdict: `VLLM_ROUTE_TOKEN_GATE_A_FAIL`. Temperature is not causal because the
 greedy raw-logprob probe already disagrees. Do not use vLLM for formal GRPO;
 continue to VeXact, then HFExact on the locked two-working-day fallback.
 
+**Upgraded scope:** for Evidence@400 + Qwen2.5-3B + BF16, both tested
+high-throughput rollout paths remove meaningful `<internal>` support at the route
+root. Treat this as a cross-backend trainer/rollout implementation mismatch, not
+an SGLang-only bug. Do not test a third ordinary inference backend.
+
 ---
 
 ## NOW — Rollout Alignment Recovery (`results/17_rollout_alignment/`)
+
+**Current gate (2026-08-11): `EXACT_ROLLOUT_GATE_A_PASS`.** Frozen-20
+VeOmni↔VeXact full logits and fused-LCE logprobs are both exact (`max |δ|=0`);
+natural sampling has `P(internal | NoSearch)=0.29545` and mixed-group rate
+`1.0`. A1 is closed. **NOW: A2 minimal EcaSearchAgentLoop integration**, then
+A3 trajectory budget and Gate B. See
+`results/17_rollout_alignment/calibration/VEXACT_GATE_A1_REPORT.md`.
 
 ```text
 results/17_rollout_alignment/
 ├── environment/       # SHA / pins lock
 ├── calibration/       # Gate A (20-Q route root)
 ├── parity_32x4/       # after Gate A+B
-└── trajectory_budget/ # Gate B artifacts (after Gate A PASS only)
+└── trajectory_budget/ # Gate B artifacts (after Gate A1 PASS only)
 ```
 
 ### Locked decisions (2026-08-11)
@@ -51,21 +63,27 @@ results/17_rollout_alignment/
 | Env | Freeze **`eca-verl`**; new **`eca-verl-vexact`** from VeXact official pinned stack (**do not** clone/upgrade `eca-verl`) |
 | VeXact pin | Clone `verl-project/vexact` → record `HEAD` SHA under `environment/`; follow its `pyproject.toml` for veRL/VeOmni/torch/transformers |
 | VeXact fail → HFExact | **2 effective working days** (not calendar); auto gate → `VEXACT_INTEGRATION_HOLD → HFEXACT_FALLBACK` |
-| Trajectory Budget | **Only after Gate A PASS**; Gate B before any formal GRPO |
-| Architecture | **Minimal VeXact hook first**; abstract `RolloutBackend` only after Gate A PASS |
+| Exact reference | **VeOmni/FSDP actor forward**, not vanilla HF |
+| Historical reference | Existing HF scores remain a continuity diagnostic; they are not the authoritative VeXact contract |
+| Trajectory Budget | **Only after Gate A1 PASS**; Gate B before any formal GRPO |
+| Architecture | **Minimal VeXact hook first**; abstract `RolloutBackend` only after Gate A1 PASS |
+| Precision | Keep official BF16 exact stack; FP16 is a later ablation only if VeXact exactness fails |
 
 ### Sequence (A0–A4)
 
 ```text
-A0 — Environment
+Env A0 — Environment
   fresh eca-verl-vexact · official pins · record all SHA/version
         ↓
-A1 — Minimal VeXact Calibration
-  Evidence@400 · exact 20 samples · route root only
-  (prompt_ids → token_ids + logprobs; no AgentLoop / no budget edit)
+A1-S — 2-Q Exact Contract Smoke
+  1 NoSearch + 1 NeedSearch · same checkpoint/prompt_ids/dtype/model definition
+  VeOmni/FSDP actor forward ↔ VeXact rollout route-token logprobs
+        │ exact smoke PASS
         ↓
-Gate A — HF vs VeXact route logprob + natural sampling
-        │ PASS
+A1-20 — Frozen-20 Exact Calibration
+  Gate A0-HF: old HF continuity diagnostic (non-authoritative)
+  Gate A1-Exact: VeOmni/FSDP actor ↔ VeXact logprobs + VeXact natural sampling
+        │ PASS (2026-08-11; exact max |δ|=0, support present)
         ▼
 A2 — EcaSearchAgentLoop minimal integration
         ↓
@@ -85,7 +103,7 @@ Effective working day = real debug time (exclude model download / image pull / q
 | Day | Target |
 |-----|--------|
 | Day 1 | Official VeXact example installs + minimal dense rollout OK |
-| Day 2 | Evidence@400 exact-20: `token_ids` + `logprobs` + sampling (AgentLoop not required) |
+| Day 2 | Evidence@400 2-Q smoke, then exact-20 only after smoke PASS |
 
 Trigger **`VEXACT_INTEGRATION_HOLD → HFEXACT_FALLBACK`** if any of:
 
@@ -93,15 +111,43 @@ Trigger **`VEXACT_INTEGRATION_HOLD → HFEXACT_FALLBACK`** if any of:
 - **B.** Official example works, but Qwen2.5-3B cannot minimal `generate`  
 - **C.** Would require large VeXact/veRL **core** forks  
 
-Then run the **same Gate A** on HFExact. Do **not** return to SGLang forensics.
+Then run the same exact-contract gate on HFExact. Do **not** return to SGLang/vLLM
+forensics and do not try TensorRT-LLM or another ordinary high-throughput backend.
 
-### Gate A — Rollout Alignment
+### Gate A0-HF — Historical continuity (diagnostic)
 
-- route tok0: median `|δ| = |log P_rollout − log P_HF| ≤ 0.02` nat; P95 `≤ 0.05`
+- Preserve old HF route-root scores and natural-sampling support as the historical policy reference.
+- Record HF ↔ VeOmni and HF ↔ VeXact deltas, but do **not** require bitwise or `0.02/0.05` agreement.
+- If VeOmni and VeXact agree with each other but both lose the HF `<internal>` mass, trigger Model-Implementation Parity Audit; do not train.
+
+### Gate A1-Exact — Authoritative rollout contract
+
+- reference: VeOmni/FSDP actor forward using the exact VeXact-compatible model definition
+- candidate: VeXact rollout, same checkpoint, exact prompt IDs, dtype and route-token IDs
+- 2-Q smoke first: one `NoSearch`, one `NeedSearch`; any large actor↔rollout divergence stops expansion to 20
+- frozen-20 route tok0: median `|δ_exact| = |log P_VeXact − log P_VeOmni| ≤ 0.02` nat; P95 `≤ 0.05`
 - NoSearch: `P(internal) > 0.10` and `mixed_action_group_rate > 0`
 - If logprob aligned but stochastic internal still 0 → debug **sampler**, not reward
 
-Gate A **before** any Trajectory Budget change (isolate causal variable).
+Gate outcomes:
+
+- **Exact aligned + support present** → `EXACT_ROLLOUT_GATE_A_PASS`; proceed to A2/A3.
+- **Exact aligned + both all-search while old HF has internal mass** → Model-Implementation Parity Audit (`HF ↔ VeOmni`); training forbidden.
+- **Actor ↔ VeXact not aligned** → `VEXACT_GATE_A_FAIL`; debug only within the two-working-day budget, then HFExact fallback.
+
+Gate A1 **before** any AgentLoop, Trajectory Budget or reward change.
+
+### A2 — Minimal AgentLoop integration smoke
+
+- 1 NoSearch + 1 NeedSearch, `N=2`, `lr=0`, response cap 128
+- real veRL `EcaSearchAgentLoop` dispatches generation through the registered
+  VeXact async server and returns non-empty token/logprob outputs
+- first-generate-only: this proves interface/registration/weight-path wiring;
+  it intentionally makes **no** multi-turn stop, tool, finish or budget claim
+- artifact: `results/17_rollout_alignment/trajectory_budget/a2_agent_loop_smoke/`
+
+A2 PASS unlocks A3, where VeXact per-turn stopping and the registered trajectory
+budgets are repaired before Gate B. It does not unlock training by itself.
 
 ### Gate B — Trajectory Contract (after Gate A; before GRPO)
 
@@ -124,8 +170,9 @@ Gate A **before** any Trajectory Budget change (isolate causal variable).
 - Mixed-action GRPO · Root Branching / BPO · REINFORCE · α/reward retune  
 - More SGLang kernel digging · Importance Sampling / OAPL as primary fix  
 - Blind Evidence@400 retrain · CIPO/CIGPO · premature `RolloutBackend` refactor
+- TensorRT-LLM / third ordinary backend · temperature escalation · FP16 before BF16 exact-stack diagnosis
 
-### If Gate A PASS then Boundary@50 still FAIL
+### If Gate A1 PASS then Boundary@50 still FAIL
 
 Only then: **REINFORCE** (optimizer-only) **or** Root-action Branching — same Exact backend.
 

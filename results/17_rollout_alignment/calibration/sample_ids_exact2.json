@@ -1,0 +1,31 @@
+{
+  "purpose": "VeOmni/FSDP actor vs VeXact 2-Q exact-contract smoke",
+  "checkpoint": {
+    "path": "outputs/rl/03_hf_evidence_step400",
+    "config_sha256": "629ad9ecd8c6b8b63db78d4cb276e5a7f0f2ec65a23526c2416ae9c48f06a58b",
+    "tokenizer_sha256": "3fd169731d2cbde95e10bf356d66d5997fd885dd8dbb6fb4684da3f23b2585d8",
+    "safetensors_index_sha256": "67f4322a00786f5597cfa6f6669604f0473aadb483d012f18b2ee1dcf0e92f42"
+  },
+  "contract": {
+    "dtype": "bfloat16",
+    "search_token_id": 27,
+    "internal_token_id": 4159,
+    "actor_reference": "VeOmni/FSDP forward",
+    "rollout_candidate": "VeXact",
+    "attention_backend_a100": "triton-invariant"
+  },
+  "samples": [
+    {
+      "sample_id": "hotpotqa_distractor_train_5aba9c425542994dbf019977",
+      "boundary": "NoSearch",
+      "canonical_prompt_sha256": "57b532eaa84c5c2d025d2f3cdcb7d39aacc1dc049890893e3b88486d46d72448",
+      "canonical_prompt_len": 105
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5abbff635542993f40c73c3e",
+      "boundary": "NeedSearch",
+      "canonical_prompt_sha256": "076a768da018bd1c8432550b19f44f9428e6021509798c0120ca100284799c67",
+      "canonical_prompt_len": 105
+    }
+  ]
+}
