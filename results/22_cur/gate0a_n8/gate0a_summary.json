@@ -1,0 +1,40 @@
+{
+  "gate": "GATE_0A_PASS",
+  "n_questions": 128,
+  "n_rollouts_per_arm_distribution": {
+    "4": 52,
+    "8": 76
+  },
+  "estimand": "E[F1|do(search)] - E[F1|do(internal)]",
+  "mean_f1_search": 0.5916291452141988,
+  "mean_f1_internal": 0.2498692061822102,
+  "mean_delta_f1": 0.3417599390319886,
+  "median_delta_f1": 0.28125000000000006,
+  "delta_f1_quantiles": {
+    "0": -1.0,
+    "0.1": -0.10863095238095237,
+    "0.25": 0.0,
+    "0.5": 0.28125000000000006,
+    "0.75": 0.75,
+    "0.9": 1.0,
+    "1": 1.0
+  },
+  "direction_counts": {
+    "search_positive": 80,
+    "internal_negative": 21,
+    "exact_zero": 27
+  },
+  "high_confidence_counts": {
+    "search": 67,
+    "internal": 6,
+    "borderline": 55
+  },
+  "mean_em_search": 0.5009765625,
+  "mean_em_internal": 0.1806640625,
+  "mean_delta_em": 0.3203125,
+  "mean_search_count_do_search": 1.0,
+  "mean_observation_tokens_do_search": 380.8310546875,
+  "finish_rate_search": 0.9951171875,
+  "finish_rate_internal": 1.0,
+  "n_borderline_for_n8": 55
+}

@@ -1,0 +1,12 @@
+{
+  "gate": "CUR_HIDDEN_CAPTURE_PASS",
+  "n": 128,
+  "layers": [
+    18,
+    27,
+    36
+  ],
+  "definition": "transformers hidden_states[k] at final canonical-prompt token, before action intervention",
+  "dtype_saved": "float32",
+  "model": "outputs/rl/03_hf_evidence_step400"
+}

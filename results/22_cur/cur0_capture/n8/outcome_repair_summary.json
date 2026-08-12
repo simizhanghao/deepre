@@ -1,0 +1,8 @@
+{
+  "gate": "CUR_OUTCOME_REPAIR_PASS",
+  "rows": 608,
+  "repaired_rows": 0,
+  "rows_with_changed_f1": 0,
+  "raw_capture_immutable": "/data1/hcc/deepresearch/results/22_cur/cur0_capture/n8/outcomes.jsonl",
+  "repair": "take suffix after final literal <answer> in captured pred"
+}

@@ -1,0 +1,62 @@
+{
+  "gate": "GATE_0C_COMPLETE",
+  "protocol": "question-level shuffled 5-fold OOF; train-fold StandardScaler + nested NumPy closed-form RidgeCV",
+  "n": 128,
+  "primary_layer": 27,
+  "layers": {
+    "layer18": {
+      "spearman": 0.3118301323283121,
+      "mae": 0.3487756715764424,
+      "rmse": 0.42005788993486154,
+      "direction_auroc_high_confidence": 0.8231292517006803,
+      "n_high_confidence": 52,
+      "fold_alphas": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ]
+    },
+    "layer27": {
+      "spearman": 0.31260396168739935,
+      "mae": 0.35043987239252117,
+      "rmse": 0.4230581397521234,
+      "direction_auroc_high_confidence": 0.7210884353741497,
+      "n_high_confidence": 52,
+      "fold_alphas": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ]
+    },
+    "layer36": {
+      "spearman": 0.28089139507973004,
+      "mae": 0.3580152058977748,
+      "rmse": 0.4301618216152319,
+      "direction_auroc_high_confidence": 0.8163265306122449,
+      "n_high_confidence": 52,
+      "fold_alphas": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ]
+    }
+  },
+  "search_count_cost": {
+    "mean": 1.0,
+    "std": 0.0,
+    "predictable": false,
+    "verdict": "constant_cost_no_model_needed"
+  },
+  "constant_mean_baseline": {
+    "mae": 0.3857777757019852,
+    "rmse": 0.4349660685669623
+  },
+  "primary_rmse_improvement_fraction": 0.027376684471206447,
+  "decision": "REVIEW_AFTER_PREREGISTERED_N8_BORDERLINE_LABEL_REFINEMENT"
+}

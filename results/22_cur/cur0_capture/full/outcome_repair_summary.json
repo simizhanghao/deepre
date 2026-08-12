@@ -1,0 +1,8 @@
+{
+  "gate": "CUR_OUTCOME_REPAIR_PASS",
+  "rows": 1024,
+  "repaired_rows": 509,
+  "rows_with_changed_f1": 422,
+  "raw_capture_immutable": "results/22_cur/cur0_capture/full/outcomes.jsonl",
+  "repair": "take suffix after final literal <answer> in captured pred"
+}
