@@ -1,6 +1,6 @@
 # Results Board — Evidence-Cost-Aware Deep Research Agent
 
-> Updated **2026-08-11**. Smoke / val-200 / GRPO `train_smoke_128` unless noted.  
+> Updated **2026-08-12**. Smoke / val-200 / GRPO `train_smoke_128` unless noted.
 > Model family: **Qwen2.5-3B-Instruct** → SFT-v1 → GRPO (veRL; Exact Rollout recovery NOW).  
 > Plan freeze: [ROADMAP.md](ROADMAP.md) · [NEXT_STEPS.md](NEXT_STEPS.md)
 
@@ -23,6 +23,7 @@
 | **Rollout Alignment Recovery** | **CLOSED/PASS** | VeXact exact contract established |
 | Root-Pivot RP-0 | **FAIL** | direct route loss still moved both classes internal; @10 locked |
 | CUR-0 | **CLOSED** | 1632 rows; bidirectional utility; margin rejected; Layer-27 linear modest; small MLP unlocked |
+| CUR-1 | **TRAIN/VAL PASS** | 2304 paired trajectories; val uplift +0.2488; B0–B6 next; test sealed |
 
 **Final ckpts (local, not in git):**
 

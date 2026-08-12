@@ -1,0 +1,13 @@
+{
+  "gate": "CUR_CAPTURE_PASS",
+  "questions": 2,
+  "rows": 4,
+  "rollouts_per_arm": 1,
+  "canonical_prompt_pairing": true,
+  "action_valid_rate": 1.0,
+  "policy_failures_retained": 0,
+  "internal_tool_violations": 0,
+  "finish_rate": 1.0,
+  "mean_f1": 0.16666666666666666,
+  "errors": []
+}

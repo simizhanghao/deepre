@@ -19,9 +19,23 @@ Update 2026-08-12: smoke/full/N=8 captures all PASS (1632 merged rows). Gate 0A
 confirms bidirectional utility (`80` search-positive, `21` internal-negative);
 frozen root margin remains weak and globally search-biased. After N=8, the
 primary Layer-27 linear probe remains modest (Spearman `0.318`, only `2.55%`
-RMSE improvement). CUR-0 is closed: no more label sampling, no layer
-cherry-picking. Next is the preregistered Layer-27 small-MLP comparison under
-the identical question-level folds; uncertainty remains locked. See
+RMSE improvement). CUR-0 is closed.
+
+The standalone Layer-27 MLP@128 gate is now cancelled because it cannot
+distinguish representation failure from sample-size failure. **NOW: CUR-1
+pre-registration**, followed by one 896-question/4352-trajectory acquisition:
+fresh train 640×N1, validation 128×N4, test 128×N8. All Linear, MLP,
+multi-layer, margin and outcome-model comparisons then run offline on this one
+dataset. Fresh test is touched once. Gate priority is frozen as `C > B > A`:
+decision recovery is the Candidate hard gate, ranking is the qualification
+signal, and paired effect-error significance controls only the estimator claim.
+Gate D is a validation-only 32–64-question deployment parity check after C
+PASS. The immutable 640/128/128 splits and their independent freeze audit PASS.
+Fresh train/validation capture also PASS (2304 trajectories; validation mean
+uplift +0.2488, with 15 internal-positive questions). **NOW:** extract the
+frozen representation views and run the pre-registered offline B0–B6 matrix;
+test remains sealed. See [CUR1_PLAN.md](CUR1_PLAN.md) and
+[CUR1_CAPTURE_REPORT.md](CUR1_CAPTURE_REPORT.md). CUR-0 evidence remains in
 [CUR0_REPORT.md](CUR0_REPORT.md).
 
 ## Locked root cause (do not re-open)

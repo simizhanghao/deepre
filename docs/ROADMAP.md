@@ -75,7 +75,15 @@ NOW → Conditional Utility Router (CUR)
 │     Gate 0A outcome bidirectionality → 0B frozen margin → 0C h18/h27/h36 probes
 │     linear first; MLP/uncertainty only behind preregistered insufficiency gates
 │     ✅ 1632 rows after N=8 refinement; margin rejected; primary linear modest
-│     NOW → Layer-27 small MLP; uncertainty remains locked
+│     standalone Layer-27 MLP@128 CANCELLED (low information value)
+│
+├── 🟡 CUR-1 one-shot model-building phase → `docs/CUR1_PLAN.md`
+│     128 pilot + fresh train640×N1 + val128×N4 + test128×N8
+│     one expensive acquisition → one offline baseline matrix → one fresh test
+│     primary: L18 PCA64 semantic + cross-layer dynamics → potential outcomes
+│     metrics: Spearman, RMSE, regret, Recovery@25/50/75, quality-cost frontier
+│     ✅ fresh train/val capture PASS (2304 rows); test SEALED; B0–B6 next
+│     PASS → CUR Candidate; FAIL → one terminal short-internal/self-knowledge route
 │
 ├── ⬜ Candidate ECA PASS → freeze
 ├── ⬜ 3E Full-Corpus (passage BM25 + rerank)

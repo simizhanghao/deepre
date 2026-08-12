@@ -1,0 +1,15 @@
+{
+  "gate": "CUR1_FREEZE_AUDIT_PASS",
+  "seed": 2026081201,
+  "historical_id_count": 1240,
+  "eligible_pool_count": 7225,
+  "split_sizes": {
+    "train": 640,
+    "validation": 128,
+    "test": 128
+  },
+  "selected_questions": 896,
+  "planned_trajectories": 4352,
+  "test_sealed": true,
+  "errors": []
+}

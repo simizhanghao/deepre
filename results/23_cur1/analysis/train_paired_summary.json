@@ -1,0 +1,50 @@
+{
+  "gate": "CUR1_PAIRED_CAPTURE_PASS",
+  "rows": 1280,
+  "questions": 640,
+  "rollouts_per_arm_distribution": {
+    "1": 640
+  },
+  "arm_summary": {
+    "search": {
+      "rows": 640,
+      "mean_f1": 0.5495053210678211,
+      "mean_em": 0.4609375,
+      "finish_rate": 0.996875,
+      "format_valid_rate": 1.0,
+      "action_valid_rate": 0.9984375,
+      "policy_failure_rate": 0.0015625,
+      "mean_search_count": 0.9984375,
+      "mean_observation_tokens": 379.834375,
+      "mean_response_tokens": 630.8421875
+    },
+    "internal": {
+      "rows": 640,
+      "mean_f1": 0.24731011176323675,
+      "mean_em": 0.184375,
+      "finish_rate": 1.0,
+      "format_valid_rate": 1.0,
+      "action_valid_rate": 1.0,
+      "policy_failure_rate": 0.0,
+      "mean_search_count": 0.0,
+      "mean_observation_tokens": 0.0,
+      "mean_response_tokens": 53.084375
+    }
+  },
+  "paired": {
+    "mean_delta_f1_search_minus_internal": 0.30219520930458427,
+    "question_bootstrap_ci95_mean_delta_f1": [
+      0.2623287686705656,
+      0.34234666136814573
+    ],
+    "median_delta_f1": 0.0,
+    "mean_delta_em_search_minus_internal": 0.2765625,
+    "direction_counts": {
+      "search_positive": 271,
+      "internal_positive": 42,
+      "tie": 327
+    },
+    "oracle_mean_f1_from_arm_means": 0.594362711940837
+  },
+  "errors": []
+}

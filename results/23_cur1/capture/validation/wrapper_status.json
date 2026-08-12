@@ -1,0 +1,12 @@
+{
+  "capture_complete": true,
+  "trainer_steps": "16/16",
+  "rows": 1024,
+  "outcomes_sha256": "0df29a77e08cc71e6209f99b30415f029ae4b1dbd222f0e3faa7f26b4a2e3786",
+  "trainer_progress_wall_time": "20:05",
+  "postrun_wrapper_exit": 127,
+  "postrun_wrapper_error": "launcher edited in place while Bash process was alive; a Hydra override was reread as a shell command after trainer completion",
+  "generation_affected": false,
+  "independent_capture_audit": "CUR_CAPTURE_PASS",
+  "independent_paired_analysis": "CUR1_PAIRED_CAPTURE_PASS"
+}

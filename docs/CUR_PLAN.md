@@ -1,6 +1,6 @@
 # Conditional Utility Router (CUR) Plan
 
-Status: **CUR-0 complete; Layer-27 small MLP unlocked.**
+Status: **CUR-0 complete; superseded by the one-shot CUR-1 outcome-model plan.**
 
 ## Decision
 
@@ -42,8 +42,10 @@ while Evidence@400 and its AgentLoop remain frozen.
 
 CUR-0 final: root margin Spearman `0.177`; primary Layer-27 linear Spearman
 `0.318` with only `2.55%` RMSE gain over the constant mean after N=8 label
-refinement. This is insufficient for freezing CUR-v0, so the small-MLP branch
-is unlocked. Fixed sensitivity layers must not replace Layer 27 post hoc.
+refinement. This is insufficient for freezing CUR-v0. The previously unlocked
+Layer-27 small-MLP@128 is cancelled as a standalone gate: at 128 questions its
+PASS/FAIL cannot separate model capacity from sample size. CUR-1 instead runs
+Linear/MLP/multi-layer candidates together on one larger counterfactual dataset.
 
 Deployment applies cost after prediction:
 
@@ -51,9 +53,9 @@ Deployment applies cost after prediction:
 search iff predicted_delta_F1 - lambda * predicted_search_cost > 0
 ```
 
-Report separate F1-cost and EM-cost frontiers. CUR-1 expands to 1024 paired
-questions with 256/512/1024 learning curves; 2048 is unlocked only by a
-data-limited learning curve.
+Report separate F1-cost and EM-cost frontiers. CUR-1 uses the fixed wide-train,
+deep-test design in [CUR1_PLAN.md](CUR1_PLAN.md); the earlier serial
+256/512/1024/2048 acquisition ladder is cancelled.
 
 ## Artifacts
 
