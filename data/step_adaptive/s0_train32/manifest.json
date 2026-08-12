@@ -1,0 +1,70 @@
+{
+  "gate": "STEP_S0_DATA_FREEZE_PASS",
+  "source": "/data1/hcc/deepresearch/data/cur/cur1_fresh896/train.parquet",
+  "source_sha256": "3a59b798cd972f9f2b719901651cce16ef6f8cda3b7e199de88be1b2f9f67853",
+  "questions": 32,
+  "replay_subset": [
+    "hotpotqa_distractor_train_5abfe96f5542997d64295939",
+    "hotpotqa_distractor_train_5abc5186554299700f9d7862",
+    "hotpotqa_distractor_train_5a848d5b5542997b5ce3feb3",
+    "hotpotqa_distractor_train_5ae01c4755429925eb1afc16",
+    "hotpotqa_distractor_train_5ae01e4a554299025d62a407",
+    "hotpotqa_distractor_train_5a8e8cfb5542990e94052b4c",
+    "hotpotqa_distractor_train_5ab1d0ad554299722f9b4c86",
+    "hotpotqa_distractor_train_5abd16c055429924427fcef1"
+  ],
+  "question_ids": [
+    "hotpotqa_distractor_train_5abfe96f5542997d64295939",
+    "hotpotqa_distractor_train_5abc5186554299700f9d7862",
+    "hotpotqa_distractor_train_5a848d5b5542997b5ce3feb3",
+    "hotpotqa_distractor_train_5ae01c4755429925eb1afc16",
+    "hotpotqa_distractor_train_5ae01e4a554299025d62a407",
+    "hotpotqa_distractor_train_5a8e8cfb5542990e94052b4c",
+    "hotpotqa_distractor_train_5ab1d0ad554299722f9b4c86",
+    "hotpotqa_distractor_train_5abd16c055429924427fcef1",
+    "hotpotqa_distractor_train_5a7c192a5542990527d55450",
+    "hotpotqa_distractor_train_5a7b22ae554299042af8f6fe",
+    "hotpotqa_distractor_train_5a839509554299334474604b",
+    "hotpotqa_distractor_train_5a70f21b5542994082a3e416",
+    "hotpotqa_distractor_train_5a889c7955429938390d3f9d",
+    "hotpotqa_distractor_train_5a8a135f5542992d82986e98",
+    "hotpotqa_distractor_train_5ab94b55554299743d22eacb",
+    "hotpotqa_distractor_train_5ab5080e5542990594ba9ce3",
+    "hotpotqa_distractor_train_5a821f4855429903bc27ba3f",
+    "hotpotqa_distractor_train_5a8e2abc5542995a26add472",
+    "hotpotqa_distractor_train_5ae33a8a5542992f92d8224f",
+    "hotpotqa_distractor_train_5ab81e0a5542990e739ec82a",
+    "hotpotqa_distractor_train_5a78ed3a554299148911f9a5",
+    "hotpotqa_distractor_train_5ab9e075554299232ef4a242",
+    "hotpotqa_distractor_train_5a7e82b055429949594199eb",
+    "hotpotqa_distractor_train_5a89df615542992e4fca8411",
+    "hotpotqa_distractor_train_5a7c29b25542996dd594b8a8",
+    "hotpotqa_distractor_train_5a7fbe2c5542995d8a8ddf0e",
+    "hotpotqa_distractor_train_5ab406f755429976abd1bd37",
+    "hotpotqa_distractor_train_5a90b87055429933b8a205b8",
+    "hotpotqa_distractor_train_5a90964655429933b8a20573",
+    "hotpotqa_distractor_train_5a7f6db15542995d8a8dde65",
+    "hotpotqa_distractor_train_5ac29be2554299657fa28fd5",
+    "hotpotqa_distractor_train_5a74669155429979e288293e"
+  ],
+  "actions": [
+    "continue",
+    "search",
+    "answer"
+  ],
+  "budgets": {
+    "response_tokens": 2048,
+    "observation_tokens": 384,
+    "answer_reserve": 256,
+    "step_tokens": 128,
+    "checkpoints": 4,
+    "searches": 3
+  },
+  "artifact_sha256": {
+    "train32.parquet": "9fa954753132484d75b564e73d1bc8d97b0cef99b7f6ea338e8cfc3e32ec085d",
+    "replay8.parquet": "9ee4c0840951b29ea88b9ee22e05e9b2688755fcb4741da74176f7a1b3b77f22",
+    "smoke2.parquet": "24e6ad0c6c987ab70e173770018cc3d88fe6348dcf830698ed60f7204e7d0ec9"
+  },
+  "val3_read": false,
+  "test_read": false
+}

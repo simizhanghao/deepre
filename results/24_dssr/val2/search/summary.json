@@ -1,0 +1,13 @@
+{
+  "gate": "DSSR_VAL2_SEARCH_CAPTURE_PASS",
+  "questions": 128,
+  "rows": 512,
+  "rollouts_per_question": 4,
+  "action_valid_rate": 1.0,
+  "policy_failures_retained": 0,
+  "finish_rate": 0.994140625,
+  "mean_search_f1": 0.6116199192915718,
+  "errors": [],
+  "error_count": 0,
+  "test_read": false
+}

@@ -1,6 +1,6 @@
 # CUR-1 — Counterfactual Outcome Router
 
-Status: **train/validation capture PASS; offline B0–B6 selection next. Test sealed.**
+Status: **CLOSED — static pre-action CUR failed Validation Unlock. Test sealed.**
 
 ## Research-mode transition
 
@@ -37,13 +37,14 @@ CUR-0 becomes pilot/development data and is never final test data.
 
 | Split | Questions | Rollouts per arm | Trajectories | Role |
 |---|---:|---:|---:|---|
-| Existing CUR-0 pilot | 128 | existing N=4/8 | 1632 | development/train only |
+| Existing CUR-0 pilot | 128 | existing N=4/8 | 1632 | historical development only |
 | Fresh train | 640 | N=1 | 1280 | outcome-model fitting |
 | Fresh validation | 128 | N=4 | 1024 | architecture/calibration selection |
 | Fresh test | 128 | N=8 | 2048 | one final untouched decision |
 
-New acquisition totals 896 questions and 4352 trajectories. Pilot plus fresh
-train gives 768 training questions. Before any rollout, write immutable split
+New acquisition totals 896 questions and 4352 trajectories. The primary CUR-1
+model uses **only fresh train 640**; CUR-0 pilot never enters PCA, fitting,
+validation, or test. Before any rollout, write immutable split
 IDs, prompt hashes, exclusion hashes, model/tokenizer hashes, and seed.
 
 The first train/validation capture used batch 16 (80/16 steps). The locked
@@ -64,22 +65,27 @@ All features are extracted at the final canonical-prompt token before action.
 
 - Layer-18 hidden state.
 - PCA to 64 dimensions.
-- Every PCA/scaling transform is fitted on training questions only inside each
-  fold, then applied to validation/test. No global preprocessing is allowed.
+- PCA18 and PCA27 are fitted separately on fresh train 640 only, then frozen.
+  Validation may only transform. Test remains untouched until Unlock.
 
 ### Representation-dynamics view
 
-- `||h27-h18||`, `||h36-h27||`;
 - cosine similarities `(18,27)`, `(27,36)`, `(18,36)`;
-- hidden norms and layer-update ratios;
-- route margins at layers 18/27/36, defined consistently as the search versus
-  internal logit difference after the frozen final norm and LM head.
+- relative updates `||h27-h18||/(||h18||+eps)` and
+  `||h36-h27||/(||h27||+eps)`;
+- hidden norms `||h18||`, `||h27||`, and `||h36||`;
+- one final root margin `log P(search)-log P(internal)`.
+
+Intermediate-layer logit-lens margins, entropy, attention features, and extra
+layers are forbidden.
 
 Do not concatenate three full 2048-dimensional states.
 
 ## Potential-outcome model
 
-The primary model predicts two potential outcomes rather than a binary route:
+The B3/B5/B6 MLPs share one frozen capacity, optimizer, training schedule,
+early-stop rule and seed ensemble. They predict two potential outcomes rather
+than a binary route:
 
 ```text
 mu_internal(q) = sigmoid(b(q) - tau(q)/2)
@@ -97,9 +103,22 @@ L = mean_q [ 0.5 * mean_rollouts L(search,q)
            + 0.5 * mean_rollouts L(internal,q) ]
 ```
 
-Thus CUR-0 N=8 questions do not receive twice the weight of N=4 questions.
-The current search cost is exactly one call under `do(search)`, so no cost head
+The ensemble is the arithmetic mean of seeds 1/2/3; no seed is selected on
+validation. The current search cost is exactly one call under `do(search)`, so no cost head
 is fitted. Deployment is `search iff predicted_delta_F1 > lambda`.
+
+Frozen fitting details:
+
+- PCA64 uses deterministic randomized SVD (oversample 16, three power
+  iterations, seed 2026081201), fit separately for L18 and L27 on Train640;
+- Ridge alpha is selected by Train-only five-fold CV from
+  `{0.01,0.1,1,10,100,1000}` and then refit on all Train640;
+- B3/B5/B6 use the same `input -> 64 -> 32 -> 2 sigmoid heads` MLP, AdamW
+  (`lr=1e-3`, weight decay `1e-4`, batch 64, maximum 500 epochs);
+- one fixed Train-only 80/20 fold determines early stopping (patience 40,
+  min delta `1e-6`); each seed is then reinitialized and refit on all Train640
+  for its selected epoch count;
+- seeds 1/2/3 are averaged at the two potential-outcome heads.
 
 ## One offline comparison matrix
 
@@ -108,17 +127,42 @@ together; none unlocks new trajectory collection:
 
 | ID | Candidate |
 |---|---|
-| B0 | constant / always-internal / always-search / random budget |
+| B0 | Random@matched-budget |
 | B1 | frozen root margin |
-| B2 | Layer-27 linear |
-| B3 | Layer-27 small MLP |
-| B4 | Layer-18 linear |
-| B5 | semantic-only CUR outcome model |
-| B6 | primary two-view CUR-Uplift v1 |
+| B2 | Layer-27 Ridge -> delta F1 |
+| B3 | Layer-27 PCA64 -> shared dual-head small MLP |
+| B4 | Layer-18 Ridge -> delta F1 |
+| B5 | Layer-18 PCA64 -> shared dual-head potential-outcome MLP |
+| B6 | Layer-18 PCA64 + 8 dynamics scalars + final root margin -> same MLP |
 
-Architecture and calibration are selected using pilot/train plus fresh
-validation only. Fresh test is evaluated once after selection. AUROC is a
-secondary diagnostic, not the selection target.
+Every learned parameter uses fresh train 640 only. Fresh validation selects and
+calibrates one candidate; fresh test is evaluated once after selection. AUROC
+is a secondary diagnostic, not the selection target.
+
+## Validation candidate selection and Test Unlock
+
+At fixed 25%, 50%, and 75% search budgets, rank questions by predicted uplift.
+Define matched-budget recovery as
+
+```text
+Recovery_b = (V_model,b - V_random,b) / (V_oracle,b - V_random,b)
+```
+
+Selection is primary Recovery@50, secondary mean Recovery@25/50/75, then an
+Occam tie-break. If two models differ by less than 0.02 Recovery@50 and their
+fixed-policy question-level paired bootstrap does not show a stable difference,
+select the simpler one. Seeds are ensembled, never selected.
+
+The single candidate may be B1–B6; B6 has no privilege. Validation unlocks Test
+only if all hold:
+
+1. Recovery@50 >= 0.65;
+2. Candidate F1@50 >= AlwaysSearch F1 - 0.02;
+3. Candidate strictly exceeds the strongest noncandidate among B0–B6 at at
+   least two of the three budgets.
+
+The selected search sets are fixed before paired bootstrap. Bootstrap resamples
+questions only; it never refits models, thresholds, PCA, or features.
 
 ## Held-out metrics and gate hierarchy
 
@@ -160,9 +204,8 @@ veto a router that passes Gate C.
 - matched search budgets are fixed at 25%, 50%, and 75%;
 - report answer F1, regret, and Oracle Utility Recovery;
 - Recovery@50 >= 0.75 and mean Recovery@25/50/75 >= 0.70;
-- CUR must exceed random, frozen root-margin, and B2 Layer-27 linear at matched
-  budgets; compare policy value against the best baseline with question-level
-  paired bootstrap;
+- CUR must exceed the strongest noncandidate among B0–B6 at matched budgets;
+  compare fixed policies with question-level paired bootstrap;
 - Gate C FAIL closes static CUR even if Gate A looks strong;
 - Gate C PASS can produce a Candidate even if only A-Weak holds, but the paper
   may claim decision-useful ranking rather than estimator superiority.
@@ -191,6 +234,12 @@ Fresh test is not reused by Gate D.
   and entropy. No further static layer/MLP/probe sweep is allowed.
 - Uncertainty features are part of the terminal post-internal branch, not an
   automatic next experiment after any individual baseline.
+
+Final outcome: B3 was the Recovery@50 winner (`0.3801`) but failed both the
+`0.65` recovery gate and quality preservation (`F1@50=0.4226` versus
+`AlwaysSearch=0.4859`). Static CUR is closed without opening Test. The one
+allowed successor is the information-changing short-internal SK-CUR plan in
+[SK_CUR_PLAN.md](SK_CUR_PLAN.md), not another static feature/model sweep.
 
 ## Test seal
 

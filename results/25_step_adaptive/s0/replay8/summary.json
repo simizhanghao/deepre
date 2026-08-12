@@ -1,0 +1,58 @@
+{
+  "gate": "STEP_S0_REPLAY_PASS",
+  "rows_a": 8,
+  "rows_b": 8,
+  "sample_ids_match": true,
+  "exact_trajectory_match_rate": 1.0,
+  "comparisons": [
+    {
+      "sample_id": "hotpotqa_distractor_train_5a848d5b5542997b5ce3feb3",
+      "exact_match": true,
+      "sha256_a": "0b1092ea4ed91d534f5f37c918572b9629ab0755bbfed7b042fb02023ea81904",
+      "sha256_b": "0b1092ea4ed91d534f5f37c918572b9629ab0755bbfed7b042fb02023ea81904"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a8e8cfb5542990e94052b4c",
+      "exact_match": true,
+      "sha256_a": "d8ec05777a2f6ee5901f7a47ac76e3ea00856068b53084689fe7b90823e5d7f7",
+      "sha256_b": "d8ec05777a2f6ee5901f7a47ac76e3ea00856068b53084689fe7b90823e5d7f7"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ab1d0ad554299722f9b4c86",
+      "exact_match": true,
+      "sha256_a": "6285e59a612cee1e98c70cbd6350a09f2158e6847053bc5376d4de88a05bb5fd",
+      "sha256_b": "6285e59a612cee1e98c70cbd6350a09f2158e6847053bc5376d4de88a05bb5fd"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5abc5186554299700f9d7862",
+      "exact_match": true,
+      "sha256_a": "c908fe908b8918dc51080d554476875374a341a6a7fcaef376a99fb13ecaefad",
+      "sha256_b": "c908fe908b8918dc51080d554476875374a341a6a7fcaef376a99fb13ecaefad"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5abd16c055429924427fcef1",
+      "exact_match": true,
+      "sha256_a": "d51dc6900e9bc8ca7495f25402a81bdfe91cce94ee0231185e1c47c949ab7fb8",
+      "sha256_b": "d51dc6900e9bc8ca7495f25402a81bdfe91cce94ee0231185e1c47c949ab7fb8"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5abfe96f5542997d64295939",
+      "exact_match": true,
+      "sha256_a": "b10e03c4c7ce328750bf6eb69cf49ab7ee6bf827e04beba8e3727cc1a50eebc4",
+      "sha256_b": "b10e03c4c7ce328750bf6eb69cf49ab7ee6bf827e04beba8e3727cc1a50eebc4"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae01c4755429925eb1afc16",
+      "exact_match": true,
+      "sha256_a": "e58b87b580395cbe6de419d322a3edc065a8f71163323957686084df806d2e68",
+      "sha256_b": "e58b87b580395cbe6de419d322a3edc065a8f71163323957686084df806d2e68"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae01e4a554299025d62a407",
+      "exact_match": true,
+      "sha256_a": "6f316179623b775880bd1e8376e3a6353cc1ec1f1ef5e13166af80a01d3cdf17",
+      "sha256_b": "6f316179623b775880bd1e8376e3a6353cc1ec1f1ef5e13166af80a01d3cdf17"
+    }
+  ],
+  "original_test_read": false
+}

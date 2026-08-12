@@ -31,11 +31,14 @@ decision recovery is the Candidate hard gate, ranking is the qualification
 signal, and paired effect-error significance controls only the estimator claim.
 Gate D is a validation-only 32–64-question deployment parity check after C
 PASS. The immutable 640/128/128 splits and their independent freeze audit PASS.
-Fresh train/validation capture also PASS (2304 trajectories; validation mean
-uplift +0.2488, with 15 internal-positive questions). **NOW:** extract the
-frozen representation views and run the pre-registered offline B0–B6 matrix;
-test remains sealed. See [CUR1_PLAN.md](CUR1_PLAN.md) and
-[CUR1_CAPTURE_REPORT.md](CUR1_CAPTURE_REPORT.md). CUR-0 evidence remains in
+Fresh train/validation capture PASS (2304 trajectories), but the frozen B0–B6
+matrix ends in `VALIDATION_UNLOCK_FAIL`: best B3 Recovery@50 is `0.3801` and
+F1@50 is `0.4226`, so static pre-action CUR is closed without opening Test.
+**NOW:** implement the fully frozen DSSR successor: deterministic short
+internal Probe, Prefix-20 uncertainty, static searchability prior, and direct
+Skip-Regret ranking. Build fresh Val2 with seed `2026081202`; Test remains
+sealed. See [SK_CUR_PLAN.md](SK_CUR_PLAN.md),
+[CUR1_PLAN.md](CUR1_PLAN.md), and [CUR1_CAPTURE_REPORT.md](CUR1_CAPTURE_REPORT.md). CUR-0 evidence remains in
 [CUR0_REPORT.md](CUR0_REPORT.md).
 
 ## Locked root cause (do not re-open)
@@ -343,3 +346,21 @@ Candidate ECA freeze → Full-Corpus Wikipedia → CIPO if evidence-use bottlene
 
 `hotpotqa_200` = **dev-200**. Train: `data/rl/train_smoke_128`.  
 Frozen sample IDs: reuse from `results/16_.../worker_mismatch/sample_ids.json` as **inputs**; all new outputs under `results/17_rollout_alignment/`.
+# Active: Phase 25 step-level adaptive retrieval preregistration
+
+DSSR Val2 ended in `SELF_KNOWLEDGE_ROUTER_FAIL`: K3@50 F1 `0.5294`, Recovery
+`.3240`, TokenCost ratio `.6228`; only the cost gate passed. Question-level
+Router development is closed and original Test remains sealed. The only
+allowed next phase is step-level adaptive retrieval. First complete S0 code-
+contract inspection and freeze checkpoint/query/context rules; do not launch
+new trajectories until its independent audit passes. See
+[STEP_LEVEL_ADAPTIVE_RETRIEVAL_PLAN.md](STEP_LEVEL_ADAPTIVE_RETRIEVAL_PLAN.md)
+and [DSSR_VAL2_REPORT.md](DSSR_VAL2_REPORT.md).
+
+S0 is now complete. The independent `eca_step_adaptive_agent` leaves the
+historical loop unchanged; fixed Train32 passed with parser/query/finish/close
+rates `1.0`, zero clipping/duplicate-search/tool/reserve violations, and fixed
+Train8 replay A/B matched all eight complete trajectories exactly. Next run S1
+Train640 matched `SEARCH_NOW` versus `CONTINUE_NOW` acquisition, at no more than
+two checkpoints per question. Do not construct Val3 or read Test yet. See
+[STEP_S0_REPORT.md](STEP_S0_REPORT.md).

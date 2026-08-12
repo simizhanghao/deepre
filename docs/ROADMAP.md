@@ -83,7 +83,17 @@ NOW → Conditional Utility Router (CUR)
 │     primary: L18 PCA64 semantic + cross-layer dynamics → potential outcomes
 │     metrics: Spearman, RMSE, regret, Recovery@25/50/75, quality-cost frontier
 │     ✅ fresh train/val capture PASS (2304 rows); test SEALED; B0–B6 next
-│     PASS → CUR Candidate; FAIL → one terminal short-internal/self-knowledge route
+│     ❌ Validation Unlock FAIL: B3 Recovery@50=.380, F1@50=.423
+│
+├── ❌ DSSR Safe-Skip routing phase → `docs/SK_CUR_PLAN.md`
+│     one greedy tool-free short probe → self-knowledge → SkipRegret
+│     Train: reuse Search N1 + Probe N1; new Val2: Probe1 + Search4
+│     SELF_KNOWLEDGE_ROUTER_FAIL; Test sealed
+│
+├── 🟡 Phase25 Step-Level Adaptive Retrieval → `docs/STEP_LEVEL_ADAPTIVE_RETRIEVAL_PLAN.md`
+│     move decision from root to explicit reasoning checkpoints
+│     ✅ S0 Train32 contract + Train8 exact replay PASS
+│     NEXT: Train640 counterfactuals → fresh Val3 → sealed Test once
 │
 ├── ⬜ Candidate ECA PASS → freeze
 ├── ⬜ 3E Full-Corpus (passage BM25 + rerank)

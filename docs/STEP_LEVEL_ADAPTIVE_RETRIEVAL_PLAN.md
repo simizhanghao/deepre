@@ -1,0 +1,238 @@
+# Phase 25 — Step-Level Adaptive Retrieval Preregistration
+
+Status: **S0 contract + deterministic replay PASS; S1 acquisition is next.**
+
+S0 result: fixed Train32 passed all hard checks after one preserved failed
+attempt exposed an unhandled legacy `</search>` suffix. The fixed Train8 was
+then replayed independently twice with exact trajectory match `8/8`. See
+[STEP_S0_REPORT.md](STEP_S0_REPORT.md).
+
+## S0 code-audit finding
+
+The current `EcaSearchAgentLoop` is not a step-level loop:
+
+- `_STOP_STRINGS` contains only `</search>`, `</answer>`, and `</internal>`;
+- `</think>` is never a generation boundary;
+- a closed `<search>` is executed immediately;
+- a closed `<internal>` receives a fixed final-answer nudge;
+- the existing continuation path is only truncation recovery, not a reasoning
+  checkpoint;
+- at most two searches are already enforced, but there is no matched
+  continue-vs-retrieve branch at an intermediate prefix.
+
+Therefore existing trajectories cannot be relabelled as step-level decisions.
+S0 requires a new registered loop name and must leave
+`EcaSearchAgentLoop` unchanged for historical reproducibility.
+
+## Frozen S0 interface (before implementation)
+
+- New registry name: `eca_step_adaptive_agent`.
+- It uses a separate frozen step-system prompt. Reusing the historical system
+  prompt is forbidden because that prompt explicitly demands root
+  Search/Internal choice and wins over the new checkpoint instruction.
+- Every checkpoint is generated as two controlled raw proposal spans
+  (reasoning, then candidate query). The controller normalizes only text before
+  any legacy structural tag, records both raw token streams, and loss-masks the
+  normalized checkpoint plus its `<think>`, `Search query:`, and `</think>`
+  structure. This keeps Phase25 a separate-router experiment rather than an LM
+  policy update. ANSWER similarly forces and masks `<answer>` only after the
+  external ANSWER action.
+- Checkpoint close sequence: decoded complete `</think>`; use the existing
+  decoded-prefix fallback to handle BPE boundary merges.
+- System maximum reasoning checkpoints: `4`; maximum executed searches: `3`.
+  S1 counterfactual acquisition samples at most 2 checkpoints per question.
+- Both counterfactual arms share byte-identical canonical prompt and assistant
+  checkpoint token IDs.
+- The checkpoint must end with one parseable proposed query field. Exact
+  sentinel `Search query: NONE` is permitted and recorded separately. The
+  model has no tool access until the branch decision is externally applied.
+- Retrieve arm appends the normal masked `<observation>` turn. Continue arm
+  appends a frozen masked `retrieval skipped; continue reasoning` control turn.
+- Prefix/KV rule for S0: logical prefix reuse inside one AgentLoop request;
+  token-cost accounting also reports a conservative replay proxy so future
+  backend KV optimization cannot improve the scientific Gate silently.
+- Smoke source: fixed 32 CUR-1 Train IDs. Its first 8 form the deterministic
+  replay subset; greedy decoding; two independent runs must match checkpoint
+  and response token IDs exactly.
+- Val3 provisional freeze seed: `2026081203`. Final numerical S2 gates must be
+  committed before Val3 construction, not after S0 observations.
+
+Implementation order is fixed: parser/unit tests → two-question no-tool smoke
+→ Train32 contract → 8-question deterministic replay → S1 counterfactual
+acquisition. The first four stages are now complete.
+
+## Frozen action and trajectory budgets
+
+```text
+actions                  = CONTINUE | SEARCH | ANSWER
+total response budget    = 2048 tokens
+observation cap          = 384 tokens
+final-answer reserve     = 256 tokens
+reasoning-step cap       = 128 tokens
+max checkpoints          = 4
+max executed searches    = 3
+S1 sampled checkpoints   <= 2/question
+```
+
+`Search query:` is a proposal only. It never executes a tool. The external
+state machine applies exactly one action:
+
+- CONTINUE: append a frozen masked control turn and request another checkpoint;
+- SEARCH: execute the proposal, append the normal masked observation, request
+  another checkpoint;
+- ANSWER: append one frozen masked final-answer nudge and generate a closed
+  `<answer>...</answer>`.
+
+`Search query: NONE` is not synonymous with ANSWER. SEARCH is invalid when the
+query is NONE; CONTINUE and ANSWER remain available.
+
+## Phase 25A system smoke
+
+One fixed Train32 only; no scientific model selection. Hard checks:
+
+- parser valid and `<think>` closure `1.0`;
+- candidate-query field parse `>= .98`;
+- finish `>= .98`;
+- tool violations, duplicate-query loops and reserve violations `0`;
+- response clipping `< .05`;
+- an externally forced CONTINUE must reach another checkpoint where SEARCH is
+  still available.
+
+## Step counterfactual contract
+
+At one byte-identical checkpoint prefix and proposed query, branch:
+
+```text
+do(SEARCH_NOW)   vs   do(CONTINUE_NOW)
+```
+
+After this one intervention, both arms use the same frozen completion policy
+and retain future Search access. Phase25B uses greedy completion so N1 is a
+deterministic potential outcome rather than a stochastic single-draw label.
+The target is continuous bounded Step SkipRegret:
+
+```text
+max(0, F1_SearchNow - F1_ContinueNow)
+```
+
+Question-balanced and checkpoint-balanced weights prevent questions with more
+states from dominating training.
+
+## Query Availability — corrected observable gate
+
+The proposed conditional `P(query != NONE | R_skip > 0)` is not identifiable
+when query is NONE: SearchNow cannot be executed, so `R_skip` is missing. We
+therefore report two preregistered quantities without pretending otherwise:
+
+1. overall valid-query rate across eligible checkpoints (`>= .90` hard gate);
+2. positive-regret coverage among states where a valid query makes the paired
+   counterfactual observable (`>= .90`, explicitly a conditional lower-bound
+   diagnostic, not the unobservable population probability).
+
+If either fails, Step-Risk fitting is locked and the only permitted repair is
+a small query-proposal SFT followed by a fresh S0/S1 capture.
+
+## Step-Risk features and Val3 gate
+
+Frozen first model: step mean/P10 logP and entropy; Train-only L27 PCA64; step
+index, response/query lengths and query-is-NONE; previous-search count, tokens
+since search and duplicate-query similarity; frozen root B3 scalar. Fit one
+linear uncertainty baseline and one small MLP only.
+
+Fresh Step-Val3: 128 questions, seed `2026081203`, excluding all historical
+IDs including DSSR Val2 and original sealed Test. Primary PASS:
+
+```text
+average SearchCalls <= 0.75
+F1_adaptive >= F1_AlwaysSearch - 0.02
+```
+
+Strong PASS additionally reaches AlwaysSearch F1 at `<=0.75` calls. Report a
+second `<=1.0` calls operating point for Search reallocation, plus full F1 vs
+calls and F1 vs TokenCost Pareto curves, response/observation tokens and
+wall-clock. Only Val3 PASS may open Test once. Failure ends adaptive-routing
+R&D and retains the frozen Evidence Agent.
+
+## Why this is the sole remaining route
+
+Static CUR and DSSR both failed their fresh validation gates. Their common
+constraint is a single question-level decision made before the information
+deficit has been localized. Phase 25 moves only the decision time:
+
+```text
+canonical question
+→ bounded internal reasoning step
+→ step uncertainty / knowledge-gap decision
+→ continue internally OR retrieve for that step
+→ answer; permit another decision only at the next frozen checkpoint
+```
+
+Evidence@400, VeXact exact rollout, Candidate-BM25, answer/evidence reward and
+the canonical prompt remain frozen. This is not another root Router, optimizer
+sweep, or reward revision.
+
+## Frozen causal hypothesis
+
+For multi-hop QA, question-level observables cannot reliably reveal which
+intermediate fact will be missing. A reasoning checkpoint containing the
+current subclaim/query exposes that deficit. Retrieval triggered at that
+checkpoint should preserve Always-Search quality while reducing calls/tokens.
+
+## Stages and locks
+
+### S0 — execution contract smoke
+
+- 8 open Train questions only; original Test and DSSR Val2 are forbidden.
+- Greedy Evidence@400 reasoning with explicit, parseable step checkpoints.
+- At each checkpoint save token IDs, chosen-token log-probs, entropy/margin,
+  L27 state, proposed search query, retrieval decision and full token costs.
+- Re-run the same 8 questions twice; response/checkpoint tokens and extracted
+  features must be bit-exact.
+- Retrieval must restart/continue under one explicitly recorded context rule;
+  no hidden leakage from gold/supporting facts.
+
+### S1 — open-Train counterfactual capture
+
+- Use CUR-1 Train640 only.
+- For each eligible reasoning checkpoint, pair `continue_without_search` with
+  `retrieve_once_then_continue` under matched prefix token IDs.
+- Primary target is step rescue regret:
+
+  ```text
+  R_step = max(0, downstream_F1_retrieve - downstream_F1_continue)
+  ```
+
+- Store retrieval-call count and the existing reproducible token proxy.
+- Fit one linear uncertainty baseline and one frozen small step router; no
+  method sweep.
+
+### S2 — fresh Val3 freeze and decision
+
+- Draw a new 128-question split from the same source pool with a new seed,
+  excluding every historical ID including DSSR Val2 and original sealed Test.
+- Freeze IDs, prompts, contexts, checkpoint policy, model and feature hashes
+  before generation.
+- Compare Always Search, Never Search, fixed-interval retrieval, uncertainty
+  baseline and the one step router.
+- Report answer F1, retrieval calls, TokenCost, latency, finish/format, and
+  risk–coverage.
+
+### S3 — original Test
+
+Original Test remains sealed. It may open once only after S2 thresholds and
+the final checkpoint/router bundle are frozen.
+
+## S0 implementation decisions that must be resolved from code evidence
+
+Before acquisition, inspect the current AgentLoop parser and stop/continue
+contract and freeze:
+
+1. the exact token sequence defining a reasoning checkpoint;
+2. whether continuation reuses KV/prefix or performs a canonical replay;
+3. maximum checkpoints/search calls per question;
+4. how a generated query is represented without granting the model tool
+   access on the continue-without-search arm;
+5. the Val3 seed and numerical quality/cost gates.
+
+No GPU acquisition starts until these five values appear in the frozen S0
+manifest and an independent contract audit passes.

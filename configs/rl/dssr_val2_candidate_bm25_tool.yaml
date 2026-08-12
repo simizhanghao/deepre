@@ -1,0 +1,18 @@
+tools:
+  - class_name: "src.rl.candidate_bm25_tool.CandidateBM25Tool"
+    config:
+      type: native
+      retrieval_url: "http://127.0.0.1:8004/retrieve"
+      default_topk: 5
+      timeout_s: 30.0
+    tool_schema:
+      type: "function"
+      function:
+        name: "search"
+        description: "Search frozen DSSR Val2 candidate documents bound to this trajectory's sample_id."
+        parameters:
+          type: "object"
+          properties:
+            query: {type: "string"}
+            topk: {type: "integer"}
+          required: ["query"]

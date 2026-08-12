@@ -23,7 +23,9 @@
 | **Rollout Alignment Recovery** | **CLOSED/PASS** | VeXact exact contract established |
 | Root-Pivot RP-0 | **FAIL** | direct route loss still moved both classes internal; @10 locked |
 | CUR-0 | **CLOSED** | 1632 rows; bidirectional utility; margin rejected; Layer-27 linear modest; small MLP unlocked |
-| CUR-1 | **TRAIN/VAL PASS** | 2304 paired trajectories; val uplift +0.2488; B0–B6 next; test sealed |
+| CUR-1 static | **CLOSED/FAIL** | B3 Recovery@50=.380, F1@50=.423; Validation Unlock FAIL; test sealed |
+| DSSR Safe-Skip | **FAIL** | Val2 K3@50 F1/Recovery/TokenCost=.5294/.3240/.6228; Test sealed |
+| Step-Level Adaptive Retrieval S0 | **PASS** | Train32 contract PASS; deterministic Train8 replay exact 8/8; S1 next |
 
 **Final ckpts (local, not in git):**
 
@@ -203,3 +205,31 @@ Artifacts: `results/17_rollout_alignment/{environment,calibration,parity_32x4,tr
 - `train_smoke_128` train-window ≠ leaderboard; **dev-200 is a development set**.  
 - Not production cost-optimal yet.  
 - Not open-web / multimodal.
+# Phase 24 DSSR
+
+- Val2 freeze: `DSSR_VAL2_FREEZE_AUDIT_PASS` (128 fresh questions; seed
+  2026081202; 3046 historical IDs excluded; Test sealed).
+- SK-0: `DSSR_SK0_REPLAY_PASS` on 8 questions; response tokens and endpoint
+  hidden states were bit-exact across independent runs; valid/closed rate 1.0.
+- Train Probe audit: PASS; Probe/Search mean F1 `0.2893/0.5495`, mean
+  SkipRegret `0.3188`, positive-regret rate `0.3891`.
+- K0-K3 Train freeze: PASS. Strict OOF B3 priors were used for K3 stacking.
+- Val2 Search4: PASS, 512 rows, F1 `0.6116`. Final DSSR decision:
+  `SELF_KNOWLEDGE_ROUTER_FAIL`. K3@50 F1/Recovery/TokenCost-ratio are
+  `.5294/.3240/.6228`; gates are fail/fail/pass/fail. Test remains sealed.
+- Next and only allowed routing phase: preregistered reasoning-step-level
+  adaptive retrieval. See `DSSR_VAL2_REPORT.md`.
+
+# Phase 25 Step-Level Adaptive Retrieval
+
+- Independent `eca_step_adaptive_agent`; historical AgentLoop unchanged.
+- Fixed Train32 final audit: 32 rows, 112 checkpoints; parser, close, query,
+  finish, and CONTINUE-to-next rates all `1.0`; 48 searches; zero clipping,
+  duplicate search execution, tool violation, or answer-reserve violation.
+- A preserved first attempt failed on two legacy `</search>` suffixes. The
+  structural normalizer was completed and the exact same Train32 rerun passed.
+- Fixed Train8 replay: both A and B independently passed 8 rows / 16
+  checkpoints; complete trajectory exact-match rate `1.0` (8/8), including
+  raw and normalized token IDs, masks, actions, queries, and answers.
+- Gate: `STEP_S0_REPLAY_PASS`. Val3 and original Test were not read. S1
+  Train640 matched counterfactual acquisition is next.

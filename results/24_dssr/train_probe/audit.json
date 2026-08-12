@@ -1,0 +1,27 @@
+{
+  "gate": "DSSR_TRAIN_PROBE_AUDIT_PASS",
+  "questions": 640,
+  "probe_valid_rate": 1.0,
+  "closed_answer_rate": 1.0,
+  "mean_probe_f1": 0.2892555560248575,
+  "mean_search_f1": 0.549505321067821,
+  "mean_skip_regret": 0.31880293062737913,
+  "positive_skip_regret_rate": 0.3890625,
+  "direction_counts": {
+    "search_positive": 249,
+    "tie": 336,
+    "probe_positive": 55
+  },
+  "search_action_invalid_retained": 1,
+  "search_policy_failures_retained": 1,
+  "artifact_sha256": {
+    "train_ids": "f667411f2e167eb2c72633c987b58dde19aa8914985240edabecad21380a91e7",
+    "probes": "5997e83f9ff0b0bc89ef2a86c49289e8cd88e2be5ba0519afff6a6c617885b52",
+    "hidden_states": "5000f81995ff7cd858864c5cd7b8ac11f301e8fd466051e4d9140d9c3e35b6f2",
+    "search_outcomes": "2ea80dbf4f45e5ea7a580a47af7f6159fc7d36bec981f88022b7dd39aa54e2dd"
+  },
+  "errors": [],
+  "error_count": 0,
+  "test_read": false,
+  "val2_outcomes_read": false
+}

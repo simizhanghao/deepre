@@ -1,0 +1,28 @@
+{
+  "gate": "DSSR_PROBE_CAPTURE_PASS",
+  "n": 8,
+  "valid_probe_rate": 1.0,
+  "closed_answer_rate": 1.0,
+  "mean_probe_f1": 0.3,
+  "response_token_mean": 19.5,
+  "response_token_max": 22,
+  "generation_and_feature_wall_seconds": 3.9620276730129262,
+  "deterministic_payload_sha256": "c85b9b3975d67fa046c1e888c4feb9469124e4b811c59eb4a0ff0db19bcd1a1f",
+  "details_sha256": "8133cb63eba01f13cbfc64b9d6a02de9b08523ec7bb55953c43dbea47ce56d96",
+  "hidden_states_sha256": "6ccc28dcab78d03bc28fadcd7c497a6cd562b572272719b5e5783f0824625cad",
+  "model": "outputs/rl/03_hf_evidence_step400",
+  "seed": 42,
+  "probe_contract": {
+    "forced_prefix": "<internal>",
+    "forced_prefix_ids": [
+      4159,
+      2978,
+      29
+    ],
+    "temperature": 0,
+    "max_total_response_tokens": 96,
+    "tools": false,
+    "confidence_scope": "non-empty answer-content tokens only",
+    "post_hidden_scope": "last non-empty answer-content token; invalid probes route Search"
+  }
+}

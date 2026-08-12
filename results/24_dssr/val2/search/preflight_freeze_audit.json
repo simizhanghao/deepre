@@ -1,0 +1,11 @@
+{
+  "gate": "DSSR_VAL2_FREEZE_AUDIT_PASS",
+  "seed": 2026081202,
+  "questions": 128,
+  "historical_id_count": 3046,
+  "eligible_pool_count": 6329,
+  "planned_probe_trajectories": 128,
+  "planned_search_trajectories": 512,
+  "original_test_sealed": true,
+  "errors": []
+}

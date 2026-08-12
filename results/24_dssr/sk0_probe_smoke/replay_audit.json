@@ -1,0 +1,7 @@
+{
+  "gate": "DSSR_SK0_REPLAY_PASS",
+  "n": 8,
+  "response_tokens_bit_exact": true,
+  "hidden_max_abs_delta": 0.0,
+  "errors": []
+}
