@@ -11,6 +11,7 @@ max_samples=
 debug=0
 validate_only=0
 stage=a3
+model_path=$repo/outputs/rl/03_hf_evidence_step400
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -21,6 +22,7 @@ while [[ $# -gt 0 ]]; do
     --debug) debug=1; shift ;;
     --validate-only) validate_only=1; shift ;;
     --stage) stage=$2; shift 2 ;;
+    --model-path) model_path=$2; shift 2 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -65,7 +67,7 @@ run_log=$output_abs/run.log
 
 test -f "$config_abs"
 test -f "$train_file"
-test -d "$repo/outputs/rl/03_hf_evidence_step400"
+test -f "$model_path/config.json"
 test -x "$vexact_repo/.venv/bin/python"
 curl -sf http://127.0.0.1:8001/health >/dev/null || {
   echo "Candidate-BM25 server is not healthy on :8001" >&2
@@ -105,7 +107,7 @@ if [[ "$validate_only" -eq 1 ]]; then
 fi
 
 set +e
-env -u LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES=4,5,6,7 \
+env -u LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES="${ECA_VISIBLE_GPUS:-4,5,6,7}" \
   "${runner[@]}" \
   model_engine=veomni \
   algorithm.adv_estimator=grpo \
@@ -119,7 +121,7 @@ env -u LD_LIBRARY_PATH CUDA_VISIBLE_DEVICES=4,5,6,7 \
   data.truncation=error \
   data.return_raw_chat=True \
   data.seed="$seed" \
-  actor_rollout_ref.model.path="$repo/outputs/rl/03_hf_evidence_step400" \
+  actor_rollout_ref.model.path="$model_path" \
   actor_rollout_ref.model.external_lib=vexact.integrations.verl.fsdp_enable_invariant \
   actor_rollout_ref.model.use_remove_padding=True \
   actor_rollout_ref.model.use_fused_kernels=True \
@@ -239,7 +241,10 @@ for row in rows:
             unresolved_unclosed_turns += 1
 routes = Counter(row["route_first"] for row in rows)
 nosearch = [row for row in rows if boundary(row["sample_id"]) == "NoSearch"]
+needsearch = [row for row in rows if boundary(row["sample_id"]) == "NeedSearch"]
 p_internal_nosearch = sum(row["route_first"] == "internal" for row in nosearch) / len(nosearch)
+sr_nosearch = sum(row["route_first"] == "search" for row in nosearch) / len(nosearch)
+sr_needsearch = sum(row["route_first"] == "search" for row in needsearch) / len(needsearch)
 groups = defaultdict(set)
 for row in rows:
     groups[row["sample_id"]].add(row["route_first"])
@@ -280,6 +285,9 @@ summary = {
     "unresolved_unclosed_turns": unresolved_unclosed_turns,
     "routes": dict(routes),
     "p_internal_NoSearch": p_internal_nosearch,
+    "search_rate_NoSearch": sr_nosearch,
+    "search_rate_NeedSearch": sr_needsearch,
+    "delta_boundary": sr_needsearch - sr_nosearch,
     "mixed_action_group_rate": mixed_rate,
 }
 Path(sys.argv[3]).write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

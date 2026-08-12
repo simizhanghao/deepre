@@ -1,0 +1,56 @@
+{
+  "step": 10,
+  "verdict": "GRPO_NO_STD_DIRECTION_FAIL",
+  "alignment": {
+    "pass": true,
+    "full_logits": {
+      "success": true,
+      "max_abs_delta": 0.0
+    },
+    "fused_lce": {
+      "success": true,
+      "max_abs_delta": 0.0
+    }
+  },
+  "trajectory": {
+    "finish_rate": 1.0,
+    "response_clip_ratio": 0.015625,
+    "final_answer_missing_rate": 0.0,
+    "reserve_violations": 0.0,
+    "max_assistant_turn_tokens": 256.0,
+    "max_observation_turn_tokens": 384.0
+  },
+  "trajectory_gate_pass": true,
+  "optimizer_health_pass": true,
+  "mechanism": {
+    "sr_need": 0.22727272727272727,
+    "sr_no": 0.0,
+    "delta_boundary": 0.22727272727272727,
+    "osr": 0.0,
+    "usr": 0.7727272727272727,
+    "p_internal_NoSearch": 1.0,
+    "mixed_action_group_rate": 0.625,
+    "mixed_NoSearch_rate": 0.0,
+    "mixed_NeedSearch_rate": 0.6363636363636364,
+    "delta_R_NS": null,
+    "delta_R_Need": 0.27312857125486645,
+    "zero_std_group_rate": 0.4375,
+    "advantage_std": 0.129735067486763,
+    "gradient_norm": 0.3510236144065857,
+    "clip_ratio": 0.0,
+    "kl": 0.011661917538731359,
+    "importance_ratio": {
+      "p01": 1.0,
+      "p10": 1.0,
+      "p50": 1.0000076293945312,
+      "p90": 1.0018986463546753,
+      "p99": 1.078623652458191
+    },
+    "route_margin": {
+      "NeedSearch": -0.8888888955116272,
+      "NoSearch": -1.40909091044556
+    }
+  },
+  "answer_reward": 0.125,
+  "evidence_f1": 0.13742500000000002
+}

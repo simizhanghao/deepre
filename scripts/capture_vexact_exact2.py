@@ -73,7 +73,7 @@ def main() -> None:
     capture_manifest = Path(args.capture_manifest).resolve() if args.capture_manifest else None
     output_dir = Path(args.output_dir).resolve()
     output_root = (
-        (REPO / ("results/19_optimizer_attribution" if capture_manifest else "results/18_boundary_exact_rollout")).resolve()
+        (REPO / "results").resolve()
         if args.route_probe_only
         else ((REPO / "outputs").resolve() if args.debug else (REPO / "results/17_rollout_alignment/calibration").resolve())
     )

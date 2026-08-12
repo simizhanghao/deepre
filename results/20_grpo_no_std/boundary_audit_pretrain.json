@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "table_path": "/data1/hcc/deepresearch/outputs/rl/04_table_search_boundary/boundary_table.json",
+  "sha256": "dacb5c1d8248659d8a75888de63bd150ec35d59fbb1271cc41f19d318815c6d4",
+  "num_train": 128,
+  "num_table": 128,
+  "missing_count": 0,
+  "missing_sample_ids": [],
+  "extra_count": 0,
+  "coverage": 1.0,
+  "histogram": {
+    "NeedSearch": 67,
+    "NoSearch": 28,
+    "Undetermined": 33
+  },
+  "invalid_labels": [],
+  "frac_NoSearch": 0.21875,
+  "frac_NeedSearch": 0.5234375,
+  "frac_Undetermined": 0.2578125
+}

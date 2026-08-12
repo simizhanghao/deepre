@@ -54,10 +54,11 @@ NOW → Rollout Alignment Recovery
 │     ✅ Gate A1 → ✅ A2 loop → ✅ A3/Gate B → ✅ A4 32×4 → NOW Boundary@50
 │     Boundary GRPO step10: REVIEW/STOP (global search bias; exact stack PASS)
 │     ✅ Phase19 fixed-policy 640 + four-estimator attribution
-│     NOW RF++ baseline@10, only estimator changes; token-mean frozen
-│     gate M_NS<.864 and M_Need>=1.272 → PASS continues 25→50
-│     FAIL search→length-neutral; FAIL internal→GRPO-no-std
-│     only a passing optimizer branch may proceed → step25 → step50
+│     ❌ RF++ baseline@10 → global internal (exact/system gates PASS)
+│     ❌ GRPO-no-std@10 → global internal (exact/system gates PASS)
+│     optimizer/normalization sweep CLOSED; neither continues to step25
+│     NOW Root-Pivot v0: task credit + Boundary-masked root-token route loss
+│     calibrate fixed beta from initial gradient scales; no dev coefficient sweep
 │     Boundary@50 sentinel: exact 2-Q at steps 0/10/25/50
 │     PASS → Candidate ECA-v1 → one Boundary refresh → short @50 → Full Corpus
 │     FAIL branches only by signature: REINFORCE | SAPO | Root Branch/BPO

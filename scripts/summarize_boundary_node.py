@@ -26,6 +26,7 @@ def main() -> None:
     p.add_argument("--full-log", required=True)
     p.add_argument("--fused-log", required=True)
     p.add_argument("--output", required=True)
+    p.add_argument("--profile", choices=("grpo", "rfpp_baseline", "grpo_no_std"), default="grpo")
     args = p.parse_args()
 
     rows = [json.loads(x) for x in Path(args.metrics).read_text().splitlines() if x.strip()]
@@ -81,8 +82,48 @@ def main() -> None:
     mixed = mechanism["mixed_action_group_rate"]
     delta = mechanism["delta_boundary"]
     ns_margin = mechanism["route_margin"].get("NoSearch")
+    trajectory_pass = (
+        (trajectory["finish_rate"] or 0) >= 0.95
+        and (trajectory["response_clip_ratio"] or 0) < 0.05
+        and (trajectory["final_answer_missing_rate"] or 0) <= 0.01
+        and (trajectory["reserve_violations"] or 0) == 0
+    )
+    ratio_p99 = mechanism["importance_ratio"]["p99"]
+    optimizer_health = (
+        (mechanism["clip_ratio"] is None or mechanism["clip_ratio"] <= 0.20)
+        and (ratio_p99 is None or 0.5 <= ratio_p99 <= 2.0)
+        and (mechanism["kl"] is None or abs(mechanism["kl"]) < 0.05)
+    )
     if not alignment_pass:
         verdict = "HARD_STOP_ALIGNMENT"
+    elif args.profile in ("rfpp_baseline", "grpo_no_std") and args.step == 10:
+        direction = ns_margin is not None and ns_margin < 0.863636
+        preservation = mechanism["route_margin"].get("NeedSearch", float("-inf")) >= 1.272
+        support = (mixed or 0) > 0 and (mechanism["p_internal_NoSearch"] or 0) > 0
+        prefix = "RFPP_BASELINE" if args.profile == "rfpp_baseline" else "GRPO_NO_STD"
+        verdict = (
+            f"{prefix}_DIRECTION_PASS"
+            if direction and preservation and support and trajectory_pass and optimizer_health
+            else f"{prefix}_DIRECTION_FAIL"
+        )
+    elif args.profile == "rfpp_baseline" and args.step == 25:
+        routing = (
+            (sr_need or 0) >= 0.85 and sr_no is not None and sr_no <= 0.70
+            and (delta or 0) >= 0.20 and (mixed or 0) > 0
+        )
+        verdict = (
+            "RFPP_BASELINE_STEP25_PASS"
+            if routing and trajectory_pass and optimizer_health else "RFPP_BASELINE_STEP25_FAIL"
+        )
+    elif args.profile == "rfpp_baseline" and args.step == 50:
+        routing = (
+            (sr_need or 0) >= 0.85 and sr_no is not None and sr_no <= 0.70
+            and (delta or 0) >= 0.20
+        )
+        verdict = (
+            "RFPP_BASELINE_ROUTING_PASS_PENDING_VAL200"
+            if routing and trajectory_pass and optimizer_health else "RFPP_BASELINE_ROUTING_FAIL"
+        )
     elif args.step == 10:
         collapse = sr_no is not None and sr_no >= 0.95 and (mixed or 0) < 0.05
         direction = (sr_no is not None and sr_no < 0.681818) or (
@@ -109,6 +150,8 @@ def main() -> None:
         "verdict": verdict,
         "alignment": {"pass": alignment_pass, "full_logits": full, "fused_lce": fused},
         "trajectory": trajectory,
+        "trajectory_gate_pass": trajectory_pass,
+        "optimizer_health_pass": optimizer_health,
         "mechanism": mechanism,
         "answer_reward": get("reward/answer_reward/mean"),
         "evidence_f1": get("evidence/f1/mean"),

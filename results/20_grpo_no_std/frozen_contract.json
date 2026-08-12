@@ -1,0 +1,19 @@
+{
+  "model": "Evidence@400",
+  "rollout": "VeXact",
+  "algorithm": "grpo",
+  "norm_adv_by_std_in_grpo": false,
+  "n": 4,
+  "temperature": 0.9,
+  "top_p": 0.95,
+  "steps": 50,
+  "evidence_weight": 0.5,
+  "search_cost_weight": 0.3,
+  "files_sha256": {
+    "/data1/hcc/deepresearch/outputs/rl/03_hf_evidence_step400/config.json": "629ad9ecd8c6b8b63db78d4cb276e5a7f0f2ec65a23526c2416ae9c48f06a58b",
+    "/data1/hcc/deepresearch/outputs/rl/04_table_search_boundary/boundary_table.json": "dacb5c1d8248659d8a75888de63bd150ec35d59fbb1271cc41f19d318815c6d4",
+    "/data1/hcc/deepresearch/src/rl/rewards_boundary.py": "183716ef82d7d8c89fed337b621ff1c6b7dbc7349369579d3ff89b4fa1b42c28",
+    "/data1/hcc/deepresearch/data/rl/train_smoke_128/train.parquet": "bd6dbaaff1d6433008ccf2a7b45e80f76e99b9913575105d4e5e3fbc2362e83d",
+    "/data1/hcc/deepresearch/data/rl/train_smoke_128/val.parquet": "efa8a85d05a44bdc5c4585be6dcdf59fd05ff911e398313e9196734893210a96"
+  }
+}

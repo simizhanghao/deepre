@@ -1,7 +1,7 @@
 # Fixed-Policy Attribution Capture Report
 
 Date: 2026-08-12
-Status: `CAPTURE_PASS`; optimizer launch intentionally stopped.
+Status: `CAPTURE_PASS`; both registered online follow-ups are complete.
 
 ## Question and scope
 
@@ -105,3 +105,19 @@ a parallel run. Do not change reward, data, trajectory budget, sampling,
 backend or `loss_agg_mode=token-mean`. Before launch, require an official-function
 parity check on saved Phase 19 tensors. GRPO@25, plain RF++, SAPO, BPO and reward
 retuning remain locked.
+
+## Online follow-up closeout
+
+The offline root proxy correctly diagnosed competition but did not predict the
+full shared-parameter update direction. RF++ baseline@10 passed exact and
+health gates yet moved both frozen classes toward internal (`M_NS=-1.591`,
+`M_Need=-.972`). The registered GRPO-no-std fallback behaved more gently at
+first, then also moved both classes toward internal by step10
+(`M_NS=-1.409`, `M_Need=-.889`). Its mixed support remained `.625`, PPO clip
+was zero and exact deltas were zero.
+
+Therefore prompt-local std normalization is an amplifier, not a sufficient
+root cause. The optimizer-only sweep is closed. The next causal intervention
+must align credit with the root decision rather than broadcasting one outcome
+advantage across trajectories whose exact policy-token lengths differ by
+`12.642x`. See `docs/GRPO_NO_STD_STEP10_REPORT.md`.

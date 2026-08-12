@@ -166,3 +166,25 @@ Failure branches are locked by signature:
 
 SAPO and branching remain excluded because importance drift and counterfactual
 support scarcity are absent.
+
+### Phase 20 step-10 result
+
+RF++ baseline completed ten optimizer steps and passed exact alignment,
+trajectory, mixed-support and optimizer-health checks, but failed the frozen
+direction gate. Frozen-20 margins were `M_NS=-1.591` and `M_Need=-.972`:
+the NoSearch direction improved, while NeedSearch crossed into a strong global
+internal shift instead of staying `>=1.272`. Therefore its optimizer state is
+not continued to step 25. Per the locked failure tree, the next and only active
+branch is GRPO with `norm_adv_by_std_in_grpo=false`, still using
+`loss_agg_mode=token-mean`, from Evidence@400 to step 10.
+
+### GRPO-no-std step-10 result
+
+The clean four-GPU run completed and formally returned
+`GRPO_NO_STD_DIRECTION_FAIL`. NoSearch margin improved from `.864` to `-1.409`,
+but NeedSearch collapsed from `1.472` to `-.889`; this is global internal bias,
+not conditional routing. Exact full-logit and fused-LCE deltas were zero, the
+trajectory gate passed, mixed support was `.625`, clip fraction was zero and
+importance-ratio P99 was `1.079`. Therefore the optimizer/normalization sweep is
+closed. The next method is Root-Pivot decision-aligned credit, as detailed in
+`docs/GRPO_NO_STD_STEP10_REPORT.md`.

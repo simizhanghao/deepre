@@ -45,8 +45,8 @@ VeOmni↔VeXact full logits and fused-LCE logprobs are both exact (`max |δ|=0`)
 natural sampling has `P(internal | NoSearch)=0.29545` and mixed-group rate
 `1.0`. A1 is closed. **A2 is also PASS**: the real AgentLoop→VeXact path
 returned 4/4 rollouts with exact prompt/checkpoint sentinels and route support.
-**A3/Gate B and A4 exact 32×4: PASS. Boundary GRPO step 10 direction gate:
-REVIEW/STOP. NOW: Phase 19 Optimizer Attribution.** See
+**A3/Gate B and A4 exact 32×4: PASS. The trajectory-level optimizer sweep is
+now closed after three exact-stack step-10 tests. NEXT: Root-Pivot v0.** See
 `results/17_rollout_alignment/calibration/VEXACT_GATE_A1_REPORT.md`.
 
 Boundary@50 is implemented as the staged 10/25/50 Exact-VeXact run documented
@@ -68,10 +68,18 @@ passes with `G_NS=-131.17`, `G_Need=+48.30`, and `C=.427`; plain RF++ fails.
 The near-equality of GRPO-no-std and RF++-baseline competition ratios identifies
 prompt-local std normalization as the primary suspect. The `12.642×` exact
 policy-token length gap is the registered second risk. The next candidate is
-one matched RF++-baseline@10 run with `token-mean` unchanged. It requires an
-official estimator parity check, then frozen-20 `M_NS<.864` and
-`M_Need>=1.272`; only PASS may continue to 25/50. See
-`docs/FIXED_POLICY_ATTRIBUTION_REPORT.md`.
+one matched RF++-baseline@10 run with `token-mean` unchanged. That online run
+passed all system gates but produced global internal bias (`M_NS=-1.591`,
+`M_Need=-.972`). The registered GRPO-no-std fallback was then run cleanly to
+step 10 on four GPUs. It also passed exactness/trajectory/optimizer gates but
+produced global internal bias (`M_NS=-1.409`, `M_Need=-.889`). Removing local
+std normalization changed the early dynamics, not the inability to learn
+opposite root decisions. Do not continue either branch to step25 and do not
+open another optimizer sweep. Implement Root-Pivot v0: preserve task credit,
+mask Undetermined, and directly supervise the two root route logits with an
+initial gradient-scale-calibrated fixed coefficient. See
+`docs/FIXED_POLICY_ATTRIBUTION_REPORT.md` and
+`docs/GRPO_NO_STD_STEP10_REPORT.md`.
 
 The backend-diagnosis line is now **closed**. The active program is
 **Exact-Rollout ECA Closure**: advance gate-by-gate through

@@ -1,0 +1,12 @@
+{
+  "gate": "RFPP_ESTIMATOR_PARITY_PASS",
+  "capture": "/data1/hcc/deepresearch/results/19_optimizer_attribution/full/raw/attribution_capture.npz",
+  "n_trajectories": 640,
+  "group_size_histogram": {
+    "4": 160
+  },
+  "adv_estimator": "reinforce_plus_plus_baseline",
+  "resolved_function": "verl.trainer.ppo.core_algos.compute_reinforce_plus_plus_baseline_outcome_advantage",
+  "max_abs_advantage_delta": 0.0,
+  "max_abs_returns_delta": 0.0
+}
