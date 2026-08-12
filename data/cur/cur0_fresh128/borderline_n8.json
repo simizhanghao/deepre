@@ -1,0 +1,8 @@
+{
+  "gate": "CUR_N8_DATA_PASS",
+  "questions": 76,
+  "rows": 152,
+  "additional_rollouts_per_arm": 4,
+  "target_total_rollouts_per_arm": 8,
+  "selection": "N=4 bootstrap delta-F1 CI95 crosses zero"
+}

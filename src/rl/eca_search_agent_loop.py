@@ -227,6 +227,9 @@ class EcaSearchAgentLoop(AgentLoopBase):
         messages = list(kwargs["raw_prompt"])
         extra_info = kwargs.get("extra_info", {}) or {}
         tools_kwargs = kwargs.get("tools_kwargs", {}) or extra_info.get("tools_kwargs") or {}
+        forced_root_action = str(extra_info.get("cur_forced_arm") or "").strip().lower()
+        if forced_root_action not in {"", "search", "internal"}:
+            raise ValueError(f"invalid cur_forced_arm={forced_root_action!r}")
 
         sample_id = (
             extra_info.get("sample_id")
@@ -251,6 +254,8 @@ class EcaSearchAgentLoop(AgentLoopBase):
             "used_internal": 0,
             "final_answer_missing": 1,
             "final_answer_reserve_violations": 0,
+            "cur_forced_arm": forced_root_action,
+            "cur_forbidden_search_attempts": 0,
         }
         request_id = uuid4().hex
 
@@ -261,6 +266,12 @@ class EcaSearchAgentLoop(AgentLoopBase):
         canonical_prompt_sha256 = hashlib.sha256(
             json.dumps(canonical_prompt_ids).encode("utf-8")
         ).hexdigest()
+        forced_open_tag = f"<{forced_root_action}>" if forced_root_action else ""
+        forced_prefix_ids = (
+            list(self.tokenizer.encode(forced_open_tag, add_special_tokens=False))
+            if forced_open_tag
+            else []
+        )
         stop_tok_report = _stop_tokenization_report(self.tokenizer) if _audit_enabled() else {}
         stop_sequences = {
             tag: list(self.tokenizer.encode(tag, add_special_tokens=False)) for tag in _STOP_STRINGS
@@ -319,7 +330,7 @@ class EcaSearchAgentLoop(AgentLoopBase):
         assistant_turns = 0
         user_turns = 0
         finished = False
-        route_first = "none"  # search | internal | both | answer | none
+        route_first = forced_root_action or "none"  # search | internal | both | answer | none
         first_gen_ids: list[int] = []
         first_gen_text = ""
         # Propagate weight-version tags from generate → TransferQueue metrics.
@@ -369,6 +380,13 @@ class EcaSearchAgentLoop(AgentLoopBase):
                 and user_turns < self.max_user_turns
                 and len(response_mask) < self.response_length
             ):
+                # CUR intervention is applied *after* hashing the canonical
+                # prompt.  Its tokens are externally forced, hence masked out
+                # of policy loss/logprob while remaining in the response span.
+                if assistant_turns == 0 and forced_prefix_ids:
+                    prompt_ids = prompt_ids + forced_prefix_ids
+                    response_mask.extend([0] * len(forced_prefix_ids))
+                    response_logprobs.extend([0.0] * len(forced_prefix_ids))
                 # Prefer remaining trajectory budget when engine honors max_new_tokens.
                 remain_budget = self.response_length - len(response_mask)
                 if remain_budget <= 0:
@@ -432,8 +450,10 @@ class EcaSearchAgentLoop(AgentLoopBase):
                 turn_was_truncated.append(was_truncated)
                 turn_continued.append(False)
                 if assistant_turns == 0:
-                    first_gen_ids = list(gen_ids)
-                    first_gen_text = self.tokenizer.decode(gen_ids, skip_special_tokens=True)
+                    first_gen_ids = list(forced_prefix_ids) + list(gen_ids)
+                    first_gen_text = forced_open_tag + self.tokenizer.decode(
+                        gen_ids, skip_special_tokens=True
+                    )
                     first_gen_meta = _token_output_meta(output)
 
                 # Path B: dump raw first generate then terminate (no parse/tool/continue).
@@ -516,6 +536,8 @@ class EcaSearchAgentLoop(AgentLoopBase):
                 assistant_turns += 1
 
                 text = self.tokenizer.decode(gen_ids, skip_special_tokens=True)
+                if assistant_turns == 1 and forced_open_tag:
+                    text = forced_open_tag + text
                 # Some engines omit stop string; tolerate either.
                 has_answer = bool(_ANSWER_RE.search(text))
                 search_hits = list(_SEARCH_RE.finditer(text))
@@ -538,6 +560,11 @@ class EcaSearchAgentLoop(AgentLoopBase):
                     break
 
                 if search_hits:
+                    if forced_root_action == "internal":
+                        # Tools remain disabled for the complete internal arm.
+                        # Retain this as a policy failure instead of executing.
+                        metrics["cur_forbidden_search_attempts"] += len(search_hits)
+                        break
                     if metrics["search_count"] >= self.max_search_turns:
                         # Budget exhausted — stop without executing more search.
                         break
@@ -658,6 +685,18 @@ class EcaSearchAgentLoop(AgentLoopBase):
         metrics["max_assistant_turn_tokens"] = max(turn_gen_lens, default=0)
         metrics["max_observation_turn_tokens"] = max(observation_turn_lens, default=0)
         metrics["final_answer_reserve"] = self.final_answer_reserve
+        if forced_root_action == "search":
+            forced_action_valid = int(int(metrics.get("search_count") or 0) >= 1)
+        elif forced_root_action == "internal":
+            forced_action_valid = int(
+                int(metrics.get("used_internal") or 0) == 1
+                and int(metrics.get("search_count") or 0) == 0
+                and int(metrics.get("cur_forbidden_search_attempts") or 0) == 0
+            )
+        else:
+            forced_action_valid = 1
+        metrics["cur_forced_action_valid"] = forced_action_valid
+        metrics["cur_policy_failure"] = int(bool(forced_root_action) and not forced_action_valid)
         extra_fields = {
             "turn_scores": [],
             "tool_rewards": [],
@@ -672,6 +711,13 @@ class EcaSearchAgentLoop(AgentLoopBase):
             "max_search_turns": int(self.max_search_turns),
             "used_internal": int(metrics.get("used_internal") or 0),
             "route_first": route_first,
+            "cur_forced_arm": forced_root_action,
+            "cur_forced_prefix_ids": forced_prefix_ids,
+            "cur_forced_action_valid": forced_action_valid,
+            "cur_policy_failure": int(metrics["cur_policy_failure"]),
+            "cur_forbidden_search_attempts": int(
+                metrics.get("cur_forbidden_search_attempts") or 0
+            ),
             # Exact fixed-policy attribution needs the untouched root prompt
             # and the first assistant segment.  Keep these in TransferQueue so
             # the post-reward trainer hook can persist them with estimator
@@ -704,6 +750,15 @@ class EcaSearchAgentLoop(AgentLoopBase):
                     ).encode("utf-8")
                 ).hexdigest(),
                 "route_first": route_first,
+                "canonical_prompt_sha256": canonical_prompt_sha256,
+                "canonical_prompt_len": root_prompt_len,
+                "cur_forced_arm": forced_root_action,
+                "cur_forced_prefix_ids": forced_prefix_ids,
+                "cur_forced_action_valid": forced_action_valid,
+                "cur_policy_failure": int(metrics["cur_policy_failure"]),
+                "cur_forbidden_search_attempts": int(
+                    metrics.get("cur_forbidden_search_attempts") or 0
+                ),
                 "action": (
                     "search"
                     if route_first == "search"

@@ -221,6 +221,41 @@ def apply() -> str:
                 phase_m["rollout_corr_diag/max_abs_logprob_delta"] = max_abs
             metrics.update(phase_m)
 
+            cur_capture = os.environ.get("ECA_CUR_CAPTURE_JSONL", "").strip()
+            if cur_capture:
+                cur_path = Path(cur_capture)
+                cur_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(cur_path, "a", encoding="utf-8") as handle:
+                    for uid, extra in zip(uids_np, extras_np, strict=True):
+                        reward = extra.get("reward_extra_info") or {}
+                        agent_metrics = extra.get("metrics") or {}
+                        row = {
+                            "step": int(global_steps),
+                            "uid": str(uid),
+                            "sample_id": str(extra.get("sample_id", reward.get("sample_id", ""))),
+                            "cur_forced_arm": str(extra.get("cur_forced_arm", reward.get("cur_forced_arm", ""))),
+                            "canonical_prompt_sha256": str(extra.get("canonical_prompt_sha256", "")),
+                            "canonical_prompt_len": int(extra.get("root_prompt_len", 0)),
+                            "cur_forced_prefix_ids": [int(x) for x in extra.get("cur_forced_prefix_ids", [])],
+                            "cur_forced_action_valid": int(extra.get("cur_forced_action_valid", 0)),
+                            "cur_policy_failure": int(extra.get("cur_policy_failure", 0)),
+                            "cur_forbidden_search_attempts": int(extra.get("cur_forbidden_search_attempts", 0)),
+                            "route_first": str(extra.get("route_first", "none")),
+                            "finish": int(extra.get("finish", 0)),
+                            "search_count": int(extra.get("search_count", 0)),
+                            "duplicate_query_count": int(extra.get("duplicate_query_count", 0)),
+                            "observation_tokens": int(extra.get("observation_tokens", 0)),
+                            "response_tokens": int(extra.get("response_tokens", 0)),
+                            "assistant_tokens": int(agent_metrics.get("assistant_tokens", 0)),
+                            "answer_f1": float(reward.get("answer_f1", 0.0)),
+                            "answer_em": float(reward.get("answer_em", reward.get("em", 0.0))),
+                            "format": float(reward.get("format", 0.0)),
+                            "pred": str(reward.get("pred", "")),
+                            "gold": str(reward.get("gold", "")),
+                        }
+                        handle.write(json.dumps(row, sort_keys=True) + "\n")
+                print(f"[cur] captured step={global_steps} rows={len(extras_np)} path={cur_path}", flush=True)
+
             capture_root = os.environ.get("ECA_ATTRIBUTION_CAPTURE_DIR", "").strip()
             if capture_root:
                 capture_path = Path(capture_root)

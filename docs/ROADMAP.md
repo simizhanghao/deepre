@@ -1,6 +1,6 @@
 # Roadmap — Evidence-Cost-Aware Deep Research Agent (v2)
 
-> Frozen **2026-08-11 (v2.2)**. Problem-driven tech only.
+> Updated **2026-08-12 (v2.3)**. Problem-driven tech only.
 
 > Board: [RESULTS_BOARD.md](RESULTS_BOARD.md) · Actions: [NEXT_STEPS.md](NEXT_STEPS.md)
 
@@ -25,9 +25,9 @@ Routing audit         → SGLANG_ROUTE_TOKEN_LOGIT_TIM
                       → trainer π ≠ SGLang μ on route token
 vLLM calibration      → VLLM_ROUTE_TOKEN_GATE_A_FAIL
                       → 320/320 search; high-throughput mismatch scope widened
-NOW                   → Rollout Alignment Recovery (VeXact / HFExact)
-THEN                  → Boundary@50 on Exact Rollout (same reward)
-THEN                  → Candidate ECA PASS → Full-Corpus → Phase4
+Exact Rollout         → VeXact contract PASS
+optimizer/root sweep → GRPO/RF++/no-std/RP-0 all fail conditional separation
+NOW                   → Conditional Utility Router on frozen Evidence@400
 ```
 
 ---
@@ -35,7 +35,7 @@ THEN                  → Candidate ECA PASS → Full-Corpus → Phase4
 ## A. Text ECA mainline
 
 ```text
-NOW → Rollout Alignment Recovery
+NOW → Conditional Utility Router (CUR)
 │
 ├── ✅ Answer-only CLOSED @100
 ├── ✅ Evidence CLOSED @400 + GEN PASS
@@ -68,6 +68,14 @@ NOW → Rollout Alignment Recovery
 │     VeXact hold after 2 effective working days → auto HFExact (same exact gate)
 │     abstract RolloutBackend only after Gate A1 PASS
 │     reward/table frozen until Exact backend proven
+│
+├── 🟡 CUR-0 causal diagnostic → `results/22_cur/`
+│     fresh random 128; same canonical prompt; do(search) vs do(internal), N=4/arm
+│     predict delta-F1 and search cost separately; lambda only at deployment
+│     Gate 0A outcome bidirectionality → 0B frozen margin → 0C h18/h27/h36 probes
+│     linear first; MLP/uncertainty only behind preregistered insufficiency gates
+│     ✅ 1632 rows after N=8 refinement; margin rejected; primary linear modest
+│     NOW → Layer-27 small MLP; uncertainty remains locked
 │
 ├── ⬜ Candidate ECA PASS → freeze
 ├── ⬜ 3E Full-Corpus (passage BM25 + rerank)

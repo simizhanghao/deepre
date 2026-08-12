@@ -2,6 +2,28 @@
 
 > [ROADMAP.md](ROADMAP.md) · [RESULTS_BOARD.md](RESULTS_BOARD.md)
 
+## NOW — Conditional Utility Router (`results/22_cur/`)
+
+Root-Pivot RP-0 closed the shared-LM route-update line: balanced route-only
+supervision moved both classes internal. The active plan is now a separate
+Conditional Utility Router over a frozen Evidence@400 agent. CUR-0 collects
+fresh paired `do(search)` / `do(internal)` outcomes from the same canonical
+prompt, predicts F1 gain and search cost separately, and applies lambda only at
+deployment. Boundary-v1, Evidence F1 and Format are forbidden as CUR labels.
+
+Immediate gate: `2 questions × 2 arms × 2 rollouts` forced-action smoke. On
+PASS, launch `128 × 2 × 4` capture in tmux, then run Gate 0A/0B and fixed-layer
+18/27/36 hidden-state probes. See [CUR_PLAN.md](CUR_PLAN.md).
+
+Update 2026-08-12: smoke/full/N=8 captures all PASS (1632 merged rows). Gate 0A
+confirms bidirectional utility (`80` search-positive, `21` internal-negative);
+frozen root margin remains weak and globally search-biased. After N=8, the
+primary Layer-27 linear probe remains modest (Spearman `0.318`, only `2.55%`
+RMSE improvement). CUR-0 is closed: no more label sampling, no layer
+cherry-picking. Next is the preregistered Layer-27 small-MLP comparison under
+the identical question-level folds; uncertainty remains locked. See
+[CUR0_REPORT.md](CUR0_REPORT.md).
+
 ## Locked root cause (do not re-open)
 
 Under `results/16_audit_routing_exploration/worker_mismatch/` (**CLOSED**):

@@ -22,6 +22,7 @@
 | Routing / TIM audit | **CLOSED** | `SGLANG_ROUTE_TOKEN_LOGIT_TIM` (HF≈0.68/0.32 vs SGLang≈0.997/0) |
 | **Rollout Alignment Recovery** | **CLOSED/PASS** | VeXact exact contract established |
 | Root-Pivot RP-0 | **FAIL** | direct route loss still moved both classes internal; @10 locked |
+| CUR-0 | **CLOSED** | 1632 rows; bidirectional utility; margin rejected; Layer-27 linear modest; small MLP unlocked |
 
 **Final ckpts (local, not in git):**
 
