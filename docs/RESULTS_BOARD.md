@@ -20,7 +20,8 @@
 | Capability cost @50 | **CLOSED** | SOFT_PASS stability / FAIL routing |
 | Boundary Stage-II | routing **FAIL** | search≡1 · Δ_boundary≈0 @~42 |
 | Routing / TIM audit | **CLOSED** | `SGLANG_ROUTE_TOKEN_LOGIT_TIM` (HF≈0.68/0.32 vs SGLang≈0.997/0) |
-| **Rollout Alignment Recovery** | **NOW** | VeXact preferred · HFExact fallback · then Boundary@50 |
+| **Rollout Alignment Recovery** | **CLOSED/PASS** | VeXact exact contract established |
+| Root-Pivot RP-0 | **FAIL** | direct route loss still moved both classes internal; @10 locked |
 
 **Final ckpts (local, not in git):**
 
@@ -190,7 +191,10 @@ Artifacts: `results/17_rollout_alignment/{environment,calibration,parity_32x4,tr
 5. ✅ **A3 / Gate B** — finish `16/16`, clip/missing/reserve violations `0`
 6. ✅ **A4 no-train 32×4** — finish `128/128`,
    `P(internal|NoSearch)=0.31818`, mixed-group rate `0.59375`
-7. **NOW: causal Boundary@50** with the exact 2-Q sentinel at steps 0/10/25/50
+7. ❌ Exact Boundary GRPO/RF++/GRPO-no-std optimizer line closed: global route bias
+8. ❌ Root-Pivot RP-0: 9/9 branches completed; route-only
+   `ΔNoSearch=-.273`, `ΔNeed=-.278`; formal @10 locked. See
+   [ROOT_PIVOT_RP0_REPORT.md](ROOT_PIVOT_RP0_REPORT.md).
 
 ## What is not claimed
 

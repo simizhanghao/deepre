@@ -1,0 +1,55 @@
+{
+  "gate": "ROOT_PIVOT_BALANCED_DATA_PASS",
+  "source": "/data1/hcc/deepresearch/results/18_boundary_exact_rollout/data/train.parquet",
+  "source_sha256": "41ee0230a6b4c164175989073bdd3f3e5c4ad35e4c9416a60212b0bf6474168e",
+  "boundary": {
+    "histogram": {
+      "NoSearch": 28,
+      "NeedSearch": 67,
+      "Undetermined": 33
+    },
+    "delta": 2,
+    "n": 4,
+    "model_path": "outputs/rl/hf_merged/grpo_sftv1_evidence_3c_step400",
+    "path": "/data1/hcc/deepresearch/outputs/rl/04_table_search_boundary/boundary_table.json",
+    "sha256": "dacb5c1d8248659d8a75888de63bd150ec35d59fbb1271cc41f19d318815c6d4",
+    "n_entries": 128
+  },
+  "per_class": 8,
+  "subset": "need",
+  "n": 8,
+  "order": [
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae7de0e5542993210983fa6",
+      "boundary": "NeedSearch"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ac00c0c5542997d642959b0",
+      "boundary": "NeedSearch"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae5dba455429929b08079d4",
+      "boundary": "NeedSearch"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a8dc6ba55429941ae14e05e",
+      "boundary": "NeedSearch"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ac0ee5b554299012d1db658",
+      "boundary": "NeedSearch"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a88aad55542994846c1ceaf",
+      "boundary": "NeedSearch"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae3ad315542994393b9e741",
+      "boundary": "NeedSearch"
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae511b155429908b632650b",
+      "boundary": "NeedSearch"
+    }
+  ]
+}

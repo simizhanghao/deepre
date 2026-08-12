@@ -1,0 +1,21 @@
+{
+  "gate": "RP0_BRANCH_COMPLETE",
+  "mode": "route_only",
+  "subset": "need",
+  "beta": 1.0,
+  "gradient_norm": 873.1949462890625,
+  "route_margin": {
+    "NeedSearch": 1.6944444229205449,
+    "NoSearch": 1.0909090787172318
+  },
+  "root_pivot_metrics": {
+    "actor/root_pivot/beta": 1.0,
+    "actor/root_pivot/margin_mean": 1.40625,
+    "actor/root_pivot/route_loss": 0.22539258562028408,
+    "actor/root_pivot/task_loss": -0.005637406706227921
+  },
+  "trajectory": {
+    "finish_rate": 1.0,
+    "clip_ratio": 0.0625
+  }
+}

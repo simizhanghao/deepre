@@ -57,8 +57,11 @@ NOW → Rollout Alignment Recovery
 │     ❌ RF++ baseline@10 → global internal (exact/system gates PASS)
 │     ❌ GRPO-no-std@10 → global internal (exact/system gates PASS)
 │     optimizer/normalization sweep CLOSED; neither continues to step25
-│     NOW Root-Pivot v0: task credit + Boundary-masked root-token route loss
+│     ❌ Root-Pivot RP-0: balanced route-only moved both classes internal
 │     calibrate fixed beta from initial gradient scales; no dev coefficient sweep
+│     9/9 branches completed; beta=6.10e-5; route-only NSΔ=-.273, NeedΔ=-.278
+│     per-class signs correct but shared update is global; cross-job cosine invalid
+│     formal Root-Pivot @10 LOCKED; register a new conditional-separation plan
 │     Boundary@50 sentinel: exact 2-Q at steps 0/10/25/50
 │     PASS → Candidate ECA-v1 → one Boundary refresh → short @50 → Full Corpus
 │     FAIL branches only by signature: REINFORCE | SAPO | Root Branch/BPO

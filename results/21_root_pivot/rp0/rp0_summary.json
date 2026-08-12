@@ -1,0 +1,45 @@
+{
+  "gate": "RP0_FAIL",
+  "beta": 6.1023363123893274e-05,
+  "beta_definition": "||g_task||/||g_route|| on balanced all batch; fixed once",
+  "baseline_route_margin": {
+    "NeedSearch": 1.4722222023540072,
+    "NoSearch": 0.8636363704096187
+  },
+  "route_only_delta": {
+    "NeedSearch": -0.27777775790956283,
+    "NoSearch": -0.27272727679122577
+  },
+  "joint_delta": {
+    "NeedSearch": -0.1805555406543944,
+    "NoSearch": -0.17045455087314954
+  },
+  "trajectory_identical_all_groups": false,
+  "direction_pass": false,
+  "groups": {
+    "all": {
+      "trajectory_identical": false,
+      "n_trajectories": 64,
+      "g_task": 0.11642982810735703,
+      "g_route": 1907.9549560546875,
+      "g_joint": 0.15916623175144196,
+      "cosine_task_route": null
+    },
+    "need": {
+      "trajectory_identical": false,
+      "n_trajectories": 32,
+      "g_task": 0.10296422243118286,
+      "g_route": 873.1949462890625,
+      "g_joint": 0.10350193083286285,
+      "cosine_task_route": null
+    },
+    "no": {
+      "trajectory_identical": false,
+      "n_trajectories": 32,
+      "g_task": 0.19318699836730957,
+      "g_route": 2763.451171875,
+      "g_joint": 0.26130521297454834,
+      "cosine_task_route": null
+    }
+  }
+}

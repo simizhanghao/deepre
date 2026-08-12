@@ -1,0 +1,151 @@
+{
+  "step": 1,
+  "n": 20,
+  "definition": "logP(<search>)-logP(<internal>)",
+  "mean_route_margin": {
+    "NeedSearch": 1.5416666799121432,
+    "NoSearch": 0.8863636241717772
+  },
+  "rows": [
+    {
+      "sample_id": "hotpotqa_distractor_train_5a8c6a4d554299585d9e368e",
+      "boundary": "NoSearch",
+      "logp_search": -0.4742262065410614,
+      "logp_internal": -0.9742262363433838,
+      "route_margin": 0.5000000298023224
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a80e68855429938b6142240",
+      "boundary": "NoSearch",
+      "logp_search": -0.5761309266090393,
+      "logp_internal": -0.8261309266090393,
+      "route_margin": 0.25
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae008df55429925eb1afbee",
+      "boundary": "NoSearch",
+      "logp_search": -0.47423961758613586,
+      "logp_internal": -0.9742395877838135,
+      "route_margin": 0.4999999701976776
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5aba9c425542994dbf019977",
+      "boundary": "NoSearch",
+      "logp_search": -0.38700905442237854,
+      "logp_internal": -1.1370090246200562,
+      "route_margin": 0.7499999701976776
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a77c17f5542992a6e59dfba",
+      "boundary": "NoSearch",
+      "logp_search": -0.25205737352371216,
+      "logp_internal": -1.5020573139190674,
+      "route_margin": 1.2499999403953552
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a7a237b5542996a35c170f0",
+      "boundary": "NoSearch",
+      "logp_search": -0.47428837418556213,
+      "logp_internal": -0.9742883443832397,
+      "route_margin": 0.4999999701976776
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae789b25542994a481bbd7e",
+      "boundary": "NoSearch",
+      "logp_search": -0.14320620894432068,
+      "logp_internal": -2.0182061195373535,
+      "route_margin": 1.8749999105930328
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a72899f5542992359bc30da",
+      "boundary": "NoSearch",
+      "logp_search": -0.1429583579301834,
+      "logp_internal": -2.017958402633667,
+      "route_margin": 1.8750000447034836
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a7bcc24554299294a54aae4",
+      "boundary": "NoSearch",
+      "logp_search": -0.47421061992645264,
+      "logp_internal": -0.9742106199264526,
+      "route_margin": 0.5
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a7e377455429934daa2fbf5",
+      "boundary": "NoSearch",
+      "logp_search": -0.31341180205345154,
+      "logp_internal": -1.313411831855774,
+      "route_margin": 1.0000000298023224
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a9034f155429933b8a20497",
+      "boundary": "NoSearch",
+      "logp_search": -0.38706159591674805,
+      "logp_internal": -1.137061595916748,
+      "route_margin": 0.75
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5abda45e55429965af743d94",
+      "boundary": "NeedSearch",
+      "logp_search": -0.20165042579174042,
+      "logp_internal": -1.7016503810882568,
+      "route_margin": 1.4999999552965164
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5abbff635542993f40c73c3e",
+      "boundary": "NeedSearch",
+      "logp_search": -0.2520410716533661,
+      "logp_internal": -1.5020411014556885,
+      "route_margin": 1.2500000298023224
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a732a5c55429901807daf9e",
+      "boundary": "NeedSearch",
+      "logp_search": -0.1603224128484726,
+      "logp_internal": -1.9103224277496338,
+      "route_margin": 1.7500000149011612
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ab6983355429953192ad313",
+      "boundary": "NeedSearch",
+      "logp_search": -0.1800689846277237,
+      "logp_internal": -1.8050689697265625,
+      "route_margin": 1.6249999850988388
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ac021d1554299012d1db5b4",
+      "boundary": "NeedSearch",
+      "logp_search": -0.12705771625041962,
+      "logp_internal": -2.1270577907562256,
+      "route_margin": 2.000000074505806
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a8d39e45542994ba4e3dc25",
+      "boundary": "NeedSearch",
+      "logp_search": -0.12705457210540771,
+      "logp_internal": -2.1270546913146973,
+      "route_margin": 2.0000001192092896
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae511b155429908b632650b",
+      "boundary": "NeedSearch",
+      "logp_search": -0.2521359324455261,
+      "logp_internal": -1.502135992050171,
+      "route_margin": 1.2500000596046448
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5ae5f8ee5542996de7b71a93",
+      "boundary": "NeedSearch",
+      "logp_search": -0.25215965509414673,
+      "logp_internal": -1.502159595489502,
+      "route_margin": 1.2499999403953552
+    },
+    {
+      "sample_id": "hotpotqa_distractor_train_5a7e800a55429949594199e5",
+      "boundary": "NeedSearch",
+      "logp_search": -0.2520752549171448,
+      "logp_internal": -1.5020751953125,
+      "route_margin": 1.2499999403953552
+    }
+  ]
+}

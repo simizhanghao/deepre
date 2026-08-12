@@ -46,7 +46,7 @@ natural sampling has `P(internal | NoSearch)=0.29545` and mixed-group rate
 `1.0`. A1 is closed. **A2 is also PASS**: the real AgentLoop→VeXact path
 returned 4/4 rollouts with exact prompt/checkpoint sentinels and route support.
 **A3/Gate B and A4 exact 32×4: PASS. The trajectory-level optimizer sweep is
-now closed after three exact-stack step-10 tests. NEXT: Root-Pivot v0.** See
+closed, and Root-Pivot RP-0 is now `FAIL`. Formal Root-Pivot @10 is locked.** See
 `results/17_rollout_alignment/calibration/VEXACT_GATE_A1_REPORT.md`.
 
 Boundary@50 is implemented as the staged 10/25/50 Exact-VeXact run documented
@@ -75,11 +75,23 @@ step 10 on four GPUs. It also passed exactness/trajectory/optimizer gates but
 produced global internal bias (`M_NS=-1.409`, `M_Need=-.889`). Removing local
 std normalization changed the early dynamics, not the inability to learn
 opposite root decisions. Do not continue either branch to step25 and do not
-open another optimizer sweep. Implement Root-Pivot v0: preserve task credit,
-mask Undetermined, and directly supervise the two root route logits with an
-initial gradient-scale-calibrated fixed coefficient. See
+open another optimizer sweep. Root-Pivot v0 was implemented with isolated
+task/root credit and a single gradient-scale coefficient. Its nine RP-0
+branches completed, but balanced route-only moved both classes internal
+(`ΔNS=-.273`, `ΔNeed=-.278`). See
 `docs/FIXED_POLICY_ATTRIBUTION_REPORT.md` and
 `docs/GRPO_NO_STD_STEP10_REPORT.md`.
+
+Root-Pivot was true credit isolation, not an auxiliary loss on top of the old
+whole-trajectory loss. Task advantages exclude the first/root response token
+and search cost; the root token receives only pairwise route supervision on
+the exact frozen-gate logits. Need-only and No-only route branches verified the
+label/loss signs, but each mainly changed a shared global route intercept; the
+NoSearch gradient was `3.16×` larger and dominated the balanced update.
+Cross-job response hashes were non-identical, so task/route cosines are null by
+design. Do not start @10, tune beta or silently unlock the Route Adapter. A new
+conditional-separation/fixed-gradient plan must be registered first. See
+`docs/ROOT_PIVOT_PLAN.md` and `docs/ROOT_PIVOT_RP0_REPORT.md`.
 
 The backend-diagnosis line is now **closed**. The active program is
 **Exact-Rollout ECA Closure**: advance gate-by-gate through

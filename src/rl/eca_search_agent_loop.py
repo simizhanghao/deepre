@@ -692,6 +692,17 @@ class EcaSearchAgentLoop(AgentLoopBase):
         _parity_dump_row(
             {
                 "sample_id": create_kwargs["sample_id"],
+                # Counterfactual gradient attribution is valid only when all
+                # branches consume exactly the same sampled trajectory.
+                "trajectory_sha256": hashlib.sha256(
+                    json.dumps(
+                        {
+                            "response_ids": response_ids[: self.response_length],
+                            "response_mask": response_mask[: self.response_length],
+                        },
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                ).hexdigest(),
                 "route_first": route_first,
                 "action": (
                     "search"

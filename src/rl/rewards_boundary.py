@@ -187,7 +187,13 @@ def compute_score(
     boundary = lookup_boundary(sample_id, extra_info)
 
     base_w = _weights(extra_info)
-    if boundary == "NoSearch":
+    root_pivot = os.environ.get("ECA_ROOT_PIVOT", "0").strip().lower() in {"1", "true", "yes"}
+    if root_pivot:
+        # Routing utility is isolated in the root-token loss. Task credit keeps
+        # Answer/Evidence/Format for both classes and never broadcasts cost.
+        eff_e = float(base_w.evidence_weight)
+        eff_s = 0.0
+    elif boundary == "NoSearch":
         eff_e = 0.0
         eff_s = float(base_w.search_cost_weight)
     else:
@@ -233,6 +239,7 @@ def compute_score(
         "evidence_weight": base_w.evidence_weight,
         "format_weight": w.format_weight,
         "search_cost_weight": base_w.search_cost_weight,
+        "root_pivot_task_reward": float(root_pivot),
         "pred": pred,
         "gold": golds[0] if golds else "",
         "sample_id": sample_id,

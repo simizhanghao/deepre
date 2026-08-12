@@ -100,6 +100,32 @@ def apply() -> str:
             flush=True,
         )
 
+    root_pivot = os.environ.get("ECA_ROOT_PIVOT", "0").strip().lower() in {"1", "true", "yes"}
+    if root_pivot and not getattr(cls._update_actor, "_eca_root_pivot", False):
+        orig_update_actor = cls._update_actor
+
+        def _root_pivot_update_actor(self, batch, metrics):  # noqa: ANN001
+            import transfer_queue as tq
+            from src.rl.root_pivot import labels_from_boundaries
+
+            extra = tq.kv_batch_get(
+                keys=batch.keys,
+                partition_id=batch.partition_id,
+                select_fields=["extra_fields"],
+            )
+            boundaries = [
+                str((row.get("reward_extra_info") or {}).get("boundary", ""))
+                for row in list(extra["extra_fields"])
+            ]
+            labels = labels_from_boundaries(boundaries)
+            metrics["root_pivot/need_rows"] = float((labels == 1).sum())
+            metrics["root_pivot/no_rows"] = float((labels == -1).sum())
+            return orig_update_actor(self, batch, metrics)
+
+        _root_pivot_update_actor._eca_root_pivot = True  # type: ignore[attr-defined]
+        cls._update_actor = _root_pivot_update_actor
+        print("[root-pivot] trainer boundary-label audit active", flush=True)
+
     if not getattr(cls._init_dataloader, "_eca_horizon_patched", False):
         orig_init_dataloader = cls._init_dataloader
 

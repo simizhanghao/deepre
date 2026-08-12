@@ -1,0 +1,9 @@
+{
+  "gate": "RP0_FAIL",
+  "implementation_smoke_exit": 0,
+  "matrix_exit": 1,
+  "matrix_exit_semantics": "scientific hard-gate failure after all 9 branches completed",
+  "formal_step10_unlocked": false,
+  "temporary_checkpoints_retained": false,
+  "report": "docs/ROOT_PIVOT_RP0_REPORT.md"
+}
