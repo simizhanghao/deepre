@@ -11,6 +11,8 @@ import hashlib
 import json
 import fcntl
 import os
+import asyncio
+import urllib.request
 from pathlib import Path
 from typing import Any, Optional
 from uuid import uuid4
@@ -106,6 +108,37 @@ def _action_plan(extra_info: dict[str, Any]) -> list[StepAction]:
     if not isinstance(raw, list):
         raise ValueError("step_action_plan must be a list or comma-separated string")
     return [StepAction(str(value).lower()) for value in raw]
+
+
+def _query_similarity(query: str, previous: list[str]) -> float:
+    left = set(query.lower().split())
+    if not left or not previous:
+        return 0.0
+    return max(
+        len(left & right) / max(1, len(left | right))
+        for right in (set(value.lower().split()) for value in previous)
+    )
+
+
+async def _frozen_gate_request(payload: dict[str, Any]) -> dict[str, Any]:
+    url = (os.environ.get("ECA_STEP_GATE_URL") or "").strip()
+    if not url:
+        raise RuntimeError("step_policy=frozen_gate requires ECA_STEP_GATE_URL")
+    timeout = float(os.environ.get("ECA_STEP_GATE_TIMEOUT_S") or 120)
+
+    def send() -> dict[str, Any]:
+        request = urllib.request.Request(
+            url.rstrip("/") + "/decide",
+            data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return json.load(response)
+
+    result = await asyncio.to_thread(send)
+    if result.get("action") not in {"search", "continue"}:
+        raise RuntimeError(f"invalid frozen Gate response: {result}")
+    return result
 
 
 def _with_step_protocol(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -211,6 +244,9 @@ class EcaStepAdaptiveAgentLoop(AgentLoopBase):
         if not sample_id:
             raise ValueError("eca_step_adaptive_agent requires sample_id")
         plan = _action_plan(extra_info)
+        step_policy = str(extra_info.get("step_policy") or "fixed").strip().lower()
+        if step_policy not in {"fixed", "all_search", "all_continue", "frozen_gate"}:
+            raise ValueError(f"invalid step_policy={step_policy!r}")
         branch_id = str(extra_info.get("step_branch_id") or "")
         target_index_raw = extra_info.get("step_target_index")
         target_index = int(target_index_raw) if target_index_raw is not None else None
@@ -237,6 +273,10 @@ class EcaStepAdaptiveAgentLoop(AgentLoopBase):
             "tool_violations": 0,
             "final_answer_reserve_violations": 0,
             "response_clipped": 0,
+            "step_policy": step_policy,
+            "gate_search_count": 0,
+            "gate_continue_count": 0,
+            "gate_probabilities": [],
         }
         create_kwargs = {"sample_id": str(sample_id)}
         if isinstance(tools_kwargs.get("search"), dict):
@@ -337,7 +377,47 @@ class EcaStepAdaptiveAgentLoop(AgentLoopBase):
                     break
                 state = StepState(checkpoint_index, searches_used, self.max_checkpoints, self.max_searches)
                 forced_action = checkpoint_index < len(plan)
-                action = plan[checkpoint_index] if forced_action else fixed_completion_action(checkpoint, state)
+                gate_output: dict[str, Any] | None = None
+                if forced_action:
+                    action = plan[checkpoint_index]
+                elif step_policy in {"fixed", "all_search"}:
+                    action = fixed_completion_action(checkpoint, state)
+                elif step_policy == "all_continue":
+                    action = (
+                        StepAction.ANSWER
+                        if checkpoint_index + 1 >= self.max_checkpoints
+                        else StepAction.CONTINUE
+                    )
+                elif checkpoint_index + 1 >= self.max_checkpoints:
+                    action = StepAction.ANSWER
+                elif checkpoint.query_is_none or searches_used >= self.max_searches:
+                    action = StepAction.CONTINUE
+                elif checkpoint.proposed_query in previous_queries:
+                    action = StepAction.CONTINUE
+                else:
+                    raw_logps = list(reasoning_raw_logps) + list(query_raw_logps)
+                    gate_output = await _frozen_gate_request(
+                        {
+                            "sample_id": str(sample_id),
+                            "canonical_prompt_ids": canonical_prompt_ids,
+                            "state_prompt_ids": list(prompt_ids),
+                            "query_position": len(prompt_ids) - len(close_ids) - 1,
+                            "checkpoint_abs_start": len(step_prompt_ids) + checkpoint_start,
+                            "checkpoint_abs_end": len(prompt_ids),
+                            "mean_logp": sum(raw_logps) / max(1, len(raw_logps)),
+                            "p10_logp": float(__import__("numpy").quantile(raw_logps, 0.10)),
+                            "step_index": checkpoint_index,
+                            "previous_searches": searches_used,
+                            "query_length": len(query_ids),
+                            "duplicate_similarity": _query_similarity(
+                                checkpoint.proposed_query, previous_queries
+                            ),
+                        }
+                    )
+                    action = StepAction(gate_output["action"])
+                    metrics["gate_probabilities"].append(float(gate_output["probability_search"]))
+                if step_policy == "frozen_gate" and action in {StepAction.SEARCH, StepAction.CONTINUE}:
+                    metrics[f"gate_{action.value}_count"] += 1
                 if (
                     not forced_action
                     and action is StepAction.SEARCH
@@ -372,6 +452,11 @@ class EcaStepAdaptiveAgentLoop(AgentLoopBase):
                     "duplicate_query": duplicate,
                     "matched_close": CLOSE,
                     "was_truncated": bool(reasoning_truncated or query_truncated),
+                    "step_policy": step_policy,
+                    "gate_probability_search": (
+                        float(gate_output["probability_search"]) if gate_output else None
+                    ),
+                    "gate_threshold": float(gate_output["threshold"]) if gate_output else None,
                 }
                 records.append(record)
                 metrics["checkpoint_count"] += 1

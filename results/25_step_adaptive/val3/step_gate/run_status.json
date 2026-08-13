@@ -1,0 +1,8 @@
+{
+  "arm": "step_gate",
+  "rows": 128,
+  "steps": 2,
+  "wall_seconds": 490,
+  "run_rc": 0,
+  "original_test_read": false
+}

@@ -1,0 +1,11 @@
+{
+  "threshold": 0.4683305025100708,
+  "positive_regret_capture": 0.9532343364539614,
+  "search_rate": 0.8718199608610567,
+  "paired_calls": 2277.0,
+  "paired_calls_vs_all_search_ratio": 0.9495412844036697,
+  "paired_tokens": 1264981.0,
+  "oof_policy_f1": 0.409655593884902,
+  "all_search_f1": 0.4090685097361741,
+  "f1_delta_vs_all_search": 0.0005870841487279344
+}

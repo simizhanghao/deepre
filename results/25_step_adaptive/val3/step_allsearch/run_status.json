@@ -1,0 +1,8 @@
+{
+  "arm": "step_allsearch",
+  "rows": 128,
+  "steps": 2,
+  "wall_seconds": 499,
+  "run_rc": 0,
+  "original_test_read": false
+}

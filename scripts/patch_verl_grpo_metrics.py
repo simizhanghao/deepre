@@ -247,6 +247,7 @@ def apply() -> str:
                             "observation_tokens": int(extra.get("observation_tokens", 0)),
                             "response_tokens": int(extra.get("response_tokens", 0)),
                             "assistant_tokens": int(agent_metrics.get("assistant_tokens", 0)),
+                            "generation_seconds": float(agent_metrics.get("generate_sequences", 0.0)),
                             "answer_f1": float(reward.get("answer_f1", 0.0)),
                             "answer_em": float(reward.get("answer_em", reward.get("em", 0.0))),
                             "format": float(reward.get("format", 0.0)),

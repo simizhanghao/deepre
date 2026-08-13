@@ -1,0 +1,23 @@
+{
+  "gate": "CUR1_FEATURE_CAPTURE_PASS",
+  "split": "validation",
+  "n": 128,
+  "model": "outputs/rl/03_hf_evidence_step400",
+  "feature_schema": {
+    "hidden_definition": "transformers hidden_states[k] at final canonical-prompt token",
+    "layers": [
+      18,
+      27,
+      36
+    ],
+    "root_margin": "logP(first_search_token)-logP(first_internal_token), equal to logit difference",
+    "route_token_ids": {
+      "search": 27,
+      "internal": 4159
+    },
+    "dtype_saved": "float32",
+    "test_read": false
+  },
+  "feature_schema_sha256": "1bbeced3358b2a3704860bbd73867abace56f85dda9ae8e59e622eeabf94dde8",
+  "artifact_sha256": "a2f9033fd1488c56a6526125684f5f4ea4263195afed50deae6dc492066e057e"
+}

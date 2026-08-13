@@ -1,0 +1,8 @@
+{
+  "arm": "step_gate_smoke",
+  "rows": 2,
+  "steps": 1,
+  "wall_seconds": 219,
+  "run_rc": 0,
+  "original_test_read": false
+}

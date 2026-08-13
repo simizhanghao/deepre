@@ -1,0 +1,8 @@
+{
+  "arm": "root",
+  "rows": 256,
+  "steps": 4,
+  "wall_seconds": 737,
+  "run_rc": 0,
+  "original_test_read": false
+}

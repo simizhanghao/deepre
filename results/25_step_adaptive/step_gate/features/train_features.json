@@ -1,0 +1,22 @@
+{
+  "gate": "STEP_GATE_FEATURE_CAPTURE_PASS",
+  "n": 1022,
+  "world_size": 4,
+  "batch_size_per_gpu": 16,
+  "feature_schema": {
+    "layer27": "native-HF hidden_states[27] at candidate-query final token",
+    "scalars": [
+      "step_mean_logp",
+      "step_p10_logp",
+      "checkpoint_mean_entropy",
+      "step_index",
+      "previous_searches",
+      "query_token_length",
+      "max_previous_query_jaccard"
+    ],
+    "entropy": "mean next-token categorical entropy over normalized checkpoint tokens"
+  },
+  "artifact_sha256": "d18ca346ee9f19169678d777799d4cf3892f3672822db805a1e2541be87af01a",
+  "val3_read": false,
+  "test_read": false
+}

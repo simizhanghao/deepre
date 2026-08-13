@@ -256,3 +256,79 @@ contract and freeze:
 
 No GPU acquisition starts until these five values appear in the frozen S0
 manifest and an independent contract audit passes.
+
+## Final Step Preference Gate freeze (2026-08-13)
+
+S1 passed the causal headroom gate.  The final router is therefore a
+conservative safe-skip classifier: its default action is SEARCH, and it emits
+CONTINUE only when the current search can be skipped with sufficiently low
+quality risk.  This supersedes the earlier linear/MLP method matrix; there is
+one small MLP and no further loss, architecture, feature, or threshold sweep.
+
+Training labels are frozen to the lexicographic S1 preference outcome:
+`SEARCH=74`, `CONTINUE=948`.  The sample weight is
+`max(abs(delta_F1), 0.02)` and weighted BCE additionally uses the Train-fold
+class ratio `N_continue/N_search` for the SEARCH positive class.
+
+Leakage control is strict:
+
+- five outer folds grouped by question; all checkpoints from one question
+  stay in one fold;
+- L27 PCA64 and scalar standardization are fitted on outer-train only;
+- the root/static scalar uses the existing strict OOF K0/B3 prediction during
+  Gate OOF, never the full-Train B3 prediction;
+- inner early stopping also splits by question;
+- three fixed seeds are averaged; the final three models are refitted on all
+  open Train states using the median selected epoch per seed.
+
+The frozen input is the candidate-query final token's native-HF L27 state,
+plus step mean/P10 chosen-token logP, mean checkpoint predictive entropy, step
+index, previous-search count, tokenized query length, maximum lexical
+similarity to a previous query, and the frozen root B3 scalar.  Exact replay is
+reconstructed from the frozen step prompt and response prefix, and every
+prompt/state SHA256 must match before a feature is accepted.
+
+The deployment threshold is selected once from OOF predictions.  SEARCH is
+the safe default.  Among thresholds capturing at least 95% of total positive
+Search regret, choose the one with minimum paired counterfactual search-call
+cost (then token cost).  After full-Train refit, freeze model, PCA, scaler,
+threshold, tokenizer/config and feature-schema hashes.
+
+Only then construct fresh Val3 and run the integrated on-policy comparison:
+No Search, old Evidence@400 Always Search, Step-AllSearch, and Frozen Step
+Gate (AllContinue is diagnostic only).  The scientific PASS is at most 0.75x
+the Step-AllSearch calls with F1 no worse than 0.02; the project PASS is lower
+TokenCost than old AlwaysSearch with F1 no worse than 0.02.  Use paired
+question bootstrap.  Val3 and the original Test remain sealed during fitting.
+
+## S2 final status (2026-08-13)
+
+The one-shot Fresh Val3 evaluation is complete on 128 previously unused
+questions (seed `2026081203`).  All four arms used one greedy trajectory per
+question; all finished with valid answers.  The frozen Step Gate preserved the
+Step-AllSearch answer exactly at aggregate level, but reduced retrieval calls
+from `2.0625` to only `2.0000` per question (`0.9697x`, a `3.03%` reduction).
+This misses the preregistered `<=0.75x` scientific cost gate, so Scientific
+PASS is false.
+
+The old Evidence@400 root-Search baseline remained substantially stronger and
+cheaper: F1 `0.56427` at `1.0` call and `636.62` response-token cost, versus
+Step Gate F1 `0.36496` at `2.0` calls and `1182.77` tokens.  Project PASS is
+therefore also false.  The paired Step-Gate minus Step-AllSearch F1 difference
+is exactly `0.0`; calls differ by `-0.0625` per question (95% paired-bootstrap
+CI `[-0.109375, -0.0234375]`).
+
+The failure is diagnostic rather than infrastructural.  The full online Gate
+made 267 learned eligible decisions and emitted only 11 learned CONTINUE
+actions below threshold.  Later search compensation left a net saving of only
+8 calls over 128 questions.  This is consistent with Train OOF, where the
+95%-regret-capture threshold already predicted only a `5.05%` call reduction;
+Fresh Val3 realized `3.03%`.  Thus the primary limitation is the frozen
+safety-calibration/coverage frontier, not a rollout crash or a large surprise
+distribution shift.  Separately, the bounded Step scaffold itself underperforms
+the old root-Search agent by `0.19931` F1 while costing `546.16` more tokens,
+which closes this version as a deployable replacement.
+
+Per the frozen decision rule, S3 remains locked: the original Test was not
+opened.  Phase 25 closes as `STEP_VAL3_FAIL`; no post-hoc threshold retuning on
+Val3 is permitted.
