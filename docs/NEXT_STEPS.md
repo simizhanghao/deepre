@@ -364,3 +364,18 @@ Train8 replay A/B matched all eight complete trajectories exactly. Next run S1
 Train640 matched `SEARCH_NOW` versus `CONTINUE_NOW` acquisition, at no more than
 two checkpoints per question. Do not construct Val3 or read Test yet. See
 [STEP_S0_REPORT.md](STEP_S0_REPORT.md).
+
+S1 is frozen as the final causal decision, not another exploratory sweep:
+Train640 base traces select earliest+latest eligible checkpoints, exact-prefix
+SEARCH_NOW/CONTINUE_NOW pairs preserve F1/EM/calls/tokens and retrieval evidence
+separately, then a local Oracle must demonstrate at least 25% safe retrieval
+headroom within the existing `.02` F1 tolerance. Only that PASS unlocks the
+single weighted-BCE Step Preference Gate; otherwise routing R&D stops.
+
+S1 has now passed that decision. On 1022 exact pairs, cost-saving Continue is
+`.6194`; at `.2502` retrieval reduction the local Oracle F1 is `.4380` versus
+fixed-Search `.4091`. Query retrieval hits a supporting title on `.8297` of
+states. Next fit exactly one lexicographic weighted-BCE Step Preference Gate;
+do not open Val3 until its feature/model/hash bundle is frozen, and do not read
+the original Test. See
+[STEP_S1_HEADROOM_REPORT.md](STEP_S1_HEADROOM_REPORT.md).

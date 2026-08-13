@@ -1,0 +1,8 @@
+{
+  "stage": "base",
+  "rows": 640,
+  "steps": 10,
+  "run_rc": 0,
+  "original_test_read": false,
+  "val3_read": false
+}

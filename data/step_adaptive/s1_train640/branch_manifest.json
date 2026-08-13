@@ -1,0 +1,22 @@
+{
+  "gate": "STEP_S1_BRANCH_FREEZE_PASS",
+  "base_records_sha256": "88c9c2600466542f9035971c88c0db6fa0470b99d9f771bf88abb8e0be050232",
+  "questions": 640,
+  "selected_states": 1022,
+  "scientific_rows": 2044,
+  "padded_rows": 4,
+  "runner_rows": 2048,
+  "batch_size": 64,
+  "selection_rule": "earliest+latest eligible; singleton once",
+  "arms": [
+    "search",
+    "continue"
+  ],
+  "same_future_completion_policy": true,
+  "original_test_read": false,
+  "val3_read": false,
+  "artifact_sha256": {
+    "branches.parquet": "22bf6c0d38db9c89bca13b3c5cd11754f2c9adc2b4b5b42715c065a52a0f765b",
+    "checkpoint_selections.jsonl": "2aa2c4b5fb757fccc529d30d1c3892a49b5fd0f53612c1742ba06c5675c92a59"
+  }
+}

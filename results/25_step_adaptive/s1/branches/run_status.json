@@ -1,0 +1,8 @@
+{
+  "stage": "branches",
+  "rows": 2048,
+  "steps": 32,
+  "run_rc": 0,
+  "original_test_read": false,
+  "val3_read": false
+}

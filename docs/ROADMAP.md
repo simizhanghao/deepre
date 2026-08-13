@@ -93,7 +93,8 @@ NOW → Conditional Utility Router (CUR)
 ├── 🟡 Phase25 Step-Level Adaptive Retrieval → `docs/STEP_LEVEL_ADAPTIVE_RETRIEVAL_PLAN.md`
 │     move decision from root to explicit reasoning checkpoints
 │     ✅ S0 Train32 contract + Train8 exact replay PASS
-│     NEXT: Train640 counterfactuals → fresh Val3 → sealed Test once
+│     ✅ S1 Train640: Oracle Headroom PASS (safe Continue=.6194)
+│     NEXT: single Step Preference Gate → fresh Val3 → sealed Test once
 │
 ├── ⬜ Candidate ECA PASS → freeze
 ├── ⬜ 3E Full-Corpus (passage BM25 + rerank)

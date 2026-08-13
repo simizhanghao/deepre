@@ -104,6 +104,15 @@ class CandidateBM25Tool(BaseTool):
             "query": query,
             "topk": topk,
             "num_docs": len(data.get("documents") or []),
+            "documents": [
+                {
+                    "document_id": str(document.get("document_id") or ""),
+                    "title": str(document.get("title") or ""),
+                    "rank": int(document.get("rank") or index + 1),
+                    "score": float(document.get("score") or 0.0),
+                }
+                for index, document in enumerate(data.get("documents") or [])
+            ],
             "search_count": state["search_count"],
         }
         return ToolResponse(text=observation), 0.0, metrics

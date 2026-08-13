@@ -1,11 +1,17 @@
 # Phase 25 — Step-Level Adaptive Retrieval Preregistration
 
-Status: **S0 contract + deterministic replay PASS; S1 acquisition is next.**
+Status: **S0 PASS; S1 causal headroom PASS; the single Step Preference Gate is next.**
 
 S0 result: fixed Train32 passed all hard checks after one preserved failed
 attempt exposed an unhandled legacy `</search>` suffix. The fixed Train8 was
 then replayed independently twice with exact trajectory match `8/8`. See
 [STEP_S0_REPORT.md](STEP_S0_REPORT.md).
+
+S1 result: 1022 exact-prefix Train states produced deterministic SEARCH_NOW /
+CONTINUE_NOW pairs. Cost-saving Continue is 61.94%; the local Oracle removes
+25.02% of calls while improving F1 from 0.4091 to 0.4380. Decision:
+`STEP_ADAPTIVE_HEADROOM_PASS`. See
+[STEP_S1_HEADROOM_REPORT.md](STEP_S1_HEADROOM_REPORT.md).
 
 ## S0 code-audit finding
 
@@ -194,17 +200,31 @@ checkpoint should preserve Always-Search quality while reducing calls/tokens.
 ### S1 — open-Train counterfactual capture
 
 - Use CUR-1 Train640 only.
-- For each eligible reasoning checkpoint, pair `continue_without_search` with
-  `retrieve_once_then_continue` under matched prefix token IDs.
-- Primary target is step rescue regret:
+- An eligible checkpoint has a valid non-`NONE`, nonduplicate candidate query
+  and admits both SEARCH and CONTINUE under the frozen state budget. Select a
+  singleton once; otherwise select the earliest and latest eligible checkpoint,
+  never more than two per question.
+- Pair `SEARCH_NOW` with `CONTINUE_NOW` under matched prefix token IDs. Replay
+  identical prior actions to the target; after the single intervention both
+  arms return to the same deterministic frozen completion policy and retain
+  future Search access.
+- Preserve quality and costs separately:
 
   ```text
-  R_step = max(0, downstream_F1_retrieve - downstream_F1_continue)
+  delta F1, delta EM, delta actual SearchCalls,
+  response/observation/raw-generation tokens and total token proxy
   ```
 
-- Store retrieval-call count and the existing reproducible token proxy.
-- Fit one linear uncertainty baseline and one frozen small step router; no
-  method sweep.
+- Save candidate query, retrieved document IDs/titles, supporting-title hits,
+  Recall@5, and duplicate status in the same capture.
+- Before fitting any Router, compute SearchHelpful, ContinueSafe,
+  CostSavingContinue and the Local Oracle quality-cost frontier. Hard headroom
+  requires CostSavingContinue `>= .25` and Oracle quality at `>=25%` retrieval
+  reduction no worse than fixed Search by `.02` F1. Failure stops adaptive
+  routing.
+- Only after headroom PASS fit one weighted-BCE lexicographic Step Preference
+  Gate: quality differences beyond `.02` choose the better arm; within `.02`,
+  choose the cheaper arm. No B0-B6 or loss sweep.
 
 ### S2 — fresh Val3 freeze and decision
 

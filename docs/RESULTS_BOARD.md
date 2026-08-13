@@ -26,6 +26,7 @@
 | CUR-1 static | **CLOSED/FAIL** | B3 Recovery@50=.380, F1@50=.423; Validation Unlock FAIL; test sealed |
 | DSSR Safe-Skip | **FAIL** | Val2 K3@50 F1/Recovery/TokenCost=.5294/.3240/.6228; Test sealed |
 | Step-Level Adaptive Retrieval S0 | **PASS** | Train32 contract PASS; deterministic Train8 replay exact 8/8; S1 next |
+| Step-Level Adaptive Retrieval S1 | **PASS** | 1022 exact causal pairs; safe-Continue=.6194; Oracle -25.02% calls and +.0289 F1 |
 
 **Final ckpts (local, not in git):**
 
@@ -233,3 +234,18 @@ Artifacts: `results/17_rollout_alignment/{environment,calibration,parity_32x4,tr
   raw and normalized token IDs, masks, actions, queries, and answers.
 - Gate: `STEP_S0_REPLAY_PASS`. Val3 and original Test were not read. S1
   Train640 matched counterfactual acquisition is next.
+
+## S1 causal headroom
+
+- Train640 base and 2044 scientific branch rows completed; exact prefix/action
+  parity `1.0` across 1022 SEARCH_NOW/CONTINUE_NOW pairs.
+- Search-helpful / Continue-safe / cost-saving-Continue rates:
+  `.0528/.9472/.6194`; strict F1 ties are `.8855`.
+- SearchNow versus ContinueNow mean F1: `.40907/.40953`; mean calls:
+  `2.3464/1.7006`; mean token-proxy delta `+185.20` for SearchNow.
+- Query evidence: any supporting-title hit `.8297`, supporting-title Recall@5
+  `.5866`.
+- Local Oracle at `.2502` retrieval reduction improves F1 from `.4091` to
+  `.4380` (floor `.3891`). Gate: `STEP_ADAPTIVE_HEADROOM_PASS`.
+- Next: one frozen lexicographic weighted-BCE Step Preference Gate, then fresh
+  integrated Val3 only. Original Test remains sealed.

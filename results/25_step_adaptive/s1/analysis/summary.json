@@ -1,0 +1,33 @@
+{
+  "gate": "STEP_ADAPTIVE_HEADROOM_PASS",
+  "questions": 640,
+  "selected_states": 1022,
+  "paired_rows": 2044,
+  "prefix_and_action_exact_rate": 1.0,
+  "base_valid_nonduplicate_query_rate": 0.6375,
+  "search_helpful_rate": 0.05283757338551859,
+  "search_helpful_count": 54,
+  "continue_safe_rate": 0.9471624266144814,
+  "cost_saving_continue_rate": 0.6193737769080235,
+  "mean_supporting_title_recall_at_5": 0.5865949119373777,
+  "any_supporting_title_hit_rate": 0.8297455968688845,
+  "mean_delta_f1_search_minus_continue": -0.0004569222811373758,
+  "mean_delta_em_search_minus_continue": -0.0019569471624266144,
+  "mean_delta_search_calls": 0.6457925636007827,
+  "mean_delta_token_proxy": 185.1996086105675,
+  "local_frontier_25pct": {
+    "fixed_search_f1": 0.4090685097361741,
+    "frontier_f1": 0.4379855103263645,
+    "quality_floor": 0.3890685097361741,
+    "fixed_search_calls": 2398,
+    "frontier_calls": 1798,
+    "retrieval_reduction": 0.25020850708924103,
+    "quality_pass": true
+  },
+  "preference_counts": {
+    "search": 74,
+    "continue": 948
+  },
+  "original_test_read": false,
+  "val3_read": false
+}

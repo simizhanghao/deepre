@@ -1,0 +1,20 @@
+{
+  "stage": "phase25_s0",
+  "rows": 640,
+  "checkpoints": 2560,
+  "parser_valid_rate": 1.0,
+  "checkpoint_close_rate": 1.0,
+  "query_field_valid_rate": 0.996484375,
+  "finish_rate": 1.0,
+  "response_clip_rate": 0.0,
+  "tool_violations": 0,
+  "final_answer_reserve_violations": 0,
+  "duplicate_search_executions": 0,
+  "continue_count": 592,
+  "continue_reaches_next_checkpoint_rate": 1.0,
+  "reasoning_fallback_rate": 0.0,
+  "query_fallback_rate": 0.0,
+  "search_count": 1328,
+  "original_test_read": false,
+  "gate": "STEP_S0_CONTRACT_PASS"
+}

@@ -211,6 +211,11 @@ class EcaStepAdaptiveAgentLoop(AgentLoopBase):
         if not sample_id:
             raise ValueError("eca_step_adaptive_agent requires sample_id")
         plan = _action_plan(extra_info)
+        branch_id = str(extra_info.get("step_branch_id") or "")
+        target_index_raw = extra_info.get("step_target_index")
+        target_index = int(target_index_raw) if target_index_raw is not None else None
+        branch_arm = str(extra_info.get("step_branch_arm") or "")
+        step_padding = bool(extra_info.get("step_padding", False))
         messages = _with_step_protocol(raw_messages)
         canonical_prompt_ids = list(await self.apply_chat_template(raw_messages, tools=None))
         prompt_ids = list(await self.apply_chat_template(messages, tools=None))
@@ -351,6 +356,9 @@ class EcaStepAdaptiveAgentLoop(AgentLoopBase):
                     "previous_queries": list(previous_queries),
                     "checkpoint_response_start": checkpoint_start,
                     "checkpoint_response_end": end,
+                    "state_prefix_sha256": hashlib.sha256(
+                        json.dumps(prompt_ids).encode()
+                    ).hexdigest(),
                     "checkpoint_token_ids": forced_think_ids + reasoning_ids + query_prefix_ids + query_ids + close_ids,
                     "forced_prefix_token_count": len(forced_think_ids),
                     "checkpoint_logprobs": [],
@@ -454,6 +462,10 @@ class EcaStepAdaptiveAgentLoop(AgentLoopBase):
             "finish": int(finished),
             "response_tokens": len(response_mask),
             "metrics": metrics,
+            "step_branch_id": branch_id,
+            "step_target_index": target_index,
+            "step_branch_arm": branch_arm,
+            "step_padding": step_padding,
         }
         _step_dump(
             {
@@ -468,6 +480,10 @@ class EcaStepAdaptiveAgentLoop(AgentLoopBase):
                 "response_token_ids": response_ids[: self.response_length],
                 "response_mask": response_mask[: self.response_length],
                 "metrics": metrics,
+                "step_branch_id": branch_id,
+                "step_target_index": target_index,
+                "step_branch_arm": branch_arm,
+                "step_padding": step_padding,
             }
         )
         return AgentLoopOutput(

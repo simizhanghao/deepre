@@ -1,0 +1,16 @@
+{
+  "gate": "STEP_S1_BASE_FREEZE_PASS",
+  "source": "/data1/hcc/deepresearch/data/cur/cur1_fresh896/train.parquet",
+  "source_sha256": "3a59b798cd972f9f2b719901651cce16ef6f8cda3b7e199de88be1b2f9f67853",
+  "questions": 640,
+  "question_ids_sha256": "b3ad88242c79a37051d09935a639b7d6e4600abdffb2445af96af79f594b0469",
+  "selection_rule": "earliest+latest eligible; singleton once",
+  "eligible": "query != NONE; nonduplicate; SEARCH and CONTINUE both state-valid",
+  "completion_policy": "greedy deterministic fixed_completion_action",
+  "max_sampled_checkpoints_per_question": 2,
+  "original_test_read": false,
+  "val3_read": false,
+  "artifact_sha256": {
+    "base640.parquet": "98e1388e9721eea1c48ab9a06ae2b25935d53a118986d3b096bbd64f4bbd34dd"
+  }
+}
